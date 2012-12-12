@@ -9,6 +9,7 @@ import sys
 import time
 import urllib
 import uuid
+import pygeoip
 
 from django.conf import settings
 from django.contrib.auth import logout, authenticate, login
@@ -44,6 +45,7 @@ from courseware.courses import get_courses_by_university
 from courseware.access import has_access
 
 from statsd import statsd
+from analytics.models import StudentGeoLocation
 
 log = logging.getLogger("mitx.student")
 Article = namedtuple('Article', 'title url author image deck publication publish_date')
@@ -422,6 +424,7 @@ def _do_create_account(post_vars):
              is_active=False)
     user.set_password(post_vars['password'])
     registration = Registration()
+    
     # TODO: Rearrange so that if part of the process fails, the whole process fails.
     # Right now, we can have e.g. no registration e-mail sent out and a zombie account
     try:
@@ -442,6 +445,23 @@ def _do_create_account(post_vars):
         raise
 
     registration.register(user)
+    
+    # lookup geo location info from ip address
+    if post_vars.get('ip_address'):
+        gi = pygeoip.GeoIP(settings.REPO_ROOT / "data" / "GeoLiteCity.dat" , pygeoip.STANDARD)
+        geo_record = gi.record_by_addr(post_vars['ip_address'])
+
+        if geo_record:        
+            geoloc = StudentGeoLocation(user=user)
+            geoloc.country = geo_record['country_code']
+            geoloc.area_code = geo_record['area_code']
+            geoloc.city = geo_record['city']
+            geoloc.latitude = geo_record['latitude']
+            geoloc.longitude = geo_record['longitude']
+            geoloc.metro_code = geo_record['dma_code']
+            geoloc.postal_code = geo_record['postal_code']
+            geoloc.region = geo_record['region_name']
+            geoloc.save()
 
     profile = UserProfile(user=user)
     profile.name = post_vars['name']
@@ -449,7 +469,7 @@ def _do_create_account(post_vars):
     profile.gender = post_vars.get('gender')
     profile.mailing_address = post_vars.get('mailing_address')
     profile.goals = post_vars.get('goals')
-
+    
     try:
         profile.year_of_birth = int(post_vars['year_of_birth'])
     except (ValueError, KeyError):
@@ -471,6 +491,7 @@ def create_account(request, post_override=None):
     js = {'success': False}
 
     post_vars = post_override if post_override else request.POST
+    post_vars = dict(post_vars.items())
 
     # if doing signup for an external authorization, then get email, password, name from the eamap
     # don't use the ones from the form, since the user could have hacked those
@@ -480,7 +501,6 @@ def create_account(request, post_override=None):
         email = eamap.external_email
         name = eamap.external_name
         password = eamap.internal_password
-        post_vars = dict(post_vars.items())
         post_vars.update(dict(email=email, name=name, password=password))
         log.debug('extauth test: post_vars = %s' % post_vars)
 
@@ -531,6 +551,9 @@ def create_account(request, post_override=None):
         js['value'] = "Username should only consist of A-Z and 0-9.".format(field=a)
         js['field'] = 'username'
         return HttpResponse(json.dumps(js))
+    
+    # get the request ip address
+    post_vars['ip_address'] = request.META['REMOTE_ADDR']
 
     # Ok, looks like everything is legit.  Create the account.
     ret = _do_create_account(post_vars)

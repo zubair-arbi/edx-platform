@@ -363,6 +363,8 @@ MIDDLEWARE_CLASSES = (
     # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 
     'django_comment_client.utils.ViewNameMiddleware',
+
+    'analytics.middleware.SetRemoteAddrFromForwardedFor',
 )
 
 ############################### Pipeline #######################################
@@ -580,6 +582,7 @@ INSTALLED_APPS = (
     'instructor',
     'psychometrics',
     'licenses',
+    'analytics',
 
     #For the wiki
     'wiki', # The new django-wiki from benjaoming
