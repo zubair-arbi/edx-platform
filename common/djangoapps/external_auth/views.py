@@ -10,7 +10,7 @@ from external_auth.models import ExternalAuthMap
 from external_auth.djangostore import DjangoOpenIDStore
 
 from django.conf import settings
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
+from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login, get_user
 from django.contrib.auth.models import User
 from student.models import UserProfile
 
@@ -133,6 +133,7 @@ def external_login_or_signup(request,
 
     internal_user = eamap.user
     if internal_user is None:
+        # TODO: this should actually check to see if email is already in use
         log.debug('No user for %s yet, doing signup' % eamap.external_email)
         return signup(request, eamap)
 
@@ -167,7 +168,7 @@ def signup(request, eamap=None):
     to create an account on the edX system, and fill in the user
     registration form.
 
-    eamap is an ExteralAuthMap object, specifying the external user
+    eamap is an ExternalAuthMap object, specifying the external user
     for which to complete the signup.
     """
 
@@ -401,14 +402,16 @@ def provider_login(request):
     # initialize store and server
     store = DjangoOpenIDStore()
     server = Server(store, endpoint)
-
+    user = None
+    
     # handle OpenID request
+    # BW: it is either an OpenID request OR a login request, but not both:
     querydict = dict(request.REQUEST.items())
     error = False
     if 'openid.mode' in request.GET or 'openid.mode' in request.POST:
         # decode request
         openid_request = server.decodeRequest(querydict)
-
+        
         if not openid_request:
             return default_render_failure(request, "Invalid OpenID request")
 
@@ -441,7 +444,7 @@ def provider_login(request):
                                     server.handleRequest(openid_request), {})
 
     # handle login
-    if request.method == 'POST' and 'openid_setup' in request.session:
+    elif request.method == 'POST' and 'openid_setup' in request.session:
         # get OpenID request from session
         openid_setup = request.session['openid_setup']
         openid_request = openid_setup['request']
@@ -473,43 +476,62 @@ def provider_login(request):
             log.warning(msg)
             return HttpResponseRedirect(openid_request_url)
 
+        # check if authentication failed
+        if user is not None and not user.is_active:
+            request.session['openid_error'] = True
+            msg = "Login failed - Account not active for user {0}".format(username)
+            log.warning(msg)
+            return HttpResponseRedirect(openid_request_url)
+       
         # authentication succeeded, so log user in
-        if user is not None and user.is_active:
-            # remove error from session since login succeeded
-            if 'openid_error' in request.session:
-                del request.session['openid_error']
 
-            # fullname field comes from user profile
-            profile = UserProfile.objects.get(user=user)
-            log.info("OpenID login success - {0} ({1})".format(user.username,
+    # Check to see if a user is already logged into this session.
+    if user is None:
+        user = get_user(request)
+        
+    # if we have a user, either by authentication or by previous login,
+    # return that information to the client            
+    if user is not None and user.is_active:
+        # remove error from session since login succeeded
+        if 'openid_error' in request.session:
+            del request.session['openid_error']
+
+        # fullname field comes from user profile
+        profile = UserProfile.objects.get(user=user)
+        log.info("OpenID login success - {0} ({1})".format(user.username,
                                                                user.email))
 
-            # redirect user to return_to location
-            url = endpoint + urlquote(user.username)
-            response = openid_request.answer(True, None, url)
+        # redirect user to return_to location
+        url = endpoint + urlquote(user.username)
+        response = openid_request.answer(True, None, url)
 
-            # TODO: for CS50 we are forcibly returning the username
-            # instead of fullname. In the OpenID simple registration
-            # extension, we don't have to return any fields we don't
-            # want to, even if they were marked as required by the
-            # Consumer. The behavior of what to do when there are
-            # missing fields is up to the Consumer. The proper change
-            # should only return the username, however this will likely
-            # break the CS50 client. Temporarily we will be returning
-            # username filling in for fullname in addition to username 
-            # as sreg nickname.
-            results = {
-                'nickname': user.username,
-                'email': user.email,
-                'fullname': user.username
-                }
-            return provider_respond(server, openid_request, response, results)
+        # TODO: for CS50 we are forcibly returning the username
+        # instead of fullname. In the OpenID simple registration
+        # extension, we don't have to return any fields we don't
+        # want to, even if they were marked as required by the
+        # Consumer. The behavior of what to do when there are
+        # missing fields is up to the Consumer. The proper change
+        # should only return the username, however this will likely
+        # break the CS50 client. Temporarily we will be returning
+        # username filling in for fullname in addition to username 
+        # as sreg nickname.
+        results = {
+                   'nickname': user.username,
+                   'email': user.email,
+                   'fullname': user.username
+                   }
+        return provider_respond(server, openid_request, response, results)
 
-        request.session['openid_error'] = True
-        msg = "Login failed - Account not active for user {0}".format(username)
-        log.warning(msg)
-        return HttpResponseRedirect(openid_request_url)
+ 
+    
+    # So set up a provider_login dialog box.
+    return _raise_provider_login_dialog_response(request, error)
 
+
+def _raise_provider_login_dialog_response(request, error):
+    '''
+    Creates response to prompt user for email and password
+    '''
     # determine consumer domain if applicable
     return_to = ''
     if 'openid.return_to' in request.REQUEST:
@@ -526,8 +548,7 @@ def provider_login(request):
     # custom XRDS header necessary for discovery process
     response['X-XRDS-Location'] = get_xrds_url('xrds', request)
     return response
-
-
+    
 def provider_identity(request):
     """
     XRDS for identity discovery
