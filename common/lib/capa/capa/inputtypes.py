@@ -13,6 +13,9 @@ Module containing the problem elements which render into input objects
 - imageinput  (for clickable image)
 - optioninput (for option list)
 - filesubmission (upload a file)
+- crystallography
+- vsepr_input
+- drag_and_drop
 
 These are matched by *.html files templates/*.html which are mako templates with the
 actual html.
@@ -695,7 +698,9 @@ class VseprInput(InputTypeBase):
         Note: height, width are required.
         """
         return [Attribute('height'),
-                Attribute('width')
+                Attribute('width'),
+                Attribute('molecules'),
+                Attribute('geometries')
                 ]
 
 registry.register(VseprInput)
@@ -783,14 +788,14 @@ registry.register(OpenEndedInput)
 # -------------------------------------------------------------------------
 
 
-class VseprInput(InputTypeBase):
+class DragAndDropInput(InputTypeBase):
     """
     Input for molecular geometry--show possible structures, let student
     pick structure and label positions with atoms or electron pairs.
     """
 
     template = 'drag_and_drop.html'
-    tags = ['drag_and_drop']
+    tags = ['drag_and_drop_input']
 
     @classmethod
     def get_attributes(cls):
@@ -799,10 +804,10 @@ class VseprInput(InputTypeBase):
         """
         return [Attribute('height'),
                 Attribute('width'),
-                Attribute('molecules'),
-                Attribute('geometries'),
+                Attribute('template'),
+                Attribute('images'),
                 ]
 
-registry.register(VseprInput)
+registry.register(DragAndDropInput)
 
 #--------------------------------------------------------------------------------------------------------------------
