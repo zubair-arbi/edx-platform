@@ -24,6 +24,7 @@ from module_render import toc_for_course, get_module, get_instance_module
 
 from django_comment_client.utils import get_discussion_title
 
+from student.views import auto_enroll
 from student.models import UserTestGroup, CourseEnrollment
 from util.cache import cache, cache_if_anonymous
 from xmodule.modulestore import Location
@@ -151,6 +152,7 @@ def save_child_position(seq_module, child_name, instance_module):
                 instance_module.save()
 
 @login_required
+@auto_enroll
 @ensure_csrf_cookie
 @cache_control(no_cache=True, no_store=True, must_revalidate=True)
 def index(request, course_id, chapter=None, section=None,
