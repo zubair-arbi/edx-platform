@@ -82,7 +82,7 @@ MITX_FEATURES = {
     'AUTH_USE_MIT_CERTIFICATES' : False,
     'AUTH_USE_OPENID_PROVIDER': False,
 
-    'ENABLE_AUTO_COURSE_REGISTRATION': True,	# allows direct access to courseware without registering first
+    'ENABLE_AUTO_COURSE_REGISTRATION': False,	# allows direct access to courseware without registering first
 }
 
 # Used for A/B testing
