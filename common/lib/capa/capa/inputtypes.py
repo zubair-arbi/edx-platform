@@ -695,9 +695,7 @@ class VseprInput(InputTypeBase):
         Note: height, width are required.
         """
         return [Attribute('height'),
-                Attribute('width'),
-                Attribute('molecules'),
-                Attribute('geometries'),
+                Attribute('width')
                 ]
 
 registry.register(VseprInput)
@@ -782,4 +780,29 @@ class OpenEndedInput(InputTypeBase):
 
 registry.register(OpenEndedInput)
 
-#-----------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+
+class VseprInput(InputTypeBase):
+    """
+    Input for molecular geometry--show possible structures, let student
+    pick structure and label positions with atoms or electron pairs.
+    """
+
+    template = 'drag_and_drop.html'
+    tags = ['drag_and_drop']
+
+    @classmethod
+    def get_attributes(cls):
+        """
+        Note: height, width are required.
+        """
+        return [Attribute('height'),
+                Attribute('width'),
+                Attribute('molecules'),
+                Attribute('geometries'),
+                ]
+
+registry.register(VseprInput)
+
+#--------------------------------------------------------------------------------------------------------------------
