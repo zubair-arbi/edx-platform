@@ -16,18 +16,38 @@ define(['logme'], function (logme) {
                 'style=" ' +
                     'position: relative; ' +
                     'margin-bottom: 25px; ' +
+                    'margin-left: auto; ' +
+                    'margin-right: auto; ' +
                 '" ' +
             '></div>'
         );
 
-        state.baseImageEl = $(
-            '<img ' +
-                'src="' + state.config.imageDir + '/' + state.config.base_image + '" ' +
-            '/>'
-        );
-        state.baseImageEl.appendTo(baseImageElContainer);
+        state.baseImageEl = $('<img />');
 
-        baseImageElContainer.appendTo(state.containerEl);
+        state.baseImageEl.attr(
+            'src',
+            state.config.base_image
+        );
+        state.baseImageEl.load(function () {
+            baseImageElContainer.css('width', this.width);
+            baseImageElContainer.css('height', this.height);
+
+            state.baseImageEl.appendTo(baseImageElContainer);
+            baseImageElContainer.appendTo(state.containerEl);
+
+            state.baseImageLoaded = true;
+        });
+        state.baseImageEl.error(function () {
+            logme(
+                'ERROR: Image "' + state.config.base_image + '" was not found!'
+            );
+            baseImageElContainer.html(
+                '<span style="color: red;">' +
+                    'ERROR: Image "' + state.config.base_image + '" was not found!' +
+                '</span>'
+            );
+            baseImageElContainer.appendTo(state.containerEl);
+        });
     }
 });
 
