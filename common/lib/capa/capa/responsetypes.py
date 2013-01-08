@@ -869,7 +869,7 @@ def sympy_check2():
 
     response_tag = 'customresponse'
 
-    allowed_inputfields = ['textline', 'textbox', 'crystallography', 'chemicalequationinput', 'vsepr_input']
+    allowed_inputfields = ['textline', 'textbox', 'crystallography', 'chemicalequationinput', 'vsepr_input', 'editamoleculeinput']
 
     def setup_response(self):
         xml = self.xml
