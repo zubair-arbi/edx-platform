@@ -871,7 +871,7 @@ def sympy_check2():
 
     allowed_inputfields = ['textline', 'textbox', 'crystallography',
                            'chemicalequationinput', 'vsepr_input', 'editamoleculeinput',
-                           'designprotein2dinput', 'drag_and_drop_input']
+                           'designprotein2dinput', 'drag_and_drop_input', 'editageneinput']
 
     def setup_response(self):
         xml = self.xml

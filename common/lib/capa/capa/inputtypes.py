@@ -856,7 +856,6 @@ class DesignProtein2dInput(InputTypeBase):
 
 registry.register(DesignProtein2dInput)
 
-
 # -------------------------------------------------------------------------
 
 class DragAndDropInput(InputTypeBase):
@@ -945,5 +944,40 @@ class DragAndDropInput(InputTypeBase):
         self.to_render.add('drag_and_drop_json')
 
 registry.register(DragAndDropInput)
+
+#-----------------------------------------------------------------------------
+
+class EditAGeneInput(InputTypeBase):
+    """
+        An input type for editing a gene. Integrates with the genex java applet.
+
+        Example:
+
+        <editagene width="800" hight="500" dna_sequence="ETAAGGCTATAACCGA" />
+        """
+
+    template = "editageneinput.html"
+    tags = ['editageneinput']
+
+    @classmethod
+    def get_attributes(cls):
+        """
+            Note: width, hight, and dna_sequencee are required.
+            """
+        return [Attribute('width'),
+                Attribute('height'),
+                Attribute('dna_sequence')
+                ]
+
+    def _extra_context(self):
+        """
+            """
+        context = {
+            'applet_loader': '/static/js/capa/edit-a-gene.js',
+        }
+
+        return context
+
+registry.register(EditAGeneInput)
 
 #-----------------------------------------------------------------------------
