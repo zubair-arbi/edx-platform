@@ -22,6 +22,7 @@ from courseware import grades
 from courseware.access import (has_access, _course_staff_group_name,
                                course_beta_test_group_name)
 from courseware.models import StudentModuleCache
+from courseware.module_render import *
 
 from student.models import Registration
 from xmodule.error_module import ErrorDescriptor
@@ -30,6 +31,7 @@ from xmodule.modulestore import Location
 from xmodule.modulestore.xml_importer import import_from_xml
 from xmodule.modulestore.xml import XMLModuleStore
 from xmodule.timeparse import stringify_time
+
 
 def parse_json(response):
     """Parse response, which is assumed to be json"""
@@ -889,4 +891,78 @@ class TestCourseGrader(PageLoader):
         # Now we answer the final question (worth half of the grade)
         self.submit_question_answer('FinalQuestion', ['Correct', 'Correct'])
         self.check_grade_percent(1.0) # Hooray! We got 100%
+
+TEST_DATA_DIR = settings.COMMON_TEST_DATA_ROOT
+
+class ModuleRenderTestCase(TestCase):
+
+    def _create_account(self, username, email, pw):
+        '''Try to create an account.  No error checking'''
+        resp = self.client.post('/create_account', {
+            'username': username,
+            'email': email,
+            'password': pw,
+            'name': 'Fred Weasley',
+            'terms_of_service': 'true',
+            'honor_code': 'true',
+        })
+        return resp
+
+    def create_account(self, username, email, pw):
+        '''Create the account and check that it worked'''
+        resp = self._create_account(username, email, pw)
+        self.assertEqual(resp.status_code, 200)
+        data = parse_json(resp)
+        self.assertEqual(data['success'], True)
+
+        # Check both that the user is created, and inactive
+        self.assertFalse(user(email).is_active)
+
+        return resp
+
+    def _enroll(self, course):
+        """Post to the enrollment view, and return the parsed json response"""
+        resp = self.client.post('/change_enrollment', {
+            'enrollment_action': 'enroll',
+            'course_id': course.id,
+            })
+        return parse_json(resp)
+
+    def enroll(self, course):
+        """Enroll the currently logged-in user, and check that it worked."""
+        data = self._enroll(course)
+        self.assertTrue(data['success'])
+    
+    def setUp(self):
+        # This is how you create a course?
+        module_store = XMLModuleStore(
+                                      data_dir=TEST_DATA_DIR,
+                                      default_class='xmodule.hidden_module.HiddenDescriptor',
+                                      course_dirs=["toy"],
+                                      load_error_modules=True,
+                                      )
+        self.courses = module_store.get_courses()
+        # these two are courses?
+        self.full = modulestore().get_course("edX/full/6.002_Spring_2012")
+        self.toy = modulestore().get_course("edX/toy/2012_Fall")
+        # Create a user?
+        self.student = 'view@test.com'
+        self.password = 'foo'
+        self.create_account('u1', self.student, self.password)
+        #ActivateLoginTestCase.activate_user(self.student)
+        self.enroll(self.toy)
+        self.user = User.objects.create_user('student', 'view@test.com', 'foo')
+        self.student_module_cache = StudentModuleCache.cache_for_descriptor_descendents(\
+            self.full.id, self.user, self.full, depth=2)
+
+    def testGetModule(self):
+        self.assertIsNone(get_module(None,None,None,None,None))
+
+    def testTOCForCourse(self):
+        self.assertIsNone(toc_for_course(self.student, "request", self.full.location, \
+                       self.student_module_cache, "dummy"))
+
+    def tearDown(self):
+        pass
+
 

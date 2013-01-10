@@ -29,6 +29,7 @@ def has_permission(user, permission, course_id=None):
 
 
 CONDITIONS = ['is_open', 'is_author']
+# data may be a json file
 def check_condition(user, condition, course_id, data):
     def check_open(user, condition, course_id, data):
         try:

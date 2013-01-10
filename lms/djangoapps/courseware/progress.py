@@ -27,7 +27,7 @@ class completion(object):
         return completion(**result)
 
     def __contains__(self, key):
-        return key in dict
+        return key in self.dict
 
     def __repr__(self):
         return repr(self.dict)
