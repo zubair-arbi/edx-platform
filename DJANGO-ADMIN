@@ -1,0 +1,4 @@
+#!/bin/csh
+
+#django-admin.py $* --settings=lms.envs.dev_ike --pythonpath=.
+django-admin.py $* --settings=lms.envs.dev_ocw --pythonpath=.

@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "using settings dev_ocw$*"
+
+#nohup gunicorn_django -w 2 --settings=lms.envs.dev --pythonpath=. --pid=gunicorn.pid --debug --bind=localhost:8000 2>>LOG.gunicorn >> LOG.gunicorn &
+#nohup gunicorn_django -w 1 --settings=lms.envs.dev_ike --pythonpath=. --pid=gunicorn.pid --debug --bind=localhost:8000 2>>LOG.gunicorn  >> LOG.gunicorn &
+#nohup gunicorn_django -w 1 --settings=lms.envs.dev_home --pythonpath=. --pid=gunicorn.pid --debug --bind=localhost:8000 2>>LOG.gunicorn  >> LOG.gunicorn &
+#nohup gunicorn_django -w 3 --settings=lms.envs.dev_home --pythonpath=. --pid=gunicorn.pid --debug --bind=localhost:8000 2>>LOG.gunicor n >> LOG.gunicorn &
+
+#nohup gunicorn_django -w 1 --settings=lms.envs.dev_ocw --pythonpath=. --pid=gunicorn.pid --debug --bind=localhost:8000 2>>LOG.gunicorn  >> LOG.gunicorn &
+nohup gunicorn_django -w 1 --settings=lms.envs.dev_ocw$* --pythonpath=. --pid=gunicorn.pid --debug --bind=localhost:8000 2>>LOG.gunicorn  >> LOG.gunicorn &
