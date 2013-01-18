@@ -16,7 +16,7 @@ urlpatterns = ('',
     url(r'^$', 'branding.views.index', name="root"), # Main marketing page, or redirect to courseware
     url(r'^dashboard$', 'student.views.dashboard', name="dashboard"),
 
-    url(r'^admin_dashboard$', 'dashboard.views.dashboard'),
+    url(r'^admin_dashboard$', 'dashboard.views.sysadmin_dashboard', name="sysadmin"),
 
     # Adding to allow debugging issues when prod is mysteriously different from staging
     # (specifically missing get parameters in certain cases)
