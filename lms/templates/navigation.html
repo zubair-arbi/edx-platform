@@ -51,6 +51,13 @@ site_status_msg = get_site_status_msg(course_id)
     </ol>
 
   % if user.is_authenticated():
+   % if user.is_staff:
+    <ol class="left">
+      <li class="primary">
+        <a href="${reverse('sysadmin')}">Sysadmin</a>
+      </li>
+    </ol>
+   % endif
     <ol class="user">
       <li class="primary">
         <a href="${reverse('dashboard')}" class="user-link">
