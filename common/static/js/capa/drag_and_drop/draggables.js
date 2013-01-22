@@ -129,8 +129,8 @@ define(['logme', 'update_input'], function (logme, updateInput) {
     function moveDraggableTo(moveType, target) {
         var self, offset;
 
-        function processDraggable(obj, objIndex) {
-            var inContainer, mousePressed, onTarget, draggableObj;
+        if (this.hasLoaded === false) {
+            self = this;
 
             setTimeout(function () {
                 self.moveDraggableTo(moveType, target);
@@ -139,14 +139,10 @@ define(['logme', 'update_input'], function (logme, updateInput) {
             return;
         }
 
-                    draggableObj.iconEl.css(
-                        'width',
-                        draggableObj.iconWidthSmall
-                    );
-                    draggableObj.iconEl.css(
-                        'height',
-                        draggableObj.iconHeightSmall
-                    );
+        if ((this.isReusable === true) && (this.isOriginal === true)) {
+            this.makeDraggableCopy(function (draggableCopy) {
+                draggableCopy.moveDraggableTo(moveType, target);
+            });
 
             return;
         }
@@ -451,7 +447,10 @@ define(['logme', 'update_input'], function (logme, updateInput) {
                 this.labelEl.css('z-index', '1000');
             }
 
-            return;
+            this.mousePressed = true;
+            this.state.currentMovingDraggable = this;
+        }
+    }
 
     function mouseUp() {
         if (this.mousePressed === true) {
@@ -525,18 +524,19 @@ define(['logme', 'update_input'], function (logme, updateInput) {
                 if (this.isOriginal === true) {
                     this.state.numDraggablesInSlider += 1;
                 }
+            } else {
+                this.correctZIndexes();
+
+                this.x = positionIE.left + this.iconWidth * 0.5;
+                this.y = positionIE.top + this.iconHeight * 0.5;
             }
         }
 
-            function mouseMove() {
-                if (mousePressed === true) {
-                    // Because we have also attached a 'mousemove' event to the
-                    // 'document' (that will do the same thing), let's tell the
-                    // browser not to bubble up this event. The attached event
-                    // on the 'document' will only be triggered when the mouse
-                    // pointer leaves the draggable while it is in the middle
-                    // of a drag operation (user moves the mouse very quickly).
-                    event.stopPropagation();
+        if (this.isOriginal === true) {
+            this.state.updateArrowOpacity();
+        }
+        updateInput.update(this.state);
+    }
 
     // Determine if a draggable, after it was relased, ends up on a
     // target. We do this by iterating over all of the targets, and
@@ -598,16 +598,9 @@ define(['logme', 'update_input'], function (logme, updateInput) {
             return true;
         }
 
-                        state.numDraggablesInSlider += 1;
-                    } else {
-                        correctZIndexes();
-
-                        draggableObj.x =
-                            positionIE.left + draggableObj.iconWidth * 0.5;
-                        draggableObj.y =
-                            positionIE.top + draggableObj.iconHeight * 0.5;
-                    }
-                }
+        // Target was not found.
+        return false;
+    }
 
     function snapToTarget(target) {
         var offset;
@@ -675,10 +668,7 @@ define(['logme', 'update_input'], function (logme, updateInput) {
             highestZIndex = 0;
         }
 
-                    offset = 0;
-                    if (state.config.targetOutline === true) {
-                        offset = 1;
-                    }
+        this.zIndex = highestZIndex + 1;
 
         this.iconEl.css('z-index', this.zIndex);
         if (this.labelEl !== null) {
@@ -705,63 +695,25 @@ define(['logme', 'update_input'], function (logme, updateInput) {
                 }
             }
 
-                // If a draggable was released in a wrong positione, we will
-                // move it back to the slider, placing it in the same position
-                // that it was dragged out of.
-                function moveBackToSlider() {
-                    draggableObj.containerEl.show();
-
-                    draggableObj.zIndex = draggableObj.oldZIndex;
-
-                    draggableObj.iconEl.detach();
-                    draggableObj.iconEl.css('border', 'none');
-                    draggableObj.iconEl.css('background-color', 'transparent');
-                    draggableObj.iconEl.css('padding-left', 0);
-                    draggableObj.iconEl.css('padding-right', 0);
-                    draggableObj.iconEl.css('z-index', draggableObj.zIndex);
-                    draggableObj.iconEl.css(
-                        'width',
-                        draggableObj.iconWidthSmall
-                    );
-                    draggableObj.iconEl.css(
-                        'height',
-                        draggableObj.iconHeightSmall
-                    );
-                    draggableObj.iconEl.css(
-                        'left',
-                        50 - draggableObj.iconWidthSmall * 0.5
-                    );
-                    if (draggableObj.labelEl !== null) {
-                        draggableObj.iconEl.css('top', 5);
-                    } else {
-                        draggableObj.iconEl.css(
-                            'top',
-                            50 - draggableObj.iconHeightSmall * 0.5
-                        );
-                    }
+            return;
+        }
 
         this.containerEl.show();
         this.zIndex = 1;
 
-                    if (draggableObj.labelEl !== null) {
-                        draggableObj.labelEl.detach();
-                        draggableObj.labelEl.css('border', 'none');
-                        draggableObj.labelEl.css('background-color', 'transparent');
-                        draggableObj.labelEl.css('padding-left', 0);
-                        draggableObj.labelEl.css('padding-right', 0);
-                        draggableObj.labelEl.css('z-index', draggableObj.zIndex);
-                        draggableObj.labelEl.css(
-                            'left',
-                            50 - draggableObj.labelWidth * 0.5
-                        );
-                        draggableObj.labelEl.css(
-                            'top',
-                            5 + draggableObj.iconHeightSmall + 5
-                        );
-                        draggableObj.labelEl.appendTo(
-                            draggableObj.containerEl
-                        );
-                    }
+        this.iconEl.detach();
+        this.iconEl.css({
+            'border': 'none',
+            'background-color': 'transparent',
+            'padding-left': 0,
+            'padding-right': 0,
+            'z-index': this.zIndex,
+            'width': this.iconWidthSmall,
+            'height': this.iconHeightSmall,
+            'left': 50 - this.iconWidthSmall * 0.5,
+            'top': ((this.labelEl !== null) ? 5 : 50 - this.iconHeightSmall * 0.5)
+        });
+        this.iconEl.appendTo(this.containerEl);
 
         if (this.labelEl !== null) {
             this.labelEl.detach();

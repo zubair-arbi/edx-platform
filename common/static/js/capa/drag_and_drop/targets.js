@@ -181,6 +181,7 @@ define(['logme'], function (logme) {
     function updateNumTextEl() {
         if (this.numTextEl !== null) {
             this.numTextEl.html(this.draggableList.length);
+        }
     }
 });
 
