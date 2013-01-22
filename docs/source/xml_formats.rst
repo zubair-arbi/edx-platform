@@ -5,4 +5,5 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   graphical_slider_tool.rst
    drag_and_drop_input.rst

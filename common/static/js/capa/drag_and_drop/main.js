@@ -5,10 +5,8 @@
 (function (requirejs, require, define) {
 
 define(
-    ['logme', 'state', 'config_parser', 'container', 'base_image', 'scroller',
-     'draggables', 'targets', 'update_input'],
-    function (logme, State, configParser, Container, BaseImage, Scroller,
-              Draggables, Targets, updateInput) {
+    ['logme', 'state', 'config_parser', 'container', 'base_image', 'scroller', 'draggables', 'targets', 'update_input'],
+    function (logme, State, configParser, Container, BaseImage, Scroller, Draggables, Targets, updateInput) {
     return Main;
 
     function Main() {
@@ -45,7 +43,7 @@ define(
 
         state = State(problemId);
 
-        if (configParser(config, state) !== true) {
+        if (configParser(state, config) !== true) {
             logme('ERROR: Could not make sense of the JSON configuration options.');
 
             return;
@@ -63,11 +61,15 @@ define(
 
             Targets(state);
             Scroller(state);
-            Draggables(state);
+            Draggables.init(state);
+
+            state.updateArrowOpacity();
 
             // Update the input element, checking first that it is not filled with
             // an answer from the server.
-            updateInput(state, true);
+            if (updateInput.check(state) === false) {
+                updateInput.update(state);
+            }
         }());
     }
 });

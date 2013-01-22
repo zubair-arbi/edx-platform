@@ -24,13 +24,12 @@ define(['logme'], function (logme) {
 
         state.baseImageEl = $('<img />');
 
-        state.baseImageEl.attr(
-            'src',
-            state.config.base_image
-        );
+        state.baseImageEl.attr('src', state.config.baseImage);
         state.baseImageEl.load(function () {
-            baseImageElContainer.css('width', this.width);
-            baseImageElContainer.css('height', this.height);
+            baseImageElContainer.css({
+                'width': this.width,
+                'height': this.height
+            });
 
             state.baseImageEl.appendTo(baseImageElContainer);
             baseImageElContainer.appendTo(state.containerEl);
@@ -42,12 +41,10 @@ define(['logme'], function (logme) {
             state.baseImageLoaded = true;
         });
         state.baseImageEl.error(function () {
-            logme(
-                'ERROR: Image "' + state.config.base_image + '" was not found!'
-            );
+            logme('ERROR: Image "' + state.config.baseImage + '" was not found!');
             baseImageElContainer.html(
                 '<span style="color: red;">' +
-                    'ERROR: Image "' + state.config.base_image + '" was not found!' +
+                    'ERROR: Image "' + state.config.baseImage + '" was not found!' +
                 '</span>'
             );
             baseImageElContainer.appendTo(state.containerEl);

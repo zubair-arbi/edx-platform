@@ -64,6 +64,7 @@ def course_image_url(course):
     path = course.metadata['data_dir'] + "/images/course_image.jpg"
     return try_staticfiles_lookup(path)
 
+
 def find_file(fs, dirs, filename):
     """
     Looks for a filename in a list of dirs on a filesystem, in the specified order.
@@ -79,6 +80,7 @@ def find_file(fs, dirs, filename):
         if fs.exists(filepath):
             return filepath
     raise ResourceNotFoundError("Could not find {0}".format(filename))
+
 
 def get_course_about_section(course, section_key):
     """
@@ -217,11 +219,35 @@ def get_courses_by_university(user, domain=None):
     '''
     # TODO: Clean up how 'error' is done.
     # filter out any courses that errored.
-    visible_courses = branding.get_visible_courses(domain)
+    visible_courses = get_courses(user, domain)
 
     universities = defaultdict(list)
     for course in visible_courses:
-        if not has_access(user, course, 'see_exists'):
-            continue
         universities[course.org].append(course)
+
     return universities
+
+
+def get_courses(user, domain=None):
+    '''
+    Returns a list of courses available, sorted by course.number
+    '''
+    courses = branding.get_visible_courses(domain)
+    courses = [c for c in courses if has_access(user, c, 'see_exists')]
+
+    courses = sorted(courses, key=lambda course:course.number)
+
+    return courses
+
+
+def sort_by_announcement(courses):
+    """
+    Sorts a list of courses by their announcement date. If the date is
+    not available, sort them by their start date.
+    """
+
+    # Sort courses by how far are they from they start day
+    key = lambda course: course.sorting_score
+    courses = sorted(courses, key=key)
+
+    return courses
