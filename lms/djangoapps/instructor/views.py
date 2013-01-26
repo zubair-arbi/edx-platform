@@ -614,6 +614,41 @@ def _do_remote_gradebook(user, course, action, args=None, files=None):
 
     return msg, datatable
 
+
+def _seed_forum_permissions_roles(course_id, docheck=True):
+    """
+    Seed default forum permissions and roles.
+
+    If docheck=True and the 'Administrator' role is already defined, then do nothing.
+    """
+    if docheck and Role.objects.filter(name="Administrator", course_id=course_id):
+        return
+
+    administrator_role = Role.objects.get_or_create(name="Administrator", course_id=course_id)[0]
+    moderator_role = Role.objects.get_or_create(name="Moderator", course_id=course_id)[0]
+    community_ta_role = Role.objects.get_or_create(name="Community TA", course_id=course_id)[0]
+    student_role = Role.objects.get_or_create(name="Student", course_id=course_id)[0]
+
+    for per in ["vote", "update_thread", "follow_thread", "unfollow_thread",
+                   "update_comment", "create_sub_comment", "unvote" , "create_thread",
+                   "follow_commentable", "unfollow_commentable", "create_comment", ]:
+        student_role.add_permission(per)
+
+    for per in ["edit_content", "delete_thread", "openclose_thread",
+                    "endorse_comment", "delete_comment"]:
+        moderator_role.add_permission(per)
+
+    for per in ["manage_moderator"]:
+        administrator_role.add_permission(per)
+
+    moderator_role.inherit_permissions(student_role)
+
+    # For now, Community TA == Moderator, except for the styling.
+    community_ta_role.inherit_permissions(moderator_role)
+
+    administrator_role.inherit_permissions(moderator_role)
+
+
 def _list_course_forum_members(course_id, rolename, datatable):
     """
     Fills in datatable with forum membership information, for a given role,
@@ -624,6 +659,8 @@ def _list_course_forum_members(course_id, rolename, datatable):
 
     Returns message status string to append to displayed message, if role is unknown.
     """
+    # make sure forum permissions and roles exist for this course
+    _seed_forum_permissions_roles(course_id, docheck=True)
     # make sure datatable is set up properly for display first, before checking for errors
     datatable['header'] = ['Username', 'Full name', 'Roles']
     datatable['title'] = 'List of Forum {0}s in course {1}'.format(rolename, course_id)
@@ -651,6 +688,9 @@ def _update_forum_role_membership(uname, course, rolename, add_or_remove):
     Returns message status string to append to displayed message,  Status is returned if user
     or role is unknown, or if entry already exists when adding, or if entry doesn't exist when removing.
     '''
+    # make sure forum permissions and roles exist for this course
+    _seed_forum_permissions_roles(course.id, docheck=True)
+
     # check that username and rolename are valid:
     try:
         user = User.objects.get(username=uname)
