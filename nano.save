@@ -1,0 +1,1 @@
+@override_settings(MITX_FEATURES={'ENABLE_TEXTBOOK':True})

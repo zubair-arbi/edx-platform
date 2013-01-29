@@ -17,6 +17,12 @@ from fs.errors import ResourceNotFoundError
 from courseware.access import has_access
 from static_replace import replace_urls
 
+from xmodule.error_module import ErrorDescriptor
+
+from xmodule.x_module import XModule, XModuleDescriptor
+
+from xmodule.modulestore import Location
+
 ###############################################################################
 
 class ProgressTestCase(TestCase):
@@ -35,8 +41,6 @@ class ProgressTestCase(TestCase):
 
    def test_progress(self):
 
-        print 'peace'
-
         self.assertEqual(tabs._progress(self.tab, self.mockuser0, self.course,
                                         self.active_page0),
                          [])
@@ -49,9 +53,13 @@ class ProgressTestCase(TestCase):
                                        self.active_page1)[0].link,
                          reverse('progress', args = [self.course.id]))  
 
-        self.assertEqual(tabs._progress(self.tab, self.mockuser1, self.course, self.active_page0)[0].is_active, False)
+        self.assertEqual(tabs._progress(self.tab, self.mockuser1, self.course, 
+                                        self.active_page0)[0].is_active, 
+                         False)
 
-        self.assertEqual(tabs._progress(self.tab, self.mockuser1, self.course, self.active_page1)[0].is_active, True)
+        self.assertEqual(tabs._progress(self.tab, self.mockuser1, self.course, 
+                                        self.active_page1)[0].is_active, 
+                         True)
 
 ###############################################################################
 
@@ -105,27 +113,29 @@ class DiscussionTestCase(TestCase):
         self.active_page1 = 'discussion'
         self.active_page0 = 'cheese_string'
 
-        if settings.MITX_FEATURES['ENABLE_DISCUSSION_SERVICE']:
-			
-                self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
-                                                  self.active_page1)[0].name,
-                                 'same')
+    @override_settings(MITX_FEATURES = {'ENABLE_DISCUSSION_SERVICE':True})
+    def test_discussion1(self):
+        
+        self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
+                                          self.active_page1)[0].name,
+                         'same')
 
-                self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
-                                                  self.active_page1)[0].link, 
-                                 reverse('django_comment_client.forums.views.forum_form_discussion', 
-								         args = [self.course.id]))
+        self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
+                                          self.active_page1)[0].link, 
+                         reverse('django_comment_client.forum.views.forum_form_discussion', 
+                                 args = [self.course.id]))
 
-                self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
-                                                  self.active_page1)[0].is_active, 
-                                 True)
+        self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
+                                          self.active_page1)[0].is_active, 
+                         True)
 
-                self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
-                                                  self.active_page0)[0].is_active, False)
-		
-        else:
-			
-                self.assertEqual(tabs._discussion(self.tab, self.user, self.course, self.active_page1), [])
+        self.assertEqual(tabs._discussion(self.tab, self.user, self.course, 
+                                          self.active_page0)[0].is_active, False)
+	
+    @override_settings(MITX_FEATURES = {'ENABLE_DISCUSSION_SERVICE':False})	
+    def test_discussion0(self):
+ 		
+        self.assertEqual(tabs._discussion(self.tab, self.user, self.course, self.active_page1), [])
 
 ###############################################################################
 
@@ -212,49 +222,49 @@ class TextbooksTestCase(TestCase):
         T.title = 'Topology'
         self.course.textbooks = [A, T]
 
-    def test_textbooks(self):
-   
-        if settings.MITX_FEATURES['ENABLE_TEXTBOOK']:
+    @override_settings(MITX_FEATURES={'ENABLE_TEXTBOOK':True})
+    def test_textbooks1(self):
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1,
+                                         self.course, self.active_page0)[0].name,
+                         'Algebra')
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_page0)[0].link,
+                         reverse('book', args = [self.course.id, 0]))
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_page0)[0].is_active,
+                         True)
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_pageX)[0].is_active,
+                         False)
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_page1)[1].name,
+                        'Topology')
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_page1)[1].link,
+                         reverse('book', args = [self.course.id, 1]))
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_page1)[1].is_active,
+                         True)
+
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_pageX)[1].is_active,
+                         False)
+
+    @override_settings(MITX_FEATURES={'ENABLE_TEXTBOOK':False})
+    def test_textbooks0(self):
             
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_page0)[0].name,
-                             'Algebra')
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
+                                         self.course, self.active_pageX), [])
 
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_page0)[0].link,
-                             reverse('book', args = [self.course.id, 0]))
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_page0)[0].is_active,
-                             True)
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_pageX)[0].is_active,
-                             False)
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_page1)[1].name,
-                             'Topology')
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_page1)[1].link,
-                             reverse('book', args = [self.course.id, 1]))
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_page1)[1].is_active,
-                             True)
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_pageX)[1].is_active,
-                             False)
-
-        else:
-            
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser1, 
-                                             self.course, self.active_pageX), [])
-
-            self.assertEqual(tabs._textbooks(self.tab, self.mockuser0, 
-                                             self.course, self.active_pageX), [])
+        self.assertEqual(tabs._textbooks(self.tab, self.mockuser0, 
+                                         self.course, self.active_pageX), [])
 
 ###############################################################################
 #
@@ -269,20 +279,20 @@ class TextbooksTestCase(TestCase):
 #        self.activate_page0 = 'shadowfax'
 #        self.course.id =  'edX/full/6.002_Spring_2012'
 #        self.link = reverse('staff_grading', args = [self.course.id])
-#        #has_acess(self.user, self.course, 'staff').return_value = True
+#
 #
 #    def test_staff_grading(self):
-#
+#    
 #        self.assertEqual(tabs._staff_grading(self.tab, self.user, 
-#                                            self.course, self.active_page1)[0].name, 
+#                                             self.course, self.active_page1)[0].name, 
 #                         'Staff grading')
 #
 #        self.assertEqual(tabs._staff_grading(self.tab, self.user, 
-#                                            self.course, self.active_page1)[0].link, 
+#                                             self.course, self.active_page1)[0].link, 
 #                         self.link)      
 #
 #        self.assertEqual(tabs._staff_grading(self.tab, self.user, 
-#                                            self.course, self.active_page1)[0].is_active, 
+#                                             self.course, self.active_page1)[0].is_active, 
 #                         True)    
 #    
 #        
@@ -299,7 +309,8 @@ class KeyCheckerTestCase(TestCase):
     def test_key_checker(self):
 
         self.assertIsNone(tabs.key_checker(self.expected_keys1)(self.dictio))
-        self.assertRaises(tabs.InvalidTabsException, tabs.key_checker(self.expected_keys0), self.dictio)
+        self.assertRaises(tabs.InvalidTabsException, 
+                          tabs.key_checker(self.expected_keys0), self.dictio)
 
 
 ###############################################################################
@@ -374,38 +385,82 @@ class ValidateTabsTestCase(TestCase):
 #      
 ###############################################################################
 
+class GetDefaultTabsTestCase(TestCase):
 
+    def setUp(self):
+
+        self.user0 = MagicMock()
+        self.course0 = MagicMock()
+        self.course1 = MagicMock()
+        self.course0.id = 'edX/full/6.002_Spring_2012'
+        self.active_page = MagicMock()
+        self.course0.discussion_link.return_value = False
+        self.course1.syllabus_present.return_value = True
+        self.course1.discussion_link.return_value = True
+
+
+    #@override_settings(MITX_FEATURES = {'ENABLED_DISCUSSION_SERVICE' : True})   
+    #def test_get_default_tabs(self): 
+    
+    @override_settings(WIKI_ENABLED = False)
+    @override_settings(MITX_FEATURES = {'ENABLED_DISCUSSION_SERVICE': False, 
+                                        'ENABLE_TEXTBOOK':False})
+    def test_get_default_tabs(self):
         
+        self.assertEqual(tabs.get_default_tabs(self.user0, self.course0, self.active_page), 
+                         [CourseTab('courseware', 
+                                    reverse('courseware', args = [course0.id]), 
+                                    False),
+                          CourseTab('Course Info',
+                                    reverse('info', args = [self.course0.id]), 
+                                    False)])
         
-        
-        
+###############################################################################
 
-        
+class GetStaticTabBySlugTestCase(TestCase):
 
+            
+    def setUp(self):
+    
+        self.course1 = MagicMock()
+        self.course0 = MagicMock()
+        self.tab_slug = MagicMock()
+        self.course1.tabs = [{'type': 'static_tab', 'url_slug': 'pesad'}, 
+                             {'type': 'static_tab', 'url_slug': 'pesado', 'pony':'land'}]
+      
+        self.course2 = MagicMock()
+        self.course2.tabs = [{}]
 
+    def test_get_static_slug(self):
 
+        self.assertEqual(tabs.get_static_tab_by_slug(self.course1,'pesado'),
+                         {'type':'static_tab', 'url_slug': 'pesado', 'pony':'land'})
 
+        self.assertIsNone(tabs.get_static_tab_by_slug(self.course2, self.tab_slug))
 
+        #self.assertIsNone(self.assertIsNone(tabs.get_static_tab_by_slug(self.course2, self.tab_slug))
+        #if there is an empty dictionary in course.tabs an error will be produced. 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-
-		
-		
+###############################################################################
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
