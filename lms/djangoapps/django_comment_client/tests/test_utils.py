@@ -67,6 +67,34 @@ class UtilsTestCase(TestCase):
         self.dicMerge12 ={'cats': 'meow', 'dogs': 'woof','lions': 'roar','ducks': 'quack'}
         self.assertEqual(utils.merge_dict(self.dic1, self.dic2), self.dicMerge12)
 
+#########################################################################################
+#
+#class GetRoleIdTest():
+#
+#    
+#    def setUp(self):
+#
+#        self.course_id = 'edX/full/6.002_Spring_2012'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def test_get_role_ids(self):
         self.assertEqual(utils.get_role_ids(self.course_id), {u'Moderator': [2], u'Student': [1], 'Staff': [2]})
 
