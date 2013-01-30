@@ -4,7 +4,7 @@ var $gwt_version = "2.5.0";
 var $wnd = parent;
 var $doc = $wnd.document;
 var $moduleName, $moduleBase;
-var $strongName = '54670F2F197D551F9025F17D20D5419E';
+var $strongName = 'F8283183F9546F019176F75A8E25B0F0';
 var $stats = $wnd.__gwtStatsEvent ? function(a) {return $wnd.__gwtStatsEvent(a);} : null,
 $sessionId = $wnd.__gwtStatsSessionId ? $wnd.__gwtStatsSessionId : null;
 $stats && $stats({moduleName:'jsmolcalc',sessionId:$sessionId,subSystem:'startup',evtGroup:'moduleStartup',millis:(new Date()).getTime(),type:'moduleEvalStart'});
@@ -75,15 +75,11 @@ function $setStackTrace(stackTrace){
 
 defineSeed(8, 1, makeCastMap([Q$Serializable, Q$Throwable]));
 defineSeed(7, 8, makeCastMap([Q$Serializable, Q$Throwable]));
-function RuntimeException_0(){
-  $fillInStackTrace($clinit_StackTraceCreator$CollectorChrome());
-}
-
 defineSeed(6, 7, makeCastMap([Q$Serializable, Q$Throwable]));
 function JavaScriptException_0(e){
-  RuntimeException_0.call(this);
+  $fillInStackTrace();
   this.e = e;
-  $createStackTrace(new StackTraceCreator$CollectorChromeNoSourceMap_0, this);
+  $createStackTrace(this);
 }
 
 defineSeed(5, 6, makeCastMap([Q$Serializable, Q$Throwable]), JavaScriptException_0);
@@ -240,41 +236,19 @@ function extractNameFromToString(fnToString){
   index = fnToString.indexOf('(');
   start = fnToString.indexOf('function') == 0?8:0;
   if (index == -1) {
-    index = $indexOf(fnToString, fromCodePoint(64));
+    index = $indexOf(fnToString, String.fromCharCode(64));
     start = fnToString.indexOf('function ') == 0?9:0;
   }
   index != -1 && (toReturn = $trim(fnToString.substr(start, index - start)));
   return toReturn.length > 0?toReturn:'anonymous';
 }
 
-function parseInt_0(number){
-  return parseInt(number) || -1;
-}
-
-function splice(arr, length_0){
-  arr.length >= length_0 && arr.splice(0, length_0);
-  return arr;
-}
-
-function $makeException(){
-  try {
-    null.a();
-  }
-   catch (e) {
-    return e;
-  }
-}
-
-function StackTraceCreator$Collector_0(){
-}
-
-defineSeed(17, 1, {}, StackTraceCreator$Collector_0);
-_.collect = function collect(){
+function $collect(this$static){
   var seen = {};
   var toReturn = [];
   var callee = arguments.callee.caller.caller;
   while (callee) {
-    var name_0 = this.extractName(callee.toString());
+    var name_0 = this$static.extractName(callee.toString());
     toReturn.push(name_0);
     var keyName = ':' + name_0;
     var withThisName = seen[keyName];
@@ -291,149 +265,70 @@ _.collect = function collect(){
   }
   return toReturn;
 }
-;
-_.extractName = function extractName(fnToString){
-  return extractNameFromToString(fnToString);
-}
-;
-_.inferFrom = function inferFrom(e){
-  return [];
-}
-;
-function $inferFrom(this$static, e){
-  var i, j, stack;
-  stack = e && e.stack?e.stack.split('\n'):[];
-  for (i = 0 , j = stack.length; i < j; ++i) {
-    stack[i] = this$static.extractName(stack[i]);
-  }
-  return stack;
-}
 
-defineSeed(19, 17, {});
-_.collect = function collect_0(){
-  return splice(this.inferFrom($makeException()), this.toSplice());
-}
-;
-_.inferFrom = function inferFrom_0(e){
-  return $inferFrom(this, e);
-}
-;
-_.toSplice = function toSplice(){
-  return 2;
-}
-;
-function $clinit_StackTraceCreator$CollectorChrome(){
-  $clinit_StackTraceCreator$CollectorChrome = nullMethod;
-  Error.stackTraceLimit = 128;
-}
-
-function $collect(this$static){
-  var res;
-  res = splice($inferFrom_0(this$static, $makeException()), 3);
-  res.length == 0 && (res = splice((new StackTraceCreator$Collector_0).collect(), 1));
-  return res;
-}
-
-function $createStackTrace(this$static, e){
-  var stack;
-  stack = $inferFrom_0(this$static, instanceOfJso(e.e)?dynamicCastJso(e.e):null);
-  $parseStackTrace(stack);
-}
-
-function $fillInStackTrace(){
-  var stack;
-  stack = $collect(new StackTraceCreator$CollectorChromeNoSourceMap_0);
-  $parseStackTrace(stack);
-}
-
-function $inferFrom_0(this$static, e){
-  var stack;
-  stack = $inferFrom(this$static, e);
-  return stack.length == 0?(new StackTraceCreator$Collector_0).inferFrom(e):splice(stack, 1);
-}
-
-function $parseStackTrace(stack){
-  var col, endFileUrl, fileName, i, j, lastColon, location_0, stackElements, stackTrace;
+function $createStackTrace(e){
+  var i, j, stack, stackTrace;
+  stack = (instanceOfJso(e.e)?dynamicCastJso(e.e):null , []);
   stackTrace = initDim(_3Ljava_lang_StackTraceElement_2_classLit, makeCastMap([Q$Serializable]), Q$StackTraceElement, stack.length, 0);
   for (i = 0 , j = stackTrace.length; i < j; ++i) {
-    stackElements = $split(stack[i], '@@', 0);
-    col = -1;
-    fileName = 'Unknown';
-    if (stackElements.length == 2 && stackElements[1] != null) {
-      location_0 = stackElements[1];
-      lastColon = $lastIndexOf(location_0, fromCodePoint(58));
-      endFileUrl = $lastIndexOf_0(location_0, fromCodePoint(58), lastColon - 1);
-      fileName = location_0.substr(0, endFileUrl - 0);
-      if (lastColon != -1 && endFileUrl != -1) {
-        parseInt_0(location_0.substr(endFileUrl + 1, lastColon - (endFileUrl + 1)));
-        col = parseInt_0($substring(location_0, lastColon + 1));
-      }
-    }
-    stackTrace[i] = new StackTraceElement_0(stackElements[0], fileName + '@' + col);
+    stackTrace[i] = new StackTraceElement_0(stack[i]);
   }
   $setStackTrace(stackTrace);
 }
 
-defineSeed(18, 19, {});
-_.collect = function collect_1(){
-  return $collect(this);
-}
-;
-_.extractName = function extractName_0(fnToString){
-  var closeParen, index, location_0, toReturn;
-  if (fnToString.length == 0) {
-    return 'anonymous';
+function $fillInStackTrace(){
+  var i, j, stack, stackTrace;
+  stack = $collect(new StackTraceCreator$Collector_0);
+  stackTrace = initDim(_3Ljava_lang_StackTraceElement_2_classLit, makeCastMap([Q$Serializable]), Q$StackTraceElement, stack.length, 0);
+  for (i = 0 , j = stackTrace.length; i < j; ++i) {
+    stackTrace[i] = new StackTraceElement_0(stack[i]);
   }
-  toReturn = $trim(fnToString);
-  toReturn.indexOf('at ') == 0 && (toReturn = $substring(toReturn, 3));
-  index = toReturn.indexOf('[');
-  index != -1 && (toReturn = $trim(toReturn.substr(0, index - 0)) + $trim($substring(toReturn, toReturn.indexOf(']', index) + 1)));
-  index = toReturn.indexOf('(');
-  if (index == -1) {
-    location_0 = toReturn;
-    toReturn = '';
-  }
-   else {
-    closeParen = toReturn.indexOf(')', index);
-    location_0 = toReturn.substr(index + 1, closeParen - (index + 1));
-    toReturn = $trim(toReturn.substr(0, index - 0));
-  }
-  index = $indexOf(toReturn, fromCodePoint(46));
-  index != -1 && (toReturn = $substring(toReturn, index + 1));
-  return (toReturn.length > 0?toReturn:'anonymous') + '@@' + location_0;
+  $setStackTrace(stackTrace);
+}
+
+function StackTraceCreator$Collector_0(){
+}
+
+defineSeed(17, 1, {}, StackTraceCreator$Collector_0);
+_.extractName = function extractName(fnToString){
+  return extractNameFromToString(fnToString);
 }
 ;
-_.inferFrom = function inferFrom_1(e){
-  return $inferFrom_0(this, e);
-}
-;
-_.toSplice = function toSplice_0(){
-  return 3;
-}
-;
-function StackTraceCreator$CollectorChromeNoSourceMap_0(){
-  $clinit_StackTraceCreator$CollectorChrome();
+function $append(a, x){
+  a[a.explicitLength++] = x == null?'null':x;
 }
 
-defineSeed(20, 18, {}, StackTraceCreator$CollectorChromeNoSourceMap_0);
-defineSeed(21, 1, {});
-function $append(this$static, x){
-  this$static.string += x;
+function $appendNonNull(a, x){
+  a[a.explicitLength++] = x;
 }
 
-function $appendNonNull(this$static, x){
-  this$static.string += x;
+function $createData(){
+  var array = [];
+  array.explicitLength = 0;
+  return array;
 }
 
-function $replace(this$static, start, end, toInsert){
-  this$static.string = $substring_0(this$static.string, 0, start) + toInsert + $substring(this$static.string, end);
+function $replace(a, start, end, toInsert){
+  var s;
+  s = $takeString(a);
+  $appendNonNull(a, s.substr(0, start - 0));
+  a[a.explicitLength++] = toInsert == null?'null':toInsert;
+  $appendNonNull(a, $substring(s, end));
 }
 
-function StringBufferImplAppend_0(){
+function $takeString(a){
+  var s = a.join('');
+  a.length = a.explicitLength = 0;
+  return s;
 }
 
-defineSeed(22, 21, {}, StringBufferImplAppend_0);
-_.string = '';
+function $toString(a){
+  var s;
+  s = $takeString(a);
+  $appendNonNull(a, s);
+  return s;
+}
+
 function $getDefaultNative(){
   return ['USD', 'US$', 2, 'US$', '$'];
 }
@@ -451,7 +346,7 @@ function $getNumberConstants(this$static){
 function LocaleInfo_0(){
 }
 
-defineSeed(27, 1, {}, LocaleInfo_0);
+defineSeed(24, 1, {}, LocaleInfo_0);
 _.numberConstants = null;
 var instance;
 function $clinit_NumberFormat(){
@@ -461,21 +356,21 @@ function $clinit_NumberFormat(){
 
 function $addExponent(this$static, digits){
   var exponentDigits, i;
-  digits.impl.string += 'E';
+  $append(digits.data, 'E');
   if (this$static.exponent < 0) {
     this$static.exponent = -this$static.exponent;
-    digits.impl.string += '-';
+    $append(digits.data, '-');
   }
   exponentDigits = '' + this$static.exponent;
   for (i = exponentDigits.length; i < this$static.minExponentDigits; ++i) {
-    digits.impl.string += '0';
+    $appendNonNull(digits.data, '0');
   }
-  $append(digits.impl, exponentDigits);
+  $append(digits.data, exponentDigits);
 }
 
 function $addZeroAndDecimal(this$static, digits){
   if (this$static.digitsLength == 0) {
-    $replace(digits.impl, 0, 0, '0');
+    $replace(digits.data, 0, 0, '0');
     ++this$static.decimalPosition;
     ++this$static.digitsLength;
   }
@@ -490,14 +385,14 @@ function $adjustFractionDigits(this$static, digits){
   requiredDigits = this$static.decimalPosition + this$static.minimumFractionDigits;
   if (this$static.digitsLength < requiredDigits) {
     while (this$static.digitsLength < requiredDigits) {
-      digits.impl.string += '0';
+      $appendNonNull(digits.data, '0');
       ++this$static.digitsLength;
     }
   }
    else {
     toRemove = this$static.decimalPosition + this$static.maximumFractionDigits;
     toRemove > this$static.digitsLength && (toRemove = this$static.digitsLength);
-    while (toRemove > requiredDigits && $charAt(digits.impl.string, toRemove - 1) == 48) {
+    while (toRemove > requiredDigits && $charAt($toString(digits.data), toRemove - 1) == 48) {
       --toRemove;
     }
     if (toRemove < this$static.digitsLength) {
@@ -510,11 +405,11 @@ function $adjustFractionDigits(this$static, digits){
 function $computeExponent(this$static, digits){
   var remainder, strip;
   strip = 0;
-  while (strip < this$static.digitsLength - 1 && $charAt(digits.impl.string, strip) == 48) {
+  while (strip < this$static.digitsLength - 1 && $charAt($toString(digits.data), strip) == 48) {
     ++strip;
   }
   if (strip > 0) {
-    $replace(digits.impl, 0, strip, '');
+    $replace(digits.data, 0, strip, '');
     this$static.digitsLength -= strip;
     this$static.exponent -= strip;
   }
@@ -529,7 +424,7 @@ function $computeExponent(this$static, digits){
     this$static.exponent += this$static.decimalPosition - this$static.minimumIntegerDigits;
     this$static.decimalPosition = this$static.minimumIntegerDigits;
   }
-  if (this$static.digitsLength == 1 && digits.impl.string.charCodeAt(0) == 48) {
+  if (this$static.digitsLength == 1 && $toString(digits.data).charCodeAt(0) == 48) {
     this$static.exponent = 0;
     this$static.decimalPosition = this$static.minimumIntegerDigits;
   }
@@ -545,20 +440,20 @@ function $format(this$static, number){
   buf = new StringBuilder_0;
   if (!isFinite(number)) {
     $append_1(buf, isNegative?this$static.negativePrefix:this$static.positivePrefix);
-    buf.impl.string += '\u221E';
+    $append(buf.data, '\u221E');
     $append_1(buf, isNegative?this$static.negativeSuffix:this$static.positiveSuffix);
-    return buf.impl.string;
+    return $toString(buf.data);
   }
   number *= this$static.multiplier;
   scale = toScaledString(buf, number);
-  preRound = buf.impl.string.length + scale + this$static.maximumFractionDigits + 3;
-  if (preRound > 0 && preRound < buf.impl.string.length && $charAt(buf.impl.string, preRound) == 57) {
+  preRound = $toString(buf.data).length + scale + this$static.maximumFractionDigits + 3;
+  if (preRound > 0 && preRound < $toString(buf.data).length && $charAt($toString(buf.data), preRound) == 57) {
     $propagateCarry(this$static, buf, preRound - 1);
-    scale += buf.impl.string.length - preRound;
-    $delete_0(buf, preRound, buf.impl.string.length);
+    scale += $toString(buf.data).length - preRound;
+    $delete_0(buf, preRound, $toString(buf.data).length);
   }
   this$static.exponent = 0;
-  this$static.digitsLength = buf.impl.string.length;
+  this$static.digitsLength = $toString(buf.data).length;
   this$static.decimalPosition = this$static.digitsLength + scale;
   useExponent = this$static.useExponentialNotation;
   currentGroupingSize = this$static.groupingSize;
@@ -572,7 +467,7 @@ function $format(this$static, number){
   useExponent && $addExponent(this$static, buf);
   $insert(buf, 0, isNegative?this$static.negativePrefix:this$static.positivePrefix);
   $append_1(buf, isNegative?this$static.negativeSuffix:this$static.positiveSuffix);
-  return buf.impl.string;
+  return $toString(buf.data);
 }
 
 function $insertGroupingSeparators(this$static, digits, g){
@@ -588,7 +483,7 @@ function $insertGroupingSeparators(this$static, digits, g){
 
 function $parseAffix(this$static, pattern, start, affix, inNegativePattern){
   var ch, inQuote, len, pos;
-  $delete(affix, affix.impl.string.length);
+  $delete(affix, $toString(affix.data).length);
   inQuote = false;
   len = pattern.length;
   for (pos = start; pos < len; ++pos) {
@@ -596,7 +491,7 @@ function $parseAffix(this$static, pattern, start, affix, inNegativePattern){
     if (ch == 39) {
       if (pos + 1 < len && pattern.charCodeAt(pos + 1) == 39) {
         ++pos;
-        affix.impl.string += "'";
+        $append(affix.data, "'");
       }
        else {
         inQuote = !inQuote;
@@ -604,7 +499,7 @@ function $parseAffix(this$static, pattern, start, affix, inNegativePattern){
       continue;
     }
     if (inQuote) {
-      $appendNonNull(affix.impl, String.fromCharCode(ch));
+      $appendNonNull(affix.data, String.fromCharCode(ch));
     }
      else {
       switch (ch) {
@@ -639,7 +534,7 @@ function $parseAffix(this$static, pattern, start, affix, inNegativePattern){
             this$static.multiplier = 100;
           }
 
-          affix.impl.string += '%';
+          $append(affix.data, '%');
           break;
         case 8240:
           if (!inNegativePattern) {
@@ -649,12 +544,12 @@ function $parseAffix(this$static, pattern, start, affix, inNegativePattern){
             this$static.multiplier = 1000;
           }
 
-          affix.impl.string += '\u2030';
+          $append(affix.data, '\u2030');
           break;
         case 45:
-          affix.impl.string += '-';
+          $append(affix.data, '-');
           break;
-        default:$appendNonNull(affix.impl, String.fromCharCode(ch));
+        default:$appendNonNull(affix.data, String.fromCharCode(ch));
       }
     }
   }
@@ -666,17 +561,17 @@ function $parsePattern(this$static, pattern){
   pos = 0;
   affix = new StringBuffer_0;
   pos += $parseAffix(this$static, pattern, 0, affix, false);
-  this$static.positivePrefix = affix.impl.string;
+  this$static.positivePrefix = $toString(affix.data);
   pos += $parseTrunk(this$static, pattern, pos, false);
   pos += $parseAffix(this$static, pattern, pos, affix, false);
-  this$static.positiveSuffix = affix.impl.string;
+  this$static.positiveSuffix = $toString(affix.data);
   if (pos < pattern.length && pattern.charCodeAt(pos) == 59) {
     ++pos;
     pos += $parseAffix(this$static, pattern, pos, affix, true);
-    this$static.negativePrefix = affix.impl.string;
+    this$static.negativePrefix = $toString(affix.data);
     pos += $parseTrunk(this$static, pattern, pos, true);
     pos += $parseAffix(this$static, pattern, pos, affix, true);
-    this$static.negativeSuffix = affix.impl.string;
+    this$static.negativeSuffix = $toString(affix.data);
   }
    else {
     this$static.negativePrefix = '-' + this$static.positivePrefix;
@@ -777,7 +672,7 @@ function $processLeadingZeros(this$static, digits){
   var i, prefix, strip;
   if (this$static.decimalPosition > this$static.digitsLength) {
     while (this$static.digitsLength < this$static.decimalPosition) {
-      digits.impl.string += '0';
+      $appendNonNull(digits.data, '0');
       ++this$static.digitsLength;
     }
   }
@@ -785,22 +680,22 @@ function $processLeadingZeros(this$static, digits){
     if (this$static.decimalPosition < this$static.minimumIntegerDigits) {
       prefix = new StringBuilder_0;
       while (this$static.decimalPosition < this$static.minimumIntegerDigits) {
-        prefix.impl.string += '0';
+        $appendNonNull(prefix.data, '0');
         ++this$static.decimalPosition;
         ++this$static.digitsLength;
       }
-      $insert(digits, 0, prefix.impl.string);
+      $insert(digits, 0, $toString(prefix.data));
     }
      else if (this$static.decimalPosition > this$static.minimumIntegerDigits) {
       strip = this$static.decimalPosition - this$static.minimumIntegerDigits;
       for (i = 0; i < strip; ++i) {
-        if ($charAt(digits.impl.string, i) != 48) {
+        if ($charAt($toString(digits.data), i) != 48) {
           strip = i;
           break;
         }
       }
       if (strip > 0) {
-        $replace(digits.impl, 0, strip, '');
+        $replace(digits.data, 0, strip, '');
         this$static.digitsLength -= strip;
         this$static.decimalPosition -= strip;
       }
@@ -812,7 +707,7 @@ function $propagateCarry(this$static, digits, i){
   var carry, digit;
   carry = true;
   while (carry && i >= 0) {
-    digit = $charAt(digits.impl.string, i);
+    digit = $charAt($toString(digits.data), i);
     if (digit == 57) {
       $setCharAt(digits, i--, 48);
     }
@@ -822,7 +717,7 @@ function $propagateCarry(this$static, digits, i){
     }
   }
   if (carry) {
-    $replace(digits.impl, 0, 0, '1');
+    $replace(digits.data, 0, 0, '1');
     ++this$static.decimalPosition;
     ++this$static.digitsLength;
   }
@@ -856,26 +751,26 @@ function NumberFormat_1(cdata){
 
 function toScaledString(buf, val){
   var dot, expDigits, expIdx, scale, startLen;
-  startLen = buf.impl.string.length;
+  startLen = $toString(buf.data).length;
   $append_1(buf, val.toPrecision(20));
   scale = 0;
-  expIdx = $indexOf_0(buf.impl.string, 'e', startLen);
-  expIdx < 0 && (expIdx = $indexOf_0(buf.impl.string, 'E', startLen));
+  expIdx = $indexOf_0($toString(buf.data), 'e', startLen);
+  expIdx < 0 && (expIdx = $indexOf_0($toString(buf.data), 'E', startLen));
   if (expIdx >= 0) {
     expDigits = expIdx + 1;
-    expDigits < buf.impl.string.length && $charAt(buf.impl.string, expDigits) == 43 && ++expDigits;
-    expDigits < buf.impl.string.length && (scale = __parseAndValidateInt($substring(buf.impl.string, expDigits)));
-    $delete_0(buf, expIdx, buf.impl.string.length);
+    expDigits < $toString(buf.data).length && $charAt($toString(buf.data), expDigits) == 43 && ++expDigits;
+    expDigits < $toString(buf.data).length && (scale = __parseAndValidateInt($substring($toString(buf.data), expDigits)));
+    $delete_0(buf, expIdx, $toString(buf.data).length);
   }
-  dot = $indexOf_0(buf.impl.string, '.', startLen);
+  dot = $indexOf_0($toString(buf.data), '.', startLen);
   if (dot >= 0) {
-    $replace(buf.impl, dot, dot + 1, '');
-    scale -= buf.impl.string.length - dot;
+    $replace(buf.data, dot, dot + 1, '');
+    scale -= $toString(buf.data).length - dot;
   }
   return scale;
 }
 
-defineSeed(28, 1, {}, NumberFormat_1);
+defineSeed(25, 1, {}, NumberFormat_1);
 _.currencyData = null;
 _.decimalPosition = 0;
 _.decimalSeparatorAlwaysShown = false;
@@ -898,7 +793,7 @@ _.useExponentialNotation = false;
 function NumberConstantsImpl__0(){
 }
 
-defineSeed(29, 1, {}, NumberConstantsImpl__0);
+defineSeed(26, 1, {}, NumberConstantsImpl__0);
 function $getSimpleCurrencySymbol(this$static){
   return this$static[4] || this$static[1];
 }
@@ -974,7 +869,7 @@ function setCheck(array, index, value){
   return array[index] = value;
 }
 
-defineSeed(31, 1, {}, Array_0);
+defineSeed(28, 1, {}, Array_0);
 _.queryId$ = 0;
 function $clinit_Array$ExpandoWrapper(){
   $clinit_Array$ExpandoWrapper = nullMethod;
@@ -983,8 +878,6 @@ function $clinit_Array$ExpandoWrapper(){
   initExpandos(new Array_0, expandoNames_0, expandoValues_0);
 }
 
---></script>
-<script><!--
 function initExpandos(protoType, expandoNames, expandoValues){
   var i = 0, value;
   for (var name_0 in protoType) {
@@ -1046,7 +939,7 @@ function init(){
   var runtimeValue;
   !!$stats && onModuleStart('com.google.gwt.useragent.client.UserAgentAsserter');
   runtimeValue = $getRuntimeValue();
-  $equals('safari', runtimeValue) || ($wnd.alert('ERROR: Possible problem with your *.gwt.xml module file.\nThe compile time user.agent value (safari) does not match the runtime user.agent value (' + runtimeValue + '). Expect more errors.\n') , undefined);
+  $equals('ie9', runtimeValue) || ($wnd.alert('ERROR: Possible problem with your *.gwt.xml module file.\nThe compile time user.agent value (ie9) does not match the runtime user.agent value (' + runtimeValue + '). Expect more errors.\n') , undefined);
   !!$stats && onModuleStart('com.google.gwt.user.client.DocumentModeAsserter');
   $onModuleLoad();
   !!$stats && onModuleStart('edu.umb.bio.jsMolCalc.client.JsMolCalcAPI');
@@ -1065,6 +958,8 @@ function onModuleStart(mainClassName){
   return $stats({moduleName:$moduleName, sessionId:$sessionId, subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date).getTime(), type:'onModuleLoadStart', className:mainClassName});
 }
 
+--></script>
+<script><!--
 function $onModuleLoad(){
   var allowedModes, currentMode, i;
   currentMode = $doc.compatMode;
@@ -1143,8 +1038,8 @@ function $export0(){
   }
   );
   $wnd.jsmol.API.getInfo = $entry(function(a0, a1, a2){
-    var iat, info;
-    return new JsMolCalc_0 , iat = $computeAndDisplay(a0, a1, a2) , info = iat.info , info.indexOf('It is not possible') == 0?'':info;
+    var iat;
+    return new JsMolCalc_0 , iat = $computeAndDisplay(a0, a1, a2) , iat.info;
   }
   );
   addTypeMap(Ledu_umb_bio_jsMolCalc_client_JsMolCalcAPI$API_2_classLit, $wnd.jsmol.API);
@@ -1157,7 +1052,7 @@ function APIExporterImpl_0(){
   $export();
 }
 
-defineSeed(43, 1, {}, APIExporterImpl_0);
+defineSeed(40, 1, {}, APIExporterImpl_0);
 var exported = false;
 function $computeAndDisplay(molString, smileString, jmeString){
   var atom, atomDataLines, atomLineParts, atomList, atomNumber, bondArray, bondIndex, bondLineParts, bondString, br, c, canMakeHbonds, canMakeIonicBonds, charge, chargeLineParts, cl, currentAtom, currentAtomSpec, currentNeighbor, element, errorString, f, fifthAtom, firstAtom, formula, formulaString, fourthAtom, h, i, illegalAtoms, iodine, j, k, l, line3Parts, logp, logpString, m, molStringLines, moleculeInfo, n, neighbors, nf, numAromaticAtoms, numAtoms, numBonds, o, p_0, s, secondAtom, sixthAtom, targets, thirdAtom;
@@ -1289,36 +1184,36 @@ function $computeAndDisplay(molString, smileString, jmeString){
   illegalAtoms = new StringBuffer_0;
   for (i = 1; i < numAtoms + 1; ++i) {
     atom = dynamicCast((checkIndex(i, atomList.size) , atomList.array[i]), Q$JsMolCalc$Atom);
-    $equals(atom.element, 'C') && atom.charge != 0 && (illegalAtoms.impl.string += 'A Charged C atom.<br>' , illegalAtoms);
+    $equals(atom.element, 'C') && atom.charge != 0 && ($append(illegalAtoms.data, 'A Charged C atom.<br>') , illegalAtoms);
     if ($equals(atom.element, 'N')) {
-      atom.charge > 1 && (illegalAtoms.impl.string += 'An N atom with too high + charge.<br>' , illegalAtoms);
-      atom.charge < 0 && (illegalAtoms.impl.string += 'An N atom with - charge.<br>' , illegalAtoms);
-      $getNumNeighborHs(atom) < 0 && !($equals(atom.doubleBondedNeighbor, 'O2') && $getNumNeighborHs(atom) == -2 && atom.numNeighborCs == 1 && atom.numNeighborXs == 2 && atom.charge == 0) && (illegalAtoms.impl.string += 'An N atom making too many bonds.<br>' , illegalAtoms);
+      atom.charge > 1 && ($append(illegalAtoms.data, 'An N atom with too high + charge.<br>') , illegalAtoms);
+      atom.charge < 0 && ($append(illegalAtoms.data, 'An N atom with - charge.<br>') , illegalAtoms);
+      $getNumNeighborHs(atom) < 0 && !($equals(atom.doubleBondedNeighbor, 'O2') && $getNumNeighborHs(atom) == -2 && atom.numNeighborCs == 1 && atom.numNeighborXs == 2 && atom.charge == 0) && ($append(illegalAtoms.data, 'An N atom making too many bonds.<br>') , illegalAtoms);
     }
     if ($equals(atom.element, 'O')) {
-      atom.charge < -1 && (illegalAtoms.impl.string += 'An O atom with too high - charge.<br>' , illegalAtoms);
-      atom.charge > 0 && (illegalAtoms.impl.string += 'An O atom with + charge.<br>' , illegalAtoms);
+      atom.charge < -1 && ($append(illegalAtoms.data, 'An O atom with too high - charge.<br>') , illegalAtoms);
+      atom.charge > 0 && ($append(illegalAtoms.data, 'An O atom with + charge.<br>') , illegalAtoms);
     }
     if ($equals(atom.element, 'S')) {
-      atom.charge > 0 && (illegalAtoms.impl.string += 'An S atom with a + charge.<br>' , illegalAtoms);
-      $getNumNeighborHs(atom) < 0 && $getNumNeighborHs(atom) != -4 && $getNumNeighborHs(atom) != -2 && (illegalAtoms.impl.string += 'An S atom not making 2, 4, or 6 bonds.<br>' , illegalAtoms);
+      atom.charge > 0 && ($append(illegalAtoms.data, 'An S atom with a + charge.<br>') , illegalAtoms);
+      $getNumNeighborHs(atom) < 0 && $getNumNeighborHs(atom) != -4 && $getNumNeighborHs(atom) != -2 && ($append(illegalAtoms.data, 'An S atom not making 2, 4, or 6 bonds.<br>') , illegalAtoms);
     }
     if ($equals(atom.element, 'P')) {
-      atom.charge != 0 && (illegalAtoms.impl.string += 'A Charged P atom.<br>' , illegalAtoms);
-      atom.numNeighborHs != -3 && (illegalAtoms.impl.string += 'A P atom not making 5 bonds.<br>' , illegalAtoms);
+      atom.charge != 0 && ($append(illegalAtoms.data, 'A Charged P atom.<br>') , illegalAtoms);
+      atom.numNeighborHs != -3 && ($append(illegalAtoms.data, 'A P atom not making 5 bonds.<br>') , illegalAtoms);
     }
     if ($equals(atom.element, 'F') || $equals(atom.element, 'Cl') || $equals(atom.element, 'Br') || $equals(atom.element, 'I')) {
       atom.charge != 0 && $append_0(illegalAtoms, 'A Charged ' + atom.element + ' atom.<br>');
       atom.numBondsToNonHAtoms > 1 && $append_0(illegalAtoms, 'A ' + atom.element + ' atom making more than one bond.<br>');
     }
-    $equals(atom.element, 'X') && (illegalAtoms.impl.string += 'An X atom.<br>' , illegalAtoms);
+    $equals(atom.element, 'X') && ($append(illegalAtoms.data, 'An X atom.<br>') , illegalAtoms);
   }
   errorString = '';
-  illegalAtoms.impl.string.length != 0 && (errorString = '<html><body>It is not possible to calculate the properties<br>of your molecule because it contains:<br>' + illegalAtoms.impl.string + '<\/body><\/html>');
+  $toString(illegalAtoms.data).length != 0 && (errorString = '<html><body>It is not possible to calculate the properties<br>of your molecule because it contains:<br>' + $toString(illegalAtoms.data) + '<\/body><\/html>');
   logp = 0;
   canMakeHbonds = false;
   canMakeIonicBonds = false;
-  if (illegalAtoms.impl.string.length == 0) {
+  if ($toString(illegalAtoms.data).length == 0) {
     nf = ($clinit_NumberFormat() , new NumberFormat_1($getDefaultNative()));
     for (i = 1; i < numAtoms + 1; ++i) {
       atom = dynamicCast((checkIndex(i, atomList.size) , atomList.array[i]), Q$JsMolCalc$Atom);
@@ -1328,9 +1223,9 @@ function $computeAndDisplay(molString, smileString, jmeString){
       canMakeIonicBonds = canMakeIonicBonds || currentAtomSpec.canMakeIonicBonds;
       neighbors = new StringBuffer_0;
       for (j = 1; j < numAtoms + 1; ++j) {
-        bondArray[i][j] != 0 && ($append(neighbors.impl, j + ' ') , neighbors);
+        bondArray[i][j] != 0 && ($append(neighbors.data, j + ' ') , neighbors);
       }
-      $append_0(atomDataLines, i + ' ' + currentAtomSpec.type + '; bonded to: ' + neighbors.impl.string + '; logp= ' + $format(nf, currentAtomSpec.logp) + '; H-bonds: ' + currentAtomSpec.canMakeHbonds + '; ionic bonds: ' + currentAtomSpec.canMakeIonicBonds + '\n');
+      $append_0(atomDataLines, i + ' ' + currentAtomSpec.type + '; bonded to: ' + $toString(neighbors.data) + '; logp= ' + $format(nf, currentAtomSpec.logp) + '; H-bonds: ' + currentAtomSpec.canMakeHbonds + '; ionic bonds: ' + currentAtomSpec.canMakeIonicBonds + '\n');
     }
     logp < 0?(logpString = '<font color=green>Hydrophobicity index = ' + $format(nf, logp) + '<\/font>'):(logpString = '<font color=red>Hydrophobicity index = ' + $format(nf, logp) + '<\/font>');
     canMakeHbonds?(bondString = '<font color=green>Can Make Strong Hydrogen Bonds<\/font><br>'):(bondString = '<font color=red>Can not Make Strong Hydrogen Bonds<\/font><br>');
@@ -1411,12 +1306,12 @@ function $computeAndDisplay(molString, smileString, jmeString){
   $prettyPrint('F', f, formula);
   $prettyPrint('I', iodine, formula);
   if (charge != 0) {
-    formula.impl.string += '(';
-    charge == -1?(formula.impl.string += '-' , formula):charge > 0 && (formula.impl.string += '+' , formula);
-    (charge < 0?-charge:charge) != 1 && ($append(formula.impl, '' + charge) , formula);
-    formula.impl.string += ')';
+    $append(formula.data, '(');
+    charge == -1?($append(formula.data, '-') , formula):charge > 0 && ($append(formula.data, '+') , formula);
+    (charge < 0?-charge:charge) != 1 && ($append(formula.data, '' + charge) , formula);
+    $append(formula.data, ')');
   }
-  formulaString = 'Formula: ' + formula.impl.string;
+  formulaString = 'Formula: ' + $toString(formula.data);
   $equals(errorString, '')?(moleculeInfo = '<html><body>' + formulaString + '<br>' + logpString + '<br>' + bondString + '<\/body><\/html>'):(moleculeInfo = errorString);
   if ($equals(errorString, '')) {
     nf = ($clinit_NumberFormat() , new NumberFormat_1($getDefaultNative()));
@@ -1446,19 +1341,19 @@ function $prettyPrint(atomLabel, number, outString){
   if (number == 0) {
     return;
   }
-  $append(outString.impl, atomLabel);
+  $append(outString.data, atomLabel);
   if (number == 1) {
-    outString.impl.string += ' ';
+    $append(outString.data, ' ');
     return;
   }
-  $append(outString.impl, '<sub>' + number + '<\/sub> ');
+  $append(outString.data, '<sub>' + number + '<\/sub> ');
 }
 
 function JsMolCalc_0(){
   new ArrayList_0;
 }
 
-defineSeed(44, 1, {}, JsMolCalc_0);
+defineSeed(41, 1, {}, JsMolCalc_0);
 function $addBondToNonHAtom(this$static, bondIndex){
   this$static.numBondsToNonHAtoms = this$static.numBondsToNonHAtoms + bondIndex;
 }
@@ -1816,7 +1711,7 @@ function JsMolCalc$Atom_0(){
   this.numBondsToNonHAtoms = 0;
 }
 
-defineSeed(45, 1, makeCastMap([Q$JsMolCalc$Atom]), JsMolCalc$Atom_0);
+defineSeed(42, 1, makeCastMap([Q$JsMolCalc$Atom]), JsMolCalc$Atom_0);
 _.alreadyHasOneDoubleBond = false;
 _.amide = false;
 _.aromatic = false;
@@ -1843,7 +1738,7 @@ function JsMolCalc$AtomSpec_0(logp, type, canMakeHbonds, canMakeIonicBonds){
   this.canMakeIonicBonds = canMakeIonicBonds;
 }
 
-defineSeed(46, 1, {}, JsMolCalc$AtomSpec_0);
+defineSeed(43, 1, {}, JsMolCalc$AtomSpec_0);
 _.canMakeHbonds = false;
 _.canMakeIonicBonds = false;
 _.logp = 0;
@@ -1852,17 +1747,17 @@ function JsMolCalc$InfoAndTargets_0(info){
   this.info = info;
 }
 
-defineSeed(47, 1, {}, JsMolCalc$InfoAndTargets_0);
+defineSeed(44, 1, {}, JsMolCalc$InfoAndTargets_0);
 _.info = null;
 function JsMolCalcAPI$API_0(){
 }
 
-defineSeed(48, 1, makeCastMap([Q$Exportable]), JsMolCalcAPI$API_0);
+defineSeed(45, 1, makeCastMap([Q$Exportable]), JsMolCalcAPI$API_0);
 function ArrayStoreException_0(){
-  RuntimeException_0.call(this);
+  $fillInStackTrace();
 }
 
-defineSeed(49, 6, makeCastMap([Q$Serializable, Q$Throwable]), ArrayStoreException_0);
+defineSeed(46, 6, makeCastMap([Q$Serializable, Q$Throwable]), ArrayStoreException_0);
 function digit_0(c){
   if (c >= 48 && c < 58) {
     return c - 48;
@@ -1939,14 +1834,14 @@ function setClassLiteral(seedId, clazz){
   proto.___clazz$ = clazz;
 }
 
-defineSeed(51, 1, {}, Class_0);
+defineSeed(48, 1, {}, Class_0);
 _.seedId = 0;
 _.superclass = null;
 function ClassCastException_0(){
-  RuntimeException_0.call(this);
+  $fillInStackTrace();
 }
 
-defineSeed(52, 6, makeCastMap([Q$Serializable, Q$Throwable]), ClassCastException_0);
+defineSeed(49, 6, makeCastMap([Q$Serializable, Q$Throwable]), ClassCastException_0);
 function __parseAndValidateInt(s){
   var i, length_0, startIndex, toReturn;
   if (s == null) {
@@ -1970,29 +1865,29 @@ function __parseAndValidateInt(s){
 }
 
 function IllegalArgumentException_0(message){
-  $fillInStackTrace($clinit_StackTraceCreator$CollectorChrome());
+  $fillInStackTrace();
 }
 
-defineSeed(55, 6, makeCastMap([Q$Serializable, Q$Throwable]), IllegalArgumentException_0);
+defineSeed(52, 6, makeCastMap([Q$Serializable, Q$Throwable]), IllegalArgumentException_0);
 function IndexOutOfBoundsException_0(message){
-  $fillInStackTrace($clinit_StackTraceCreator$CollectorChrome());
+  $fillInStackTrace();
 }
 
-defineSeed(56, 6, makeCastMap([Q$Serializable, Q$Throwable]), IndexOutOfBoundsException_0);
+defineSeed(53, 6, makeCastMap([Q$Serializable, Q$Throwable]), IndexOutOfBoundsException_0);
 function NullPointerException_0(){
-  RuntimeException_0.call(this);
+  $fillInStackTrace();
 }
 
-defineSeed(57, 6, makeCastMap([Q$Serializable, Q$Throwable]), NullPointerException_0);
+defineSeed(54, 6, makeCastMap([Q$Serializable, Q$Throwable]), NullPointerException_0);
 function NumberFormatException_0(message){
-  $fillInStackTrace($clinit_StackTraceCreator$CollectorChrome());
+  $fillInStackTrace();
 }
 
-defineSeed(58, 55, makeCastMap([Q$Serializable, Q$Throwable]), NumberFormatException_0);
-function StackTraceElement_0(methodName, fileName){
+defineSeed(55, 52, makeCastMap([Q$Serializable, Q$Throwable]), NumberFormatException_0);
+function StackTraceElement_0(methodName){
 }
 
-defineSeed(59, 1, makeCastMap([Q$Serializable, Q$StackTraceElement]), StackTraceElement_0);
+defineSeed(56, 1, makeCastMap([Q$Serializable, Q$StackTraceElement]), StackTraceElement_0);
 function $charAt(this$static, index){
   return this$static.charCodeAt(index);
 }
@@ -2010,14 +1905,6 @@ function $indexOf(this$static, str){
 
 function $indexOf_0(this$static, str, startIndex){
   return this$static.indexOf(str, startIndex);
-}
-
-function $lastIndexOf(this$static, str){
-  return this$static.lastIndexOf(str);
-}
-
-function $lastIndexOf_0(this$static, str, start){
-  return this$static.lastIndexOf(str, start);
 }
 
 function $split(this$static, regex, maxMatch){
@@ -2062,10 +1949,6 @@ function $substring(this$static, beginIndex){
   return this$static.substr(beginIndex, this$static.length - beginIndex);
 }
 
-function $substring_0(this$static, beginIndex, endIndex){
-  return this$static.substr(beginIndex, endIndex - beginIndex);
-}
-
 function $trim(this$static){
   if (this$static.length == 0 || this$static[0] > ' ' && this$static[this$static.length - 1] > ' ') {
     return this$static;
@@ -2077,18 +1960,6 @@ function $trim(this$static){
 
 function __createArray(numElements){
   return initDim(_3Ljava_lang_String_2_classLit, makeCastMap([Q$Serializable]), Q$String, numElements, 0);
-}
-
-function fromCodePoint(codePoint){
-  var hiSurrogate, loSurrogate;
-  if (codePoint >= 65536) {
-    hiSurrogate = 55296 + (~~(codePoint - 65536) >> 10 & 1023) & 65535;
-    loSurrogate = 56320 + (codePoint - 65536 & 1023) & 65535;
-    return String.fromCharCode(hiSurrogate) + String.fromCharCode(loSurrogate);
-  }
-   else {
-    return String.fromCharCode(codePoint & 65535);
-  }
 }
 
 _ = String.prototype;
@@ -2147,57 +2018,55 @@ function increment(){
 
 var back_0, count_0 = 0, front;
 function $append_0(this$static, x){
-  $append(this$static.impl, x);
+  $append(this$static.data, x);
   return this$static;
 }
 
 function $delete(this$static, end){
-  return $replace(this$static.impl, 0, end, '') , this$static;
+  return $replace(this$static.data, 0, end, '') , this$static;
 }
 
 function StringBuffer_0(){
-  this.impl = new StringBufferImplAppend_0;
+  this.data = $createData();
 }
 
-defineSeed(61, 1, makeCastMap([Q$CharSequence]), StringBuffer_0);
+defineSeed(58, 1, makeCastMap([Q$CharSequence]), StringBuffer_0);
 function $append_1(this$static, x){
-  $append(this$static.impl, x);
+  $append(this$static.data, x);
   return this$static;
 }
 
 function $charAt_0(this$static, index){
-  return $charAt(this$static.impl.string, index);
+  return $charAt($toString(this$static.data), index);
 }
 
 function $delete_0(this$static, start, end){
-  return $replace(this$static.impl, start, end, '') , this$static;
+  return $replace(this$static.data, start, end, '') , this$static;
 }
 
 function $insert(this$static, index, x){
-  return $replace(this$static.impl, index, index, x) , this$static;
+  return $replace(this$static.data, index, index, x) , this$static;
 }
 
 function $replace_0(this$static, start, end, toInsert){
-  $replace(this$static.impl, start, end, toInsert);
+  $replace(this$static.data, start, end, toInsert);
   return this$static;
 }
 
---></script>
-<script><!--
 function $setCharAt(this$static, index, x){
   $replace_0(this$static, index, index + 1, String.fromCharCode(x));
 }
 
 function StringBuilder_0(){
-  this.impl = new StringBufferImplAppend_0;
+  this.data = $createData();
 }
 
-defineSeed(62, 1, makeCastMap([Q$CharSequence]), StringBuilder_0);
+defineSeed(59, 1, makeCastMap([Q$CharSequence]), StringBuilder_0);
 function UnsupportedOperationException_0(){
-  $fillInStackTrace($clinit_StackTraceCreator$CollectorChrome());
+  $fillInStackTrace();
 }
 
-defineSeed(63, 6, makeCastMap([Q$Serializable, Q$Throwable]), UnsupportedOperationException_0);
+defineSeed(60, 6, makeCastMap([Q$Serializable, Q$Throwable]), UnsupportedOperationException_0);
 function $advanceToFind(iter, o){
   var t;
   while (iter.hasNext()) {
@@ -2209,7 +2078,7 @@ function $advanceToFind(iter, o){
   return null;
 }
 
-defineSeed(64, 1, {});
+defineSeed(61, 1, {});
 _.add = function add(o){
   throw new UnsupportedOperationException_0;
 }
@@ -2220,7 +2089,9 @@ _.contains = function contains(o){
   return !!iter;
 }
 ;
-defineSeed(66, 1, makeCastMap([Q$Map]));
+defineSeed(63, 1, makeCastMap([Q$Map]));
+--></script>
+<script><!--
 _.equals$ = function equals_1(obj){
   var entry, entry$iterator, otherKey, otherMap, otherValue;
   if (obj === this) {
@@ -2370,7 +2241,7 @@ function $putStringValue(this$static, key, value){
   return result;
 }
 
-defineSeed(65, 66, makeCastMap([Q$Map]));
+defineSeed(62, 63, makeCastMap([Q$Map]));
 _.equalsBridge = function equalsBridge(value1, value2){
   return maskUndefined(value1) === maskUndefined(value2) || value1 != null && equals__devirtual$(value1, value2);
 }
@@ -2380,7 +2251,7 @@ _.nullSlot = null;
 _.nullSlotLive = false;
 _.size = 0;
 _.stringMap = null;
-defineSeed(68, 64, makeCastMap([Q$Set]));
+defineSeed(65, 61, makeCastMap([Q$Set]));
 _.equals$ = function equals_2(o){
   var iter, other, otherItem;
   if (o === this) {
@@ -2419,7 +2290,7 @@ function AbstractHashMap$EntrySet_0(this$0){
   this.this$0 = this$0;
 }
 
-defineSeed(67, 68, makeCastMap([Q$Set]), AbstractHashMap$EntrySet_0);
+defineSeed(64, 65, makeCastMap([Q$Set]), AbstractHashMap$EntrySet_0);
 _.contains = function contains_0(o){
   var entry, key, value;
   if (instanceOf(o, Q$Map$Entry)) {
@@ -2451,7 +2322,7 @@ function AbstractHashMap$EntrySetIterator_0(this$0){
   this.iter = new AbstractList$IteratorImpl_0(list);
 }
 
-defineSeed(69, 1, {}, AbstractHashMap$EntrySetIterator_0);
+defineSeed(66, 1, {}, AbstractHashMap$EntrySetIterator_0);
 _.hasNext = function hasNext(){
   return $hasNext(this.iter);
 }
@@ -2461,7 +2332,7 @@ _.next = function next_0(){
 }
 ;
 _.iter = null;
-defineSeed(71, 1, makeCastMap([Q$Map$Entry]));
+defineSeed(68, 1, makeCastMap([Q$Map$Entry]));
 _.equals$ = function equals_3(other){
   var entry;
   if (instanceOf(other, Q$Map$Entry)) {
@@ -2486,7 +2357,7 @@ function AbstractHashMap$MapEntryNull_0(this$0){
   this.this$0 = this$0;
 }
 
-defineSeed(70, 71, makeCastMap([Q$Map$Entry]), AbstractHashMap$MapEntryNull_0);
+defineSeed(67, 68, makeCastMap([Q$Map$Entry]), AbstractHashMap$MapEntryNull_0);
 _.getKey = function getKey(){
   return null;
 }
@@ -2505,7 +2376,7 @@ function AbstractHashMap$MapEntryString_0(this$0, key){
   this.key = key;
 }
 
-defineSeed(72, 71, makeCastMap([Q$Map$Entry]), AbstractHashMap$MapEntryString_0);
+defineSeed(69, 68, makeCastMap([Q$Map$Entry]), AbstractHashMap$MapEntryString_0);
 _.getKey = function getKey_0(){
   return this.key;
 }
@@ -2528,7 +2399,7 @@ function indexOutOfBounds(index, size){
   throw new IndexOutOfBoundsException_0('Index: ' + index + ', Size: ' + size);
 }
 
-defineSeed(73, 64, makeCastMap([Q$List]));
+defineSeed(70, 61, makeCastMap([Q$List]));
 _.add = function add_0(obj){
   $add(this, this.size_0(), obj);
   return true;
@@ -2589,7 +2460,7 @@ function AbstractList$IteratorImpl_0(this$0){
   this.this$0 = this$0;
 }
 
-defineSeed(74, 1, {}, AbstractList$IteratorImpl_0);
+defineSeed(71, 1, {}, AbstractList$IteratorImpl_0);
 _.hasNext = function hasNext_0(){
   return $hasNext(this);
 }
@@ -2602,7 +2473,7 @@ _.i = 0;
 _.this$0 = null;
 function $add(this$static, index, o){
   (index < 0 || index > this$static.size) && indexOutOfBounds(index, this$static.size);
-  splice_0(this$static.array, index, 0, o);
+  splice(this$static.array, index, 0, o);
   ++this$static.size;
 }
 
@@ -2629,11 +2500,11 @@ function ArrayList_0(){
   this.array = initDim(_3Ljava_lang_Object_2_classLit, makeCastMap([Q$Serializable]), Q$Object, 0, 0);
 }
 
-function splice_0(array, index, deleteCount, value){
+function splice(array, index, deleteCount, value){
   array.splice(index, deleteCount, value);
 }
 
-defineSeed(75, 73, makeCastMap([Q$Serializable, Q$List]), ArrayList_0);
+defineSeed(72, 70, makeCastMap([Q$Serializable, Q$List]), ArrayList_0);
 _.add = function add_1(o){
   return $add_0(this, o);
 }
@@ -2666,13 +2537,13 @@ function HashMap_0(){
   this.size = 0;
 }
 
-defineSeed(77, 65, makeCastMap([Q$Serializable, Q$Map]), HashMap_0);
+defineSeed(74, 62, makeCastMap([Q$Serializable, Q$Map]), HashMap_0);
 function MapEntryImpl_0(key, value){
   this.key = key;
   this.value = value;
 }
 
-defineSeed(78, 71, makeCastMap([Q$Map$Entry]), MapEntryImpl_0);
+defineSeed(75, 68, makeCastMap([Q$Map$Entry]), MapEntryImpl_0);
 _.getKey = function getKey_1(){
   return this.key;
 }
@@ -2691,10 +2562,10 @@ _.setValue = function setValue_1(value){
 _.key = null;
 _.value = null;
 function NoSuchElementException_0(){
-  RuntimeException_0.call(this);
+  $fillInStackTrace();
 }
 
-defineSeed(79, 6, makeCastMap([Q$Serializable, Q$Throwable]), NoSuchElementException_0);
+defineSeed(76, 6, makeCastMap([Q$Serializable, Q$Throwable]), NoSuchElementException_0);
 function equalsWithNullCheck(a, b){
   return maskUndefined(a) === maskUndefined(b) || a != null && equals__devirtual$(a, b);
 }
@@ -2703,8 +2574,8 @@ function ExportAllExporterImpl_0(){
   new APIExporterImpl_0;
 }
 
-defineSeed(81, 1, {}, ExportAllExporterImpl_0);
-defineSeed(83, 1, {});
+defineSeed(78, 1, {}, ExportAllExporterImpl_0);
+defineSeed(80, 1, {});
 function $addTypeMap(this$static, type, exportedConstructor){
   $put(this$static.typeMap, type, exportedConstructor);
 }
@@ -2748,7 +2619,7 @@ function isAssignableToClass(o, clazz){
   return false;
 }
 
-defineSeed(82, 83, {}, ExporterBaseActual_0);
+defineSeed(79, 80, {}, ExporterBaseActual_0);
 function $clinit_ExporterUtil(){
   $clinit_ExporterUtil = nullMethod;
   impl = new ExporterBaseActual_0;
@@ -2782,7 +2653,7 @@ function gwtOnLoad(errFn, modName, modBase, softPermutationId){
   }
 }
 
-var Ljava_lang_Object_2_classLit = createForClass('java.lang.', 'Object', 1, null), Lcom_google_gwt_core_client_JavaScriptObject_2_classLit = createForClass('com.google.gwt.core.client.', 'JavaScriptObject$', 9, Ljava_lang_Object_2_classLit), _3I_classLit = createForArray('', '[I', 90), _3Ljava_lang_Object_2_classLit = createForArray('[Ljava.lang.', 'Object;', 88), Ljava_lang_Throwable_2_classLit = createForClass('java.lang.', 'Throwable', 8, Ljava_lang_Object_2_classLit), Ljava_lang_Exception_2_classLit = createForClass('java.lang.', 'Exception', 7, Ljava_lang_Throwable_2_classLit), Ljava_lang_RuntimeException_2_classLit = createForClass('java.lang.', 'RuntimeException', 6, Ljava_lang_Exception_2_classLit), Ljava_lang_StackTraceElement_2_classLit = createForClass('java.lang.', 'StackTraceElement', 59, Ljava_lang_Object_2_classLit), _3Ljava_lang_StackTraceElement_2_classLit = createForArray('[Ljava.lang.', 'StackTraceElement;', 91), Lcom_google_gwt_lang_SeedUtil_2_classLit = createForClass('com.google.gwt.lang.', 'SeedUtil', 37, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalcAPI$API_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalcAPI$API', 48, Ljava_lang_Object_2_classLit), Ljava_lang_Class_2_classLit = createForClass('java.lang.', 'Class', 51, Ljava_lang_Object_2_classLit), Ljava_lang_String_2_classLit = createForClass('java.lang.', 'String', 2, Ljava_lang_Object_2_classLit), _3Ljava_lang_String_2_classLit = createForArray('[Ljava.lang.', 'String;', 89), Ljava_lang_ClassCastException_2_classLit = createForClass('java.lang.', 'ClassCastException', 52, Ljava_lang_RuntimeException_2_classLit), Ljava_lang_StringBuilder_2_classLit = createForClass('java.lang.', 'StringBuilder', 62, Ljava_lang_Object_2_classLit), Ljava_lang_ArrayStoreException_2_classLit = createForClass('java.lang.', 'ArrayStoreException', 49, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_core_client_JavaScriptException_2_classLit = createForClass('com.google.gwt.core.client.', 'JavaScriptException', 5, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_core_client_impl_StringBufferImpl_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StringBufferImpl', 21, Ljava_lang_Object_2_classLit), Lorg_timepedia_exporter_client_ExporterBaseImpl_2_classLit = createForClass('org.timepedia.exporter.client.', 'ExporterBaseImpl', 83, Ljava_lang_Object_2_classLit), Lorg_timepedia_exporter_client_ExporterBaseActual_2_classLit = createForClass('org.timepedia.exporter.client.', 'ExporterBaseActual', 82, Lorg_timepedia_exporter_client_ExporterBaseImpl_2_classLit), Lorg_timepedia_exporter_client_Exportable_2_classLit = createForInterface('org.timepedia.exporter.client.', 'Exportable'), Lorg_timepedia_exporter_client_ExportAllExporterImpl_2_classLit = createForClass('org.timepedia.exporter.client.', 'ExportAllExporterImpl', 81, Ljava_lang_Object_2_classLit), Lcom_google_gwt_core_client_impl_StackTraceCreator$Collector_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StackTraceCreator$Collector', 17, Ljava_lang_Object_2_classLit), Lcom_google_gwt_core_client_impl_StackTraceCreator$CollectorMoz_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StackTraceCreator$CollectorMoz', 19, Lcom_google_gwt_core_client_impl_StackTraceCreator$Collector_2_classLit), Lcom_google_gwt_core_client_impl_StackTraceCreator$CollectorChrome_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StackTraceCreator$CollectorChrome', 18, Lcom_google_gwt_core_client_impl_StackTraceCreator$CollectorMoz_2_classLit), Lcom_google_gwt_core_client_impl_StackTraceCreator$CollectorChromeNoSourceMap_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StackTraceCreator$CollectorChromeNoSourceMap', 20, Lcom_google_gwt_core_client_impl_StackTraceCreator$CollectorChrome_2_classLit), Lcom_google_gwt_core_client_impl_StringBufferImplAppend_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StringBufferImplAppend', 22, Lcom_google_gwt_core_client_impl_StringBufferImpl_2_classLit), Lcom_google_gwt_core_client_Scheduler_2_classLit = createForClass('com.google.gwt.core.client.', 'Scheduler', 12, Ljava_lang_Object_2_classLit), Lcom_google_gwt_core_client_impl_SchedulerImpl_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'SchedulerImpl', 14, Lcom_google_gwt_core_client_Scheduler_2_classLit), Ljava_util_AbstractMap_2_classLit = createForClass('java.util.', 'AbstractMap', 66, Ljava_lang_Object_2_classLit), Ljava_util_AbstractHashMap_2_classLit = createForClass('java.util.', 'AbstractHashMap', 65, Ljava_util_AbstractMap_2_classLit), Ljava_util_AbstractCollection_2_classLit = createForClass('java.util.', 'AbstractCollection', 64, Ljava_lang_Object_2_classLit), Ljava_util_AbstractSet_2_classLit = createForClass('java.util.', 'AbstractSet', 68, Ljava_util_AbstractCollection_2_classLit), Ljava_util_AbstractHashMap$EntrySet_2_classLit = createForClass('java.util.', 'AbstractHashMap$EntrySet', 67, Ljava_util_AbstractSet_2_classLit), Ljava_util_AbstractHashMap$EntrySetIterator_2_classLit = createForClass('java.util.', 'AbstractHashMap$EntrySetIterator', 69, Ljava_lang_Object_2_classLit), Ljava_util_AbstractMapEntry_2_classLit = createForClass('java.util.', 'AbstractMapEntry', 71, Ljava_lang_Object_2_classLit), Ljava_util_AbstractHashMap$MapEntryNull_2_classLit = createForClass('java.util.', 'AbstractHashMap$MapEntryNull', 70, Ljava_util_AbstractMapEntry_2_classLit), Ljava_util_AbstractHashMap$MapEntryString_2_classLit = createForClass('java.util.', 'AbstractHashMap$MapEntryString', 72, Ljava_util_AbstractMapEntry_2_classLit), Ljava_lang_NullPointerException_2_classLit = createForClass('java.lang.', 'NullPointerException', 57, Ljava_lang_RuntimeException_2_classLit), Ljava_lang_IllegalArgumentException_2_classLit = createForClass('java.lang.', 'IllegalArgumentException', 55, Ljava_lang_RuntimeException_2_classLit), Ljava_util_HashMap_2_classLit = createForClass('java.util.', 'HashMap', 77, Ljava_util_AbstractHashMap_2_classLit), Ledu_umb_bio_jsMolCalc_client_APIExporterImpl_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'APIExporterImpl', 43, Ljava_lang_Object_2_classLit), Ljava_lang_StringBuffer_2_classLit = createForClass('java.lang.', 'StringBuffer', 61, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalc_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc', 44, Ljava_lang_Object_2_classLit), _3_3I_classLit = createForArray('', '[[I', 92), Ledu_umb_bio_jsMolCalc_client_JsMolCalc$Atom_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc$Atom', 45, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalc$AtomSpec_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc$AtomSpec', 46, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalc$InfoAndTargets_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc$InfoAndTargets', 47, Ljava_lang_Object_2_classLit), Ljava_util_AbstractList_2_classLit = createForClass('java.util.', 'AbstractList', 73, Ljava_util_AbstractCollection_2_classLit), Ljava_util_ArrayList_2_classLit = createForClass('java.util.', 'ArrayList', 75, Ljava_util_AbstractList_2_classLit), Ljava_util_AbstractList$IteratorImpl_2_classLit = createForClass('java.util.', 'AbstractList$IteratorImpl', 74, Ljava_lang_Object_2_classLit), Ljava_lang_UnsupportedOperationException_2_classLit = createForClass('java.lang.', 'UnsupportedOperationException', 63, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_i18n_client_NumberFormat_2_classLit = createForClass('com.google.gwt.i18n.client.', 'NumberFormat', 28, Ljava_lang_Object_2_classLit), Ljava_lang_NumberFormatException_2_classLit = createForClass('java.lang.', 'NumberFormatException', 58, Ljava_lang_IllegalArgumentException_2_classLit), Lcom_google_gwt_i18n_client_LocaleInfo_2_classLit = createForClass('com.google.gwt.i18n.client.', 'LocaleInfo', 27, Ljava_lang_Object_2_classLit), Ljava_util_MapEntryImpl_2_classLit = createForClass('java.util.', 'MapEntryImpl', 78, Ljava_util_AbstractMapEntry_2_classLit), Ljava_lang_IndexOutOfBoundsException_2_classLit = createForClass('java.lang.', 'IndexOutOfBoundsException', 56, Ljava_lang_RuntimeException_2_classLit), Ljava_util_NoSuchElementException_2_classLit = createForClass('java.util.', 'NoSuchElementException', 79, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_i18n_client_constants_NumberConstantsImpl_1_2_classLit = createForClass('com.google.gwt.i18n.client.constants.', 'NumberConstantsImpl_', 29, Ljava_lang_Object_2_classLit);
+var Ljava_lang_Object_2_classLit = createForClass('java.lang.', 'Object', 1, null), Lcom_google_gwt_core_client_JavaScriptObject_2_classLit = createForClass('com.google.gwt.core.client.', 'JavaScriptObject$', 9, Ljava_lang_Object_2_classLit), _3I_classLit = createForArray('', '[I', 87), _3Ljava_lang_Object_2_classLit = createForArray('[Ljava.lang.', 'Object;', 85), Ljava_lang_Throwable_2_classLit = createForClass('java.lang.', 'Throwable', 8, Ljava_lang_Object_2_classLit), Ljava_lang_Exception_2_classLit = createForClass('java.lang.', 'Exception', 7, Ljava_lang_Throwable_2_classLit), Ljava_lang_RuntimeException_2_classLit = createForClass('java.lang.', 'RuntimeException', 6, Ljava_lang_Exception_2_classLit), Ljava_lang_StackTraceElement_2_classLit = createForClass('java.lang.', 'StackTraceElement', 56, Ljava_lang_Object_2_classLit), _3Ljava_lang_StackTraceElement_2_classLit = createForArray('[Ljava.lang.', 'StackTraceElement;', 88), Lcom_google_gwt_lang_SeedUtil_2_classLit = createForClass('com.google.gwt.lang.', 'SeedUtil', 34, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalcAPI$API_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalcAPI$API', 45, Ljava_lang_Object_2_classLit), Ljava_lang_Class_2_classLit = createForClass('java.lang.', 'Class', 48, Ljava_lang_Object_2_classLit), Ljava_lang_String_2_classLit = createForClass('java.lang.', 'String', 2, Ljava_lang_Object_2_classLit), _3Ljava_lang_String_2_classLit = createForArray('[Ljava.lang.', 'String;', 86), Ljava_lang_ClassCastException_2_classLit = createForClass('java.lang.', 'ClassCastException', 49, Ljava_lang_RuntimeException_2_classLit), Ljava_lang_StringBuilder_2_classLit = createForClass('java.lang.', 'StringBuilder', 59, Ljava_lang_Object_2_classLit), Ljava_lang_ArrayStoreException_2_classLit = createForClass('java.lang.', 'ArrayStoreException', 46, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_core_client_JavaScriptException_2_classLit = createForClass('com.google.gwt.core.client.', 'JavaScriptException', 5, Ljava_lang_RuntimeException_2_classLit), Lorg_timepedia_exporter_client_ExporterBaseImpl_2_classLit = createForClass('org.timepedia.exporter.client.', 'ExporterBaseImpl', 80, Ljava_lang_Object_2_classLit), Lorg_timepedia_exporter_client_ExporterBaseActual_2_classLit = createForClass('org.timepedia.exporter.client.', 'ExporterBaseActual', 79, Lorg_timepedia_exporter_client_ExporterBaseImpl_2_classLit), Lorg_timepedia_exporter_client_Exportable_2_classLit = createForInterface('org.timepedia.exporter.client.', 'Exportable'), Lorg_timepedia_exporter_client_ExportAllExporterImpl_2_classLit = createForClass('org.timepedia.exporter.client.', 'ExportAllExporterImpl', 78, Ljava_lang_Object_2_classLit), Lcom_google_gwt_core_client_impl_StackTraceCreator$Collector_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'StackTraceCreator$Collector', 17, Ljava_lang_Object_2_classLit), Lcom_google_gwt_core_client_Scheduler_2_classLit = createForClass('com.google.gwt.core.client.', 'Scheduler', 12, Ljava_lang_Object_2_classLit), Lcom_google_gwt_core_client_impl_SchedulerImpl_2_classLit = createForClass('com.google.gwt.core.client.impl.', 'SchedulerImpl', 14, Lcom_google_gwt_core_client_Scheduler_2_classLit), Ljava_util_AbstractMap_2_classLit = createForClass('java.util.', 'AbstractMap', 63, Ljava_lang_Object_2_classLit), Ljava_util_AbstractHashMap_2_classLit = createForClass('java.util.', 'AbstractHashMap', 62, Ljava_util_AbstractMap_2_classLit), Ljava_util_AbstractCollection_2_classLit = createForClass('java.util.', 'AbstractCollection', 61, Ljava_lang_Object_2_classLit), Ljava_util_AbstractSet_2_classLit = createForClass('java.util.', 'AbstractSet', 65, Ljava_util_AbstractCollection_2_classLit), Ljava_util_AbstractHashMap$EntrySet_2_classLit = createForClass('java.util.', 'AbstractHashMap$EntrySet', 64, Ljava_util_AbstractSet_2_classLit), Ljava_util_AbstractHashMap$EntrySetIterator_2_classLit = createForClass('java.util.', 'AbstractHashMap$EntrySetIterator', 66, Ljava_lang_Object_2_classLit), Ljava_util_AbstractMapEntry_2_classLit = createForClass('java.util.', 'AbstractMapEntry', 68, Ljava_lang_Object_2_classLit), Ljava_util_AbstractHashMap$MapEntryNull_2_classLit = createForClass('java.util.', 'AbstractHashMap$MapEntryNull', 67, Ljava_util_AbstractMapEntry_2_classLit), Ljava_util_AbstractHashMap$MapEntryString_2_classLit = createForClass('java.util.', 'AbstractHashMap$MapEntryString', 69, Ljava_util_AbstractMapEntry_2_classLit), Ljava_lang_NullPointerException_2_classLit = createForClass('java.lang.', 'NullPointerException', 54, Ljava_lang_RuntimeException_2_classLit), Ljava_lang_IllegalArgumentException_2_classLit = createForClass('java.lang.', 'IllegalArgumentException', 52, Ljava_lang_RuntimeException_2_classLit), Ljava_util_HashMap_2_classLit = createForClass('java.util.', 'HashMap', 74, Ljava_util_AbstractHashMap_2_classLit), Ledu_umb_bio_jsMolCalc_client_APIExporterImpl_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'APIExporterImpl', 40, Ljava_lang_Object_2_classLit), Ljava_lang_StringBuffer_2_classLit = createForClass('java.lang.', 'StringBuffer', 58, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalc_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc', 41, Ljava_lang_Object_2_classLit), _3_3I_classLit = createForArray('', '[[I', 89), Ledu_umb_bio_jsMolCalc_client_JsMolCalc$Atom_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc$Atom', 42, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalc$AtomSpec_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc$AtomSpec', 43, Ljava_lang_Object_2_classLit), Ledu_umb_bio_jsMolCalc_client_JsMolCalc$InfoAndTargets_2_classLit = createForClass('edu.umb.bio.jsMolCalc.client.', 'JsMolCalc$InfoAndTargets', 44, Ljava_lang_Object_2_classLit), Ljava_util_AbstractList_2_classLit = createForClass('java.util.', 'AbstractList', 70, Ljava_util_AbstractCollection_2_classLit), Ljava_util_ArrayList_2_classLit = createForClass('java.util.', 'ArrayList', 72, Ljava_util_AbstractList_2_classLit), Ljava_util_AbstractList$IteratorImpl_2_classLit = createForClass('java.util.', 'AbstractList$IteratorImpl', 71, Ljava_lang_Object_2_classLit), Ljava_lang_UnsupportedOperationException_2_classLit = createForClass('java.lang.', 'UnsupportedOperationException', 60, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_i18n_client_NumberFormat_2_classLit = createForClass('com.google.gwt.i18n.client.', 'NumberFormat', 25, Ljava_lang_Object_2_classLit), Ljava_lang_NumberFormatException_2_classLit = createForClass('java.lang.', 'NumberFormatException', 55, Ljava_lang_IllegalArgumentException_2_classLit), Lcom_google_gwt_i18n_client_LocaleInfo_2_classLit = createForClass('com.google.gwt.i18n.client.', 'LocaleInfo', 24, Ljava_lang_Object_2_classLit), Ljava_util_MapEntryImpl_2_classLit = createForClass('java.util.', 'MapEntryImpl', 75, Ljava_util_AbstractMapEntry_2_classLit), Ljava_lang_IndexOutOfBoundsException_2_classLit = createForClass('java.lang.', 'IndexOutOfBoundsException', 53, Ljava_lang_RuntimeException_2_classLit), Ljava_util_NoSuchElementException_2_classLit = createForClass('java.util.', 'NoSuchElementException', 76, Ljava_lang_RuntimeException_2_classLit), Lcom_google_gwt_i18n_client_constants_NumberConstantsImpl_1_2_classLit = createForClass('com.google.gwt.i18n.client.constants.', 'NumberConstantsImpl_', 26, Ljava_lang_Object_2_classLit);
 $stats && $stats({moduleName:'jsmolcalc',sessionId:$sessionId,subSystem:'startup',evtGroup:'moduleStartup',millis:(new Date()).getTime(),type:'moduleEvalEnd'});
 if ($wnd.jsmolcalc) $wnd.jsmolcalc.onScriptLoad();
 --></script></body></html>

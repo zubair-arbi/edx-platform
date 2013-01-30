@@ -4,7 +4,7 @@ var $gwt_version = "2.5.0";
 var $wnd = parent;
 var $doc = $wnd.document;
 var $moduleName, $moduleBase;
-var $strongName = '38E881215DD233AEE60236A5F07A6EFB';
+var $strongName = '2F6BC62FA9B71FB5EB318145F5D37E84';
 var $stats = $wnd.__gwtStatsEvent ? function(a) {return $wnd.__gwtStatsEvent(a);} : null,
 $sessionId = $wnd.__gwtStatsSessionId ? $wnd.__gwtStatsSessionId : null;
 $stats && $stats({moduleName:'jsmolcalc',sessionId:$sessionId,subSystem:'startup',evtGroup:'moduleStartup',millis:(new Date()).getTime(),type:'moduleEvalStart'});
@@ -939,7 +939,7 @@ function init(){
   var runtimeValue;
   !!$stats && onModuleStart('com.google.gwt.useragent.client.UserAgentAsserter');
   runtimeValue = $getRuntimeValue();
-  $equals('ie8', runtimeValue) || ($wnd.alert('ERROR: Possible problem with your *.gwt.xml module file.\nThe compile time user.agent value (ie8) does not match the runtime user.agent value (' + runtimeValue + '). Expect more errors.\n') , undefined);
+  $equals('ie6', runtimeValue) || ($wnd.alert('ERROR: Possible problem with your *.gwt.xml module file.\nThe compile time user.agent value (ie6) does not match the runtime user.agent value (' + runtimeValue + '). Expect more errors.\n') , undefined);
   !!$stats && onModuleStart('com.google.gwt.user.client.DocumentModeAsserter');
   $onModuleLoad();
   !!$stats && onModuleStart('edu.umb.bio.jsMolCalc.client.JsMolCalcAPI');
@@ -1038,8 +1038,8 @@ function $export0(){
   }
   );
   $wnd.jsmol.API.getInfo = $entry(function(a0, a1, a2){
-    var iat, info;
-    return new JsMolCalc_0 , iat = $computeAndDisplay(a0, a1, a2) , info = iat.info , info.indexOf('It is not possible') == 0?'':info;
+    var iat;
+    return new JsMolCalc_0 , iat = $computeAndDisplay(a0, a1, a2) , iat.info;
   }
   );
   addTypeMap(Ledu_umb_bio_jsMolCalc_client_JsMolCalcAPI$API_2_classLit, $wnd.jsmol.API);
