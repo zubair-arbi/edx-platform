@@ -117,12 +117,19 @@ urlpatterns = ('',
     url(r'^press/georgetown-joins-edx$', 'static_template_view.views.render',
         {'template': 'press_releases/Georgetown_joins_edX.html'}, name="press/georgetown-joins-edx"),
     url(r'^press/spring-courses$', 'static_template_view.views.render',
-        {'template': 'press_releases/Spring_2013_course_announcements.html'}, name="press/spring-courses"),
+        {'template': 'press_releases/Spring_2013_course_announcements.html'},
+        name="press/spring-courses"),
     url(r'^press/lewin-course-announcement$', 'static_template_view.views.render',
-        {'template': 'press_releases/Lewin_course_announcement.html'}, name="press/lewin-course-announcement"),
+        {'template': 'press_releases/Lewin_course_announcement.html'},
+        name="press/lewin-course-announcement"),
+    url(r'^press/bostonx-announcement$', 'static_template_view.views.render',
+        {'template': 'press_releases/bostonx_announcement.html'},
+        name="press/bostonx-announcement"),
+
 
     # Should this always update to point to the latest press release?
-    (r'^pressrelease$', 'django.views.generic.simple.redirect_to', {'url': '/press/lewin-course-announcement'}),
+    (r'^pressrelease$', 'django.views.generic.simple.redirect_to',
+     {'url': '/press/bostonx-announcement'}),
 
 
     (r'^favicon\.ico$', 'django.views.generic.simple.redirect_to', {'url': '/static/images/favicon.ico'}),
@@ -274,6 +281,26 @@ if settings.COURSEWARE_ENABLED:
             'open_ended_grading.peer_grading_service.save_grade', name='peer_grading_save_grade'),
         url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/peer_grading/save_calibration_essay$',
             'open_ended_grading.peer_grading_service.save_calibration_essay', name='peer_grading_save_calibration_essay'),
+
+        # Cohorts management
+        url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/cohorts$',
+            'course_groups.views.list_cohorts', name="cohorts"),
+        url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/cohorts/add$',
+            'course_groups.views.add_cohort',
+            name="add_cohort"),
+        url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/cohorts/(?P<cohort_id>[0-9]+)$',
+            'course_groups.views.users_in_cohort',
+            name="list_cohort"),
+        url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/cohorts/(?P<cohort_id>[0-9]+)/add$',
+            'course_groups.views.add_users_to_cohort',
+            name="add_to_cohort"),
+        url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/cohorts/(?P<cohort_id>[0-9]+)/delete$',
+            'course_groups.views.remove_user_from_cohort',
+            name="remove_from_cohort"),
+        url(r'^courses/(?P<course_id>[^/]+/[^/]+/[^/]+)/cohorts/debug$',
+            'course_groups.views.debug_cohort_mgmt',
+            name="debug_cohort_mgmt"),
+
     )
 
     # discussion forums live within courseware, so courseware must be enabled first

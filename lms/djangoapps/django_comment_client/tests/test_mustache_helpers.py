@@ -68,4 +68,6 @@ class CloseThreadTextTest(TestCase):
         self.assertEqual(mustache_helpers.close_thread_text(self.contentClosed), 'Re-open thread')
         self.assertEqual(mustache_helpers.close_thread_text(self.contentOpen), 'Close thread')
 
+#########################################################################################
+
 

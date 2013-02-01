@@ -3,7 +3,10 @@ import random
 import collections
 
 from django.contrib.auth.models import User
-from django.test import TestCase                         
+from django.test import TestCase
+from mock import MagicMock
+from django.test.utils import override_settings                       
+import django.core.urlresolvers as urlresolvers                   
 
 import student.models
 import django_comment_client.models as models
@@ -68,32 +71,6 @@ class UtilsTestCase(TestCase):
         self.assertEqual(utils.merge_dict(self.dic1, self.dic2), self.dicMerge12)
 
 #########################################################################################
-#
-#class GetRoleIdTest():
-#
-#    
-#    def setUp(self):
-#
-#        self.course_id = 'edX/full/6.002_Spring_2012'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def test_get_role_ids(self):
         self.assertEqual(utils.get_role_ids(self.course_id), {u'Moderator': [2], u'Student': [1], 'Staff': [2]})
@@ -104,9 +81,50 @@ class UtilsTestCase(TestCase):
         _FULLMODULES = False
         self.assertEqual(utils.get_full_modules(), django.modulestore().modules)
 
+#########################################################################################
 
-    ##needs work
-    #def test_get_discussion_id_map(self):
-    #    _DISCUSSIONINFO = collections.defaultdict(list,[("6.006", False), ("18.410", True)])
+class GetDiscussionIdTest(TestCase):
+
+    def test_get_discussion_id_map(self):
+        _DISCUSSIONINFO = collections.defaultdict(list,[("6.006", False), ("18.410", True)])
+
+#########################################################################################
+
+class GetCourseWareContextTest(TestCase):
+
+    def setUp(self):
+
+        self.course = MagicMock()
+        self.course.id = 'edX/full/6.002_Spring_2012'
+        self.content = {'commentable_id': 5}
+    @override_settings(_DISCUSSIONINFO = {'edX/full/6.002_Spring_2012': {'id_map': {'commentable_id': 5}['commentable_id']}})    
+    def test_get_courseware_context(self):
+
+        self.assertIsNone(utils.get_courseware_context(self.content, self.course))
+    
+#        self.assertEqual(urlresolvers.resolve(utils.get_courseware_context(self.content, self.course)['courseware_url']).url_name, 
+#                         'courseware_position')
+       
+#########################################################################################
 
 
+class SafeContentTest(TestCase):
+
+    def setUp(self):
+
+        self.content0 = {'anonymous':False, 'anonymous_to_peers':False, 'username': 'shadowfax'}
+        self.content1 = {'anonymous':True, 'anonymous_to_peers':False, 'depth':None, 'username': 'shadowfax'}
+        self.content2 = {'anonymous':False, 'anonymous_to_peers':True}
+        self.content3 = {'anonymous':True, 'anonymous_to_peers':True}
+        #self.content4 = {'anonymous':True, 'anonymous_to_peers':True, 'children':self.content3}
+        
+        
+    def test_safe_content(self):
+    
+        self.assertEqual(utils.safe_content(self.content1), {'anonymous':True, 'anonymous_to_peers':False})
+        self.assertEqual(utils.safe_content(self.content2), {'anonymous':False, 'anonymous_to_peers':True})
+        self.assertEqual(utils.safe_content(self.content3), {'anonymous':True, 'anonymous_to_peers':True})
+        self.assertEqual(utils.safe_content(self.content0), {'anonymous':False, 'anonymous_to_peers':False, 'username':'shadowfax'})
+        #self.assertEqual(utils.safe_content(self.content4), {'anonymous':True, 'anonymous_to_peers':True, 'children':{'a':'b'}}
+
+#########################################################################################

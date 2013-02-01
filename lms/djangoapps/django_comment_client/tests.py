@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import string
 import random
 import collections
@@ -13,6 +14,27 @@ from student.models import CourseEnrollment, \
                            update_user_information, \
                            replicate_user_save
 from .permissions import *
+=======
+from django.contrib.auth.models import User, Group
+from django.core.urlresolvers import reverse
+from django.test import TestCase
+from django.test.client import RequestFactory
+from django.conf import settings
+
+from mock import Mock
+
+from override_settings import override_settings
+
+import xmodule.modulestore.django
+
+from student.models import CourseEnrollment
+
+from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
+from django.dispatch.dispatcher import _make_id
+import string
+import random
+from .permissions import has_permission
+>>>>>>> origin
 from .models import Role, Permission
 from .utils import strip_none
 from .utils import extract
@@ -25,6 +47,7 @@ from xmodule.modulestore.django import modulestore
 from xmodule.modulestore import Location
 from xmodule.course_module import CourseDescriptor
 
+<<<<<<< HEAD
 from .helpers import pluralize
 from .mustache_helpers import close_thread_text
 from .mustache_helpers import url_for_user
@@ -44,6 +67,60 @@ from xmodule.modulestore.django import modulestore
 #Tests for .utils
 
 class UtilsTestCase(TestCase):
+=======
+from xmodule.modulestore.django import modulestore
+from xmodule.modulestore import Location
+from xmodule.modulestore.xml_importer import import_from_xml
+from xmodule.modulestore.xml import XMLModuleStore
+
+import comment_client
+
+from courseware.tests.tests import PageLoader, TEST_DATA_XML_MODULESTORE
+
+#@override_settings(MODULESTORE=TEST_DATA_XML_MODULESTORE)
+#class TestCohorting(PageLoader):
+#    """Check that cohorting works properly"""
+#
+#    def setUp(self):
+#        xmodule.modulestore.django._MODULESTORES = {}
+#
+#        # Assume courses are there
+#        self.toy = modulestore().get_course("edX/toy/2012_Fall")
+#
+#        # Create two accounts
+#        self.student = 'view@test.com'
+#        self.student2 = 'view2@test.com'
+#        self.password = 'foo'
+#        self.create_account('u1', self.student, self.password)
+#        self.create_account('u2', self.student2, self.password)
+#        self.activate_user(self.student)
+#        self.activate_user(self.student2)
+#
+#    def test_create_thread(self):
+#        my_save = Mock()
+#        comment_client.perform_request = my_save
+#
+#        resp = self.client.post(
+#            reverse('django_comment_client.base.views.create_thread',
+#                    kwargs={'course_id': 'edX/toy/2012_Fall',
+#                            'commentable_id': 'General'}),
+#                                        {'some': "some",
+#                                         'data': 'data'})
+#        self.assertTrue(my_save.called)
+#
+#        #self.assertEqual(resp.status_code, 200)
+#        #self.assertEqual(my_save.something, "expected", "complaint if not true")
+#
+#        self.toy.metadata["cohort_config"] = {"cohorted": True}
+#
+#        # call the view again ...
+#
+#       # assert that different things happened
+
+
+
+class PermissionsTestCase(TestCase):
+>>>>>>> origin
     def random_str(self, length=15, chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for x in range(length)) 
 
