@@ -11,6 +11,17 @@ import json
 from .common import *
 from logsettings import get_logger_config
 import os
+import socket
+
+# Mapping of redis database numbers to puppet environments.
+redis_databases = {'sandbox': '0', 'edge_sandbox': '1',
+                   'stage': '2', 'edge_staging': '3',
+		   'prod': '4', 'edge_production': '5' }
+
+# Obtain the correct redis database by parsing on the first element
+# of the hoststring (a dirty hack, we should work out the puppet env
+# by tag.
+redis_db = redis_databases[socket.gethostname().split('-')[0]]
 
 # specified as an environment variable.  Typically this is set
 # in the service's upstart script and corresponds exactly to the service name.
@@ -48,8 +59,10 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 ################# NON-SECURE ENV CONFIG ##############################
 # Things like server locations, ports, etc.
 
-with open(ENV_ROOT / CONFIG_PREFIX + "env.json") as env_file:
-    ENV_TOKENS = json.load(env_file)
+import redis
+r = redis.StrictRedis(host='localhost', port=6379, db=redis_db)
+env = r.get('env')
+ENV_TOKENS = json.JSONDecoder().decode(env)
 
 SITE_NAME = ENV_TOKENS['SITE_NAME']
 SESSION_COOKIE_DOMAIN = ENV_TOKENS.get('SESSION_COOKIE_DOMAIN')
@@ -61,7 +74,7 @@ LOG_DIR = ENV_TOKENS['LOG_DIR']
 
 CACHES = ENV_TOKENS['CACHES']
 
-for feature, value in ENV_TOKENS.get('MITX_FEATURES', {}).items():
+for feature, value in ENV_TOKENS.get('MITX_FEATURES', {}).iteritems():
     MITX_FEATURES[feature] = value
 
 WIKI_ENABLED = ENV_TOKENS.get('WIKI_ENABLED', WIKI_ENABLED)
@@ -83,8 +96,8 @@ CERT_QUEUE = ENV_TOKENS.get("CERT_QUEUE", 'test-pull')
 
 ############################## SECURE AUTH ITEMS ###############
 # Secret things: passwords, access keys, etc.
-with open(ENV_ROOT / CONFIG_PREFIX + "auth.json") as auth_file:
-    AUTH_TOKENS = json.load(auth_file)
+auth = r.get('auth')
+AUTH_TOKENS = json.JSONDecoder().decode(auth)
 
 SECRET_KEY = AUTH_TOKENS['SECRET_KEY']
 
