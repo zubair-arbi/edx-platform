@@ -28,6 +28,7 @@ setup(
             "error = xmodule.error_module:ErrorDescriptor",
             "problem = xmodule.capa_module:CapaDescriptor",
             "problemset = xmodule.seq_module:SequenceDescriptor",
+            "randomize = xmodule.randomize_module:RandomizeDescriptor", 
             "section = xmodule.backcompat_module:SemanticSectionDescriptor",
             "sequential = xmodule.seq_module:SequenceDescriptor",
             "slides = xmodule.backcompat_module:TranslateCustomTagDescriptor",
@@ -36,7 +37,11 @@ setup(
             "videodev = xmodule.backcompat_module:TranslateCustomTagDescriptor",
             "videosequence = xmodule.seq_module:SequenceDescriptor",
             "discussion = xmodule.discussion_module:DiscussionDescriptor",
-            "graphical_slider_tool = xmodule.gst_module:GraphicalSliderToolDescriptor",
+            "course_info = xmodule.html_module:CourseInfoDescriptor",
+            "static_tab = xmodule.html_module:StaticTabDescriptor",
+            "custom_tag_template = xmodule.raw_module:RawDescriptor",
+            "about = xmodule.html_module:AboutDescriptor",
+            "graphical_slider_tool = xmodule.gst_module:GraphicalSliderToolDescriptor"
         ]
     }
 )

@@ -2,6 +2,7 @@ import cgi
 import datetime
 import dateutil
 import dateutil.parser
+import hashlib
 import json
 import logging
 import traceback
@@ -10,7 +11,6 @@ import sys
 
 from datetime import timedelta
 from lxml import etree
-from lxml.html import rewrite_links
 from pkg_resources import resource_string
 
 from capa.capa_problem import LoncapaProblem
@@ -26,6 +26,22 @@ log = logging.getLogger("mitx.courseware")
 #-----------------------------------------------------------------------------
 TIMEDELTA_REGEX = re.compile(r'^((?P<days>\d+?) day(?:s?))?(\s)?((?P<hours>\d+?) hour(?:s?))?(\s)?((?P<minutes>\d+?) minute(?:s)?)?(\s)?((?P<seconds>\d+?) second(?:s)?)?$')
 
+# Generated this many different variants of problems with rerandomize=per_student
+NUM_RANDOMIZATION_BINS = 20
+
+def randomization_bin(seed, problem_id):
+    """
+    Pick a randomization bin for the problem given the user's seed and a problem id.
+
+    We do this because we only want e.g. 20 randomizations of a problem to make analytics
+    interesting.  To avoid having sets of students that always get the same problems,
+    we'll combine the system's per-student seed with the problem id in picking the bin.
+    """
+    h = hashlib.sha1()
+    h.update(str(seed))
+    h.update(str(problem_id))
+    # get the first few digits of the hash, convert to an int, then mod.
+    return int(h.hexdigest()[:7], 16) % NUM_RANDOMIZATION_BINS
 
 def only_one(lst, default="", process=lambda x: x):
     """
@@ -117,9 +133,11 @@ class CapaModule(XModule):
             self.grace_period = None
             self.close_date = self.display_due_date
 
-        self.max_attempts = self.metadata.get('attempts', None)
-        if self.max_attempts is not None:
-            self.max_attempts = int(self.max_attempts)
+        max_attempts = self.metadata.get('attempts', None)
+        if max_attempts:
+            self.max_attempts = int(max_attempts)
+        else:
+            self.max_attempts = None
 
         self.show_answer = self.metadata.get('showanswer', 'closed')
 
@@ -137,13 +155,9 @@ class CapaModule(XModule):
 
         if self.rerandomize == 'never':
             self.seed = 1
-        elif self.rerandomize == "per_student" and hasattr(self.system, 'id'):
-            # TODO: This line is badly broken:
-            # (1) We're passing student ID to xmodule.
-            # (2) There aren't bins of students.  -- we only want 10 or 20 randomizations, and want to assign students
-            # to these bins, and may not want cohorts.  So e.g. hash(your-id, problem_id) % num_bins.
-            #     - analytics really needs small number of bins.
-            self.seed = system.id
+        elif self.rerandomize == "per_student" and hasattr(self.system, 'seed'):
+            # see comment on randomization_bin
+            self.seed = randomization_bin(system.seed, self.location.url)
         else:
             self.seed = None
 
@@ -228,6 +242,7 @@ class CapaModule(XModule):
             'element_id': self.location.html_id(),
             'id': self.id,
             'ajax_url': self.system.ajax_url,
+            'progress': Progress.to_js_status_str(self.get_progress())
         })
 
     def get_problem_html(self, encapsulate=True):
@@ -353,16 +368,8 @@ class CapaModule(XModule):
             html = '<div id="problem_{id}" class="problem" data-url="{ajax_url}">'.format(
                 id=self.location.html_id(), ajax_url=self.system.ajax_url) + html + "</div>"
 
-        # cdodge: OK, we have to do two rounds of url reference subsitutions
-        # one which uses the 'asset library' that is served by the contentstore and the
-        # more global /static/ filesystem based static content.
-        # NOTE: rewrite_content_links is defined in XModule
-        # This is a bit unfortunate and I'm sure we'll try to considate this into
-        # a one step process.
-        html = rewrite_links(html, self.rewrite_content_links)
-
         # now do the substitutions which are filesystem based, e.g. '/static/' prefixes
-        return self.system.replace_urls(html, self.metadata['data_dir'])
+        return self.system.replace_urls(html, self.metadata['data_dir'], course_namespace=self.location)
 
     def handle_ajax(self, dispatch, get):
         '''
@@ -467,7 +474,7 @@ class CapaModule(XModule):
         new_answers = dict()
         for answer_id in answers:
             try:
-                new_answer = {answer_id: self.system.replace_urls(answers[answer_id], self.metadata['data_dir'])}
+                new_answer = {answer_id: self.system.replace_urls(answers[answer_id], self.metadata['data_dir'], course_namespace=self.location)}
             except TypeError:
                 log.debug('Unable to perform URL substitution on answers[%s]: %s' % (answer_id, answers[answer_id]))
                 new_answer = {answer_id: answers[answer_id]}
@@ -666,11 +673,29 @@ class CapaDescriptor(RawDescriptor):
     stores_state = True
     has_score = True
     template_dir_name = 'problem'
+    mako_template = "widgets/problem-edit.html"
+    js = {'coffee': [resource_string(__name__, 'js/src/problem/edit.coffee')]}
+    js_module_name = "MarkdownEditingDescriptor"
+    css = {'scss': [resource_string(__name__, 'css/editor/edit.scss'), resource_string(__name__, 'css/problem/edit.scss')]}
 
     # Capa modules have some additional metadata:
     # TODO (vshnayder): do problems have any other metadata?  Do they
     # actually use type and points?
     metadata_attributes = RawDescriptor.metadata_attributes + ('type', 'points')
+
+    def get_context(self):
+        _context = RawDescriptor.get_context(self)
+        _context.update({'markdown': self.metadata.get('markdown', '')})
+        return _context
+
+    @property
+    def editable_metadata_fields(self):
+        """Remove metadata from the editable fields since it has its own editor"""
+        subset = super(CapaDescriptor,self).editable_metadata_fields
+        if 'markdown' in subset:
+            subset.remove('markdown')
+        return subset
+
 
     # VS[compat]
     # TODO (cpennington): Delete this method once all fall 2012 course are being
