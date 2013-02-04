@@ -46,7 +46,7 @@ django-sekizai==0.6.1
 django-mptt==0.5.5
 sorl-thumbnail==11.12
 networkx==1.7
-pygraphviz==1.1
+# pygraphviz==1.1
 -r repo-requirements.txt
 pil==1.1.7
 nltk==2.0.4
