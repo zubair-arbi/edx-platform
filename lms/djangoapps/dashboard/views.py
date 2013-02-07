@@ -349,7 +349,7 @@ def sysadmin_dashboard(request):
             def_ms.try_load_course(cdir)	# load into modulestore
             errlog = def_ms.errored_courses.get(cdir,'')
             if errlog:
-                msg += '<hr width="50%"><pre>%s</pre>' % escape(errlog)
+                msg += '<hr width="50%%"><pre>%s</pre>' % escape(errlog)
             else:
                 course = def_ms.courses[cdir]
                 msg += "Loaded course %s (%s)<br/>Errors:" % (cdir, course.display_name)
