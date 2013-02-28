@@ -72,13 +72,14 @@ class CertificateWhitelist(models.Model):
     (allow_certificate set to False in userprofile).
     """
     user = models.ForeignKey(User)
-    course_id = models.CharField(max_length=255, blank=True, default='')
+    course_id = models.CharField(max_length=200, blank=True, default='')
     whitelist = models.BooleanField(default=0)
+    whitelist2 = models.BooleanField(default=0)
 
 
 class GeneratedCertificate(models.Model):
     user = models.ForeignKey(User)
-    course_id = models.CharField(max_length=255, blank=True, default='')
+    course_id = models.CharField(max_length=200, blank=True, default='')
     verify_uuid = models.CharField(max_length=32, blank=True, default='')
     download_uuid = models.CharField(max_length=32, blank=True, default='')
     download_url = models.CharField(max_length=128, blank=True,  default='')
