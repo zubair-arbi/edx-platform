@@ -112,6 +112,7 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    'mongo_query_counter.middleware.MongoQueryCounter',
     'contentserver.middleware.StaticContentServer',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',

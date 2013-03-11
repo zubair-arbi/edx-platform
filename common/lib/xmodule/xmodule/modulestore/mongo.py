@@ -20,6 +20,9 @@ from .draft import DraftModuleStore
 from .exceptions import (ItemNotFoundError,
                          DuplicateItemError)
 
+import threading
+_mongo_counter_threadlocal = threading.local()
+
 # TODO (cpennington): This code currently operates under the assumption that
 # there is only one revision for each item. Once we start versioning inside the CMS,
 # that assumption will have to change
@@ -117,7 +120,6 @@ class MongoModuleStore(ModuleStoreBase):
     """
     A Mongodb backed ModuleStore
     """
-
     # TODO (cpennington): Enable non-filesystem filestores
     def __init__(self, host, db, collection, fs_root, render_template,
                  port=27017, default_class=None,
@@ -155,6 +157,13 @@ class MongoModuleStore(ModuleStoreBase):
         self.render_template = render_template
         self.metadata_inheritance_cache = {}
 
+    def increment_db_query_counter(self):
+        global _mongo_counter_threadlocal
+        try:
+            _mongo_counter_threadlocal.db_queries = _mongo_counter_threadlocal.db_queries + 1
+        except:
+            pass
+
     def get_metadata_inheritance_tree(self, location):
         '''
         TODO (cdodge) This method can be deleted when the 'split module store' work has been completed
@@ -176,6 +185,8 @@ class MongoModuleStore(ModuleStoreBase):
 
         # call out to the DB
         resultset = self.collection.find(query, record_filter)
+
+        self.increment_db_query_counter()
 
         results_by_url = {}
         root = None
@@ -268,6 +279,7 @@ class MongoModuleStore(ModuleStoreBase):
                     '_id': {'$in': [namedtuple_to_son(Location(child)) for child in children]}
                 }
                 to_process = self.collection.find(query)
+                self.increment_db_query_counter()
             else:
                 to_process = []
             # If depth is None, then we just recurse until we hit all the descendents
@@ -334,6 +346,7 @@ class MongoModuleStore(ModuleStoreBase):
             location_to_query(location, wildcard=False),
             sort=[('revision', pymongo.ASCENDING)],
         )
+        self.increment_db_query_counter()
         if item is None:
             raise ItemNotFoundError(location)
         return item
@@ -386,7 +399,7 @@ class MongoModuleStore(ModuleStoreBase):
             location_to_query(location),
             sort=[('revision', pymongo.ASCENDING)],
         )
-
+        self.increment_db_query_counter()
         modules = self._load_items(list(items), depth)
         return modules
 
@@ -397,6 +410,8 @@ class MongoModuleStore(ModuleStoreBase):
         """
         try:
             source_item = self.collection.find_one(location_to_query(source))
+            self.increment_db_query_counter()
+
             source_item['_id'] = Location(location).dict()
             self.collection.insert(source_item)
             item = self._load_items([source_item])[0]
@@ -532,6 +547,7 @@ class MongoModuleStore(ModuleStoreBase):
         location = Location.ensure_fully_specified(location)
         items = self.collection.find({'definition.children': location.url()},
                                     {'_id': True})
+        self.increment_db_query_counter()
         return [i['_id'] for i in items]
 
     def get_errored_courses(self):

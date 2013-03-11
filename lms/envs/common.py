@@ -360,6 +360,7 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    'mongo_query_counter.middleware.MongoQueryCounter',
     'contentserver.middleware.StaticContentServer',
     'django_comment_client.middleware.AjaxExceptionMiddleware',
     'django.middleware.common.CommonMiddleware',
