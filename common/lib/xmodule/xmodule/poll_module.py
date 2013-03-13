@@ -88,7 +88,7 @@ class PollModule(XModule):
                                'total': sum(self.poll_answers.values())
                                })
         elif dispatch == 'reset_poll' and self.voted and \
-                self.descriptor.xml_attributes.get('reset', 'True').lower() != 'false':
+                self.descriptor.metadata.get('reset', 'True').lower() != 'false':
             self.voted = False
 
             # FIXME: fix this, when xblock will support mutable types.
@@ -131,7 +131,7 @@ class PollModule(XModule):
         temp_poll_answers = self.poll_answers
 
          # Fill self.poll_answers, prepare data for template context.
-        for answer in self.descriptor.xml_attributes.get('answers'):
+        for answer in self.descriptor.metadata.get('answers'):
             # Set default count for answer = 0.
             if answer['id'] not in temp_poll_answers:
                 temp_poll_answers[answer['id']] = 0
@@ -139,12 +139,12 @@ class PollModule(XModule):
         self.poll_answers = temp_poll_answers
 
         return json.dumps({'answers': answers_to_json,
-            'question': cgi.escape(self.descriptor.xml_attributes.get('question')),
+            'question': cgi.escape(self.descriptor.metadata.get('question')),
             # to show answered poll after reload:
             'poll_answer': self.poll_answer,
             'poll_answers': self.poll_answers if self.voted else {},
             'total': sum(self.poll_answers.values()) if self.voted else 0,
-            'reset': str(self.descriptor.xml_attributes.get('reset', 'true')).lower()})
+            'reset': str(self.descriptor.metadata.get('reset', 'true')).lower()})
 
 
 class PollDescriptor(MakoModuleDescriptor, XmlDescriptor):

@@ -90,9 +90,9 @@ class ConditionalModule(XModule):
 
 
     def _get_condition(self):
-        if self.descriptor.xml_attributes.get('required'):
+        if self.descriptor.metadata.get('required'):
             #old style:
-            xml_value = (self.descriptor.xml_attributes.get('required').
+            xml_value = (self.descriptor.metadata.get('required').
                     replace('required_', ''))
             attr_name = self.conditions_map.get(xml_value)
             return xml_value, attr_name
@@ -100,7 +100,7 @@ class ConditionalModule(XModule):
             #new style
             # Get first valid condition.
             for xml_attr, attr_name in self.conditions_map.iteritems():
-                xml_value = self.descriptor.xml_attributes.get(xml_attr)
+                xml_value = self.descriptor.metadata.get(xml_attr)
                 if xml_value:
                     return xml_value, attr_name
             raise Exception('Error in conditional module: unknown condition "%s"'
@@ -146,7 +146,7 @@ class ConditionalModule(XModule):
         an AJAX call.
         """
         if not self.is_condition_satisfied():
-            message = self.descriptor.xml_attributes.get('message')
+            message = self.descriptor.metadata.get('message')
             context = {'module': self,
                        'message': message}
             html = self.system.render_template('conditional_module.html',
@@ -278,5 +278,6 @@ class ConditionalDescriptor(SequenceDescriptor):
         if self.metadata.get('required'):
             return [self.system.load_item(loc) for loc in self.required_module_locations]
         else:
+            # import ipdb; ipdb.set_trace()
             return ConditionalDescriptor.parse_sources(
-                self.xml_attributes, self.system, True)
+                self.metadata, self.system, True)
