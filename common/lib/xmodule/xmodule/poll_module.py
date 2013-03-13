@@ -46,6 +46,8 @@ class PollModule(XModule):
         self.voted = None
         self.poll_answer = ''
 
+        self.poll_answers= {}
+
         if instance_state is not None:
             instance_state = json.loads(instance_state)
             self.voted = instance_state['voted']
@@ -128,9 +130,8 @@ class PollModule(XModule):
         # FIXME: fix this, when xblock support mutable types.
         # Now we use this hack.
         temp_poll_answers = self.poll_answers
-
          # Fill self.poll_answers, prepare data for template context.
-        for answer in self.descriptor.metadata.get('answers'):
+        for answer in self.definition.get('answers'):
             # Set default count for answer = 0.
             if answer['id'] not in temp_poll_answers:
                 temp_poll_answers[answer['id']] = 0
@@ -138,7 +139,7 @@ class PollModule(XModule):
         self.poll_answers = temp_poll_answers
 
         return json.dumps({'answers': answers_to_json,
-            'question': cgi.escape(self.descriptor.metadata.get('question')),
+            'question': cgi.escape(self.definition.get('question')),
             # to show answered poll after reload:
             'poll_answer': self.poll_answer,
             'poll_answers': self.poll_answers if self.voted else {},
