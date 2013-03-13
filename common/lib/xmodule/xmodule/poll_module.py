@@ -43,7 +43,6 @@ class PollModule(XModule):
                  shared_state=None, **kwargs):
         XModule.__init__(self, system, location, definition, descriptor, instance_state,
                          shared_state, **kwargs)
-
         self.voted = None
         self.poll_answer = ''
 
@@ -195,8 +194,8 @@ class PollDescriptor(MakoModuleDescriptor, XmlDescriptor):
             'question': stringify_children(xml_object_copy)
         }
         children = []
-
-        return (definition, children)
+        definition['children'] = children
+        return definition
 
     def definition_to_xml(self, resource_fs):
         """Return an xml element representing to this definition."""
