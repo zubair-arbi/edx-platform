@@ -71,19 +71,24 @@ class ConditionalModuleTest(unittest.TestCase):
 
     def test_conditional_module(self):
         """Make sure that conditional module works"""
-
+        # import ipdb; ipdb.set_trace()
         print "Starting import"
         course = self.get_course('conditional_and_poll')
 
         print "Course: ", course
         print "id: ", course.id
 
+        instance_states = dict(problem=None)
+        shared_state = None
+
         def inner_get_module(descriptor):
             if isinstance(descriptor, Location):
                 location = descriptor
                 descriptor = self.modulestore.get_instance(course.id, location, depth=None)
             location = descriptor.location
-            return descriptor.xmodule(self.test_system)
+            instance_state = instance_states.get(location.category, None)
+            print "inner_get_module, location=%s, inst_state=%s" % (location, instance_state)
+            return descriptor.xmodule_constructor(self.test_system)(instance_state, shared_state)
 
         # edx - HarvardX
         # cond_test - ER22x
