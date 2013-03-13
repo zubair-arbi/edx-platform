@@ -227,7 +227,7 @@ class ConditionalDescriptor(SequenceDescriptor):
     def definition_from_xml(cls, xml_object, system):
         children = []
         show_tag_list = []
-
+        # import ipdb; ipdb.set_trace()
         if xml_object.get('required'):
             # old syntax
             for child in xml_object:
@@ -239,6 +239,7 @@ class ConditionalDescriptor(SequenceDescriptor):
                     msg = "Unable to load child when parsing Conditional."
                     log.exception(msg)
                     system.error_tracker(msg)
+            return {'show_tag_list': show_tag_list, 'children': children}
         else:  # new syntax
             for child in xml_object:
                 if child.tag == 'show':
@@ -255,7 +256,7 @@ class ConditionalDescriptor(SequenceDescriptor):
                         msg = "Unable to load child when parsing Conditional."
                         log.exception(msg)
                         system.error_tracker(msg)
-            return {'show_tag_list': show_tag_list}, children
+            return {'show_tag_list': show_tag_list, 'children': children}
 
     def definition_to_xml(self, resource_fs):
         xml_object = etree.Element(self._tag_name)
