@@ -7,10 +7,14 @@ def get_course_id(module):
                 module.system.ajax_url.split('/')[4]
 
 def _message(reqm, message):
+    name = reqm.display_name
+    if name is None:
+        name = self.url_name.replace('_', ' ')
+
     return message.format(link="<a href={url}>{url_name}</a>".format(
         url = reverse('jump_to', kwargs=dict(course_id=get_course_id(reqm),
                         location=reqm.location.url())),
-        url_name = reqm.display_name_with_default))
+        url_name = name))
 %>
 % if message:
 	% for reqm in module.required_modules:
