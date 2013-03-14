@@ -92,10 +92,10 @@ class ConditionalModule(XModule):
     def _get_condition(self):
         if self.descriptor.metadata.get('required'):
             #old style:
-            xml_value = (self.descriptor.metadata.get('required').
-                    replace('required_', ''))
-            attr_name = self.conditions_map.get(xml_value)
-            return xml_value, attr_name
+            xml_attr = (self.descriptor.metadata.get('condition').
+                    replace('require_', ''))
+            attr_name = self.conditions_map.get(xml_attr)
+            return True, attr_name
         else:
             #new style
             # Get first valid condition.
