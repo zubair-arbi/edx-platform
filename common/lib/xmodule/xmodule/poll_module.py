@@ -27,13 +27,13 @@ log = logging.getLogger(__name__)
 
 class XField(dict):
     def __init__(self, field_name, definition_id):
-        # Get data from DB by definition_id using
-        # courseware_xmodulecontentfield table.
         from courseware.models import XModuleContentField
 
         self.field_name = field_name
         self.definition_id = definition_id
 
+        # Get data from DB by `definition_id` using
+        # `courseware_xmodulecontentfield` table.
         try:
             self.db_data = XModuleContentField.objects.get(
                 definition_id=definition_id)
@@ -46,7 +46,7 @@ class XField(dict):
 
     def save(self):
         """Save data to DB using
-        courseware_xmodulecontentfield table.
+        `courseware_xmodulecontentfield` table.
         """
         from courseware.models import XModuleContentField
 
