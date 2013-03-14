@@ -147,6 +147,12 @@ class ConditionalModule(XModule):
         """
         if not self.is_condition_satisfied():
             message = self.descriptor.metadata.get('message')
+            if self.descriptor.metadata.get('required'):
+                xml_attr = (self.descriptor.metadata.get('condition').
+                    replace('require_', ''))
+                #old style:
+                #need custom message
+                message = "{link} must be %s for this to become visible." % xml_attr
             context = {'module': self,
                        'message': message}
             html = self.system.render_template('conditional_module.html',
