@@ -46,12 +46,12 @@ class PollModule(XModule):
         self.voted = None
         self.poll_answer = ''
 
-        self.poll_answers= {}
+        self.poll_answers = {}
 
         if instance_state is not None:
             instance_state = json.loads(instance_state)
             self.voted = instance_state['voted']
-            self.poll_asnwer = instance_state['poll_answer']
+            self.poll_answer = instance_state['poll_answer']
 
 
     def get_instance_state(self):
@@ -70,6 +70,7 @@ class PollModule(XModule):
         Returns:
             json string
         """
+        self.dump_poll()
         if dispatch in self.poll_answers and not self.voted:
             # FIXME: fix this, when xblock will support mutable types.
             # Now we use this hack.
@@ -137,7 +138,6 @@ class PollModule(XModule):
                 temp_poll_answers[answer['id']] = 0
             answers_to_json[answer['id']] = cgi.escape(answer['text'])
         self.poll_answers = temp_poll_answers
-
         return json.dumps({'answers': answers_to_json,
             'question': cgi.escape(self.definition.get('question')),
             # to show answered poll after reload:
