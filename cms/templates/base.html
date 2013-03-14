@@ -33,7 +33,12 @@
         % if user.is_authenticated():
             mixpanel.identify( "${ user.id }" );
             mixpanel.name_tag( "${ user.username } ");
-            console.log("mixpanel: ${user.username} / ${user.id}");
+            mixpanel.people.set({
+                "$email": "${ user.email }",
+                "$created": "${ user.date_joined }",
+                "$last_login": "${ user.last_login }",
+                "username": "${ user.username }"
+            });
         % else:
             console.log("mixpanel: no user");
         % endif
