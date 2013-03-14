@@ -21,7 +21,6 @@ from xmodule.x_module import XModule
 from xmodule.stringify import stringify_children
 from xmodule.mako_module import MakoModuleDescriptor
 from xmodule.xml_module import XmlDescriptor
-from courseware.models import XModuleContentField
 
 log = logging.getLogger(__name__)
 
@@ -30,15 +29,17 @@ class XField(dict):
     def __init__(self, field_name, definition_id):
         # Get data from DB by definition_id using
         # courseware_xmodulecontentfield table.
+        from courseware.models import XModuleContentField
+
         self.field_name = field_name
         self.definition_id = definition_id
 
-        self.db_data = XModuleContentField.objects.get(
-            definition_id=definition_id)
-
-        if self.db_data:
+        try:
+            self.db_data = XModuleContentField.objects.get(
+                definition_id=definition_id)
             value = json.loads(self.db_data.value)
-        else:
+        except XModuleContentField.DoesNotExist:
+            self.db_data = None
             value = {}
 
         super(XField, self).__init__(value)
@@ -47,10 +48,15 @@ class XField(dict):
         """Save data to DB using
         courseware_xmodulecontentfield table.
         """
+        from courseware.models import XModuleContentField
+
         json_value = json.dumps(self)
 
         if self.db_data:
-            self.db_data.update(value=json_value)
+            self.db_data.value = json_value
+
+            # TODO: in django 1.5 use .save(update_fields=['value'])
+            self.db_data.save()
         else:
             self.db_data = XModuleContentField.objects.create(
                 field_name=self.field_name,
@@ -81,7 +87,6 @@ class PollModule(XModule):
         self.poll_answer = ''
 
         self.poll_answers = XField('poll_answers', self.location.url())
-        import ipdb; ipdb.set_trace()
 
         if instance_state is not None:
             instance_state = json.loads(instance_state)
