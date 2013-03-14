@@ -95,7 +95,7 @@ class ConditionalModule(XModule):
             xml_attr = (self.descriptor.metadata.get('condition').
                     replace('require_', ''))
             attr_name = self.conditions_map.get(xml_attr)
-            return True, attr_name
+            return str(True), attr_name
         else:
             #new style
             # Get first valid condition.
