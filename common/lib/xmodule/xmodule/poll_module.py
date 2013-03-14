@@ -21,8 +21,42 @@ from xmodule.x_module import XModule
 from xmodule.stringify import stringify_children
 from xmodule.mako_module import MakoModuleDescriptor
 from xmodule.xml_module import XmlDescriptor
+from courseware.models import XModuleContentField
 
 log = logging.getLogger(__name__)
+
+
+class XField(dict):
+    def __init__(self, field_name, definition_id):
+        # Get data from DB by definition_id using
+        # courseware_xmodulecontentfield table.
+        self.field_name = field_name
+        self.definition_id = definition_id
+
+        self.db_data = XModuleContentField.objects.get(
+            definition_id=definition_id)
+
+        if self.db_data:
+            value = json.loads(self.db_data.value)
+        else:
+            value = {}
+
+        super(XField, self).__init__(value)
+
+    def save(self):
+        """Save data to DB using
+        courseware_xmodulecontentfield table.
+        """
+        json_value = json.dumps(self)
+
+        if self.db_data:
+            self.db_data.update(value=json_value)
+        else:
+            self.db_data = XModuleContentField.objects.create(
+                field_name=self.field_name,
+                definition_id=self.definition_id,
+                value=json_value)
+
 
 
 class PollModule(XModule):
@@ -46,7 +80,8 @@ class PollModule(XModule):
         self.voted = None
         self.poll_answer = ''
 
-        self.poll_answers = {}
+        self.poll_answers = XField('poll_answers', self.location.url())
+        import ipdb; ipdb.set_trace()
 
         if instance_state is not None:
             instance_state = json.loads(instance_state)
@@ -72,11 +107,8 @@ class PollModule(XModule):
         """
         self.dump_poll()
         if dispatch in self.poll_answers and not self.voted:
-            # FIXME: fix this, when xblock will support mutable types.
-            # Now we use this hack.
-            temp_poll_answers = self.poll_answers
-            temp_poll_answers[dispatch] += 1
-            self.poll_answers = temp_poll_answers
+            self.poll_answers[dispatch] += 1
+            self.poll_answers.save()
 
             self.voted = True
             self.poll_answer = dispatch
@@ -93,11 +125,8 @@ class PollModule(XModule):
                 self.descriptor.metadata.get('reset', 'True').lower() != 'false':
             self.voted = False
 
-            # FIXME: fix this, when xblock will support mutable types.
-            # Now we use this hack.
-            temp_poll_answers = self.poll_answers
-            temp_poll_answers[self.poll_answer] -= 1
-            self.poll_answers = temp_poll_answers
+            self.poll_answers[self.poll_answer] -= 1
+            self.poll_answers.save()
 
             self.poll_answer = ''
             return json.dumps({'status': 'success'})
@@ -121,23 +150,17 @@ class PollModule(XModule):
         Returns:
             string - Serialize json.
         """
-        # FIXME: hack for resolving caching `default={}` during definition
-        # poll_answers field
-        if self.poll_answers is None:
-            self.poll_answers = {}
 
         answers_to_json = OrderedDict()
 
-        # FIXME: fix this, when xblock support mutable types.
-        # Now we use this hack.
-        temp_poll_answers = self.poll_answers
          # Fill self.poll_answers, prepare data for template context.
         for answer in self.definition.get('answers'):
             # Set default count for answer = 0.
-            if answer['id'] not in temp_poll_answers:
-                temp_poll_answers[answer['id']] = 0
+            if answer['id'] not in self.poll_answers:
+                self.poll_answers[answer['id']] = 0
             answers_to_json[answer['id']] = cgi.escape(answer['text'])
-        self.poll_answers = temp_poll_answers
+        self.poll_answers.save()
+
         return json.dumps({'answers': answers_to_json,
             'question': cgi.escape(self.definition.get('question')),
             # to show answered poll after reload:
