@@ -396,6 +396,8 @@ function createNewUnit(e) {
     parent = $(this).data('parent');
     template = $(this).data('template');
 
+    mixpanel.track('create', {'class': 'unit'});
+
     $.post('/clone_item',
         {'parent_location': parent,
             'template': template,
@@ -427,6 +429,8 @@ function _deleteItem($el) {
         return;
 
     var id = $el.data('id');
+
+    mixpanel.track('delete', {'id': id});
 
     $.post('/delete_item',
         {'id': id, 'delete_children': true, 'delete_all_versions': true},
@@ -592,6 +596,7 @@ function hideToastMessage(e) {
 
 function addNewSection(e, isTemplate) {
     e.preventDefault();
+    mixpanel.track('create', {'class': 'section'});
 
     $(e.target).addClass('disabled');
 
@@ -620,6 +625,8 @@ function saveNewSection(e) {
     var template = $saveButton.data('template');
     var display_name = $(this).find('.new-section-name').val();
 
+    mixpanel.track('save', {'class': 'section', 'display_name': display_name});
+
     $.post('/clone_item', {
             'parent_location': parent,
             'template': template,
@@ -640,6 +647,7 @@ function cancelNewSection(e) {
 
 function addNewCourse(e) {
     e.preventDefault();
+    mixpanel.track('create', {'class': 'course'});
 
     $(e.target).hide();
     var $newCourse = $($('#new-course-template').html());
@@ -665,6 +673,14 @@ function saveNewCourse(e) {
         return;
     }
 
+    mixpanel.track('save', {
+            'class': 'course', 
+            'org': org, 
+            'number': number, 
+            'display_name': display_name
+        });
+
+
     $.post('/create_new_course', {
             'template': template,
             'org': org,
@@ -673,7 +689,8 @@ function saveNewCourse(e) {
         },
         function (data) {
             if (data.id != undefined) {
-                window.location = '/' + data.id.replace(/.*:\/\//, '');
+
+                window.location = '/' + data.id.replace(/.*:\/\//, '');                
             } else if (data.ErrMsg != undefined) {
                 alert(data.ErrMsg);
             }
@@ -688,6 +705,8 @@ function cancelNewCourse(e) {
 
 function addNewSubsection(e) {
     e.preventDefault();
+    mixpanel.track('create', {'class': 'subsection'});
+
     var $section = $(this).closest('.courseware-section');
     var $newSubsection = $($('#new-subsection-template').html());
     $section.find('.subsection-list > ol').append($newSubsection);
@@ -713,6 +732,8 @@ function saveNewSubsection(e) {
     var template = $(this).find('.new-subsection-name-save').data('template');
 
     var display_name = $(this).find('.new-subsection-name-input').val();
+
+    mixpanel.track('save', {'class': 'subsection', 'display_name': display_name});
 
     $.post('/clone_item', {
             'parent_location': parent,
