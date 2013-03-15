@@ -229,10 +229,9 @@ class PollDescriptor(MakoModuleDescriptor, XmlDescriptor):
     def definition_to_xml(self, resource_fs):
         """Return an xml element representing to this definition."""
         poll_str = '<{tag_name}>{text}</{tag_name}>'.format(
-            tag_name=self._tag_name, text=self.question)
+            tag_name=self._tag_name, text=self.definition['question'])
         xml_object = etree.fromstring(poll_str)
         xml_object.set('display_name', self.display_name)
-        xml_object.set('id', self.id)
 
         def add_child(xml_obj, answer):
             child_str = '<{tag_name} id="{id}">{text}</{tag_name}>'.format(
@@ -241,7 +240,7 @@ class PollDescriptor(MakoModuleDescriptor, XmlDescriptor):
             child_node = etree.fromstring(child_str)
             xml_object.append(child_node)
 
-        for answer in self.answers:
+        for answer in self.definition['answers']:
             add_child(xml_object, answer)
 
         return xml_object

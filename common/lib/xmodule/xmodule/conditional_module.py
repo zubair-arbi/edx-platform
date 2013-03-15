@@ -179,6 +179,7 @@ class ConditionalModule(XModule):
 
 class ConditionalDescriptor(SequenceDescriptor):
     module_class = ConditionalModule
+    _tag_name = 'conditional'
 
     filename_extension = "xml"
 
@@ -268,7 +269,7 @@ class ConditionalDescriptor(SequenceDescriptor):
         xml_object = etree.Element(self._tag_name)
         for child in self.get_children():
             location = str(child.location)
-            if location in self.show_tag_list:
+            if location in self.definition['show_tag_list']:
                 show_str = '<{tag_name} sources="{sources}" />'.format(
                     tag_name='show', sources=location)
                 xml_object.append(etree.fromstring(show_str))
