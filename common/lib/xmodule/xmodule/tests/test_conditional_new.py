@@ -120,7 +120,7 @@ class ConditionalModuleTest(unittest.TestCase):
         self.assertFalse(any(['This is a secret' in item for item in html]))
 
         # now change state of the capa problem to make it completed
-        inner_get_module(Location('i4x://HarvardX/ER22x/problem/choiceprob')).attempts = 1
+        instance_states['problem'] = json.dumps({'attempts': 1})
 
         ajax = json.loads(module.handle_ajax('', ''))
         print "post-attempt ajax: ", ajax

@@ -106,19 +106,23 @@ class ConditionalModuleTest(unittest.TestCase):
         html = module.get_html()
         print "html type: ", type(html)
         print "html: ", html
-        html_expect = "{'ajax_url': 'courses/course_id/modx/a_location', 'element_id': 'i4x-edX-cond_test-conditional-condone', 'id': 'i4x://edX/cond_test/conditional/condone'}"
+        html_expect = "{'ajax_url': 'courses/course_id/modx/a_location', 'element_id': 'i4x-edX-cond_test-conditional-condone', 'id': 'i4x://edX/cond_test/conditional/condone', 'depends': 'i4x-edX-cond_test-problem-choiceprob'}"
         self.assertEqual(html, html_expect)
 
         gdi =  module.get_display_items()
         print "gdi=", gdi
 
         ajax = json.loads(module.handle_ajax('', ''))
-        self.assertTrue('xmodule.conditional_module' in ajax['html'])
+        html = ajax['html']
+        self.assertTrue(isinstance(html, list))
+        self.assertTrue('must be attempted for this to become visible.' in html[0])
         print "ajax: ", ajax
 
         # now change state of the capa problem to make it completed
         instance_states['problem'] = json.dumps({'attempts': 1})
 
         ajax = json.loads(module.handle_ajax('', ''))
-        self.assertTrue('This is a secret' in ajax['html'])
+        html = ajax['html']
+        self.assertTrue(isinstance(html, list))
+        self.assertTrue('This is a secret' in html[0])
         print "post-attempt ajax: ", ajax
