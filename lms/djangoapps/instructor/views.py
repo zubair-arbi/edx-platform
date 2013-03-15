@@ -32,7 +32,7 @@ from django_comment_client.models import (Role,
                                           FORUM_ROLE_COMMUNITY_TA)
 from django_comment_client.utils import has_forum_access
 from psychometrics import psychoanalyze
-from student.models import CourseEnrollment, CourseEnrollmentAllowed
+from student.models import CourseEnrollment, CourseEnrollmentAllowed, UserProfile
 from xmodule.course_module import CourseDescriptor
 from xmodule.modulestore import Location
 from xmodule.modulestore.django import modulestore
@@ -266,6 +266,7 @@ def instructor_dashboard(request, course_id):
             else:
                 student_to_reset = User.objects.get(username=unique_student_identifier)
             progress_url = reverse('student_progress', kwargs={'course_id': course_id, 'student_id': student_to_reset.id})
+            student_profile = UserProfile.objects.get(user=student_to_reset)
             track.views.server_track(request,
                                     '{instructor} requested progress page for {student} in {course}'.format(
                                         student=student_to_reset,
@@ -273,7 +274,7 @@ def instructor_dashboard(request, course_id):
                                         course=course_id),
                                     {},
                                     page='idashboard')
-            msg += "<a href='{0}' target='_blank'> Progress page for username: {1} with email address: {2}</a>.".format(progress_url, student_to_reset.username, student_to_reset.email)
+            msg += "<a href='{0}' target='_blank'> Progress page</a> for {1}, username: {2}, email address: <a href='mailto:{3}'>{3}</a>.".format(progress_url, student_profile.name, student_to_reset.username, student_to_reset.email)
         except:
             msg += "<font color='red'>Couldn't find student with that username.  </font>"
 
