@@ -329,7 +329,7 @@ def index(request, course_id, chapter=None, section=None,
 
             # check here if this section *is* a timed module.
             if section_module.category == 'timelimit':
-                timer_context = update_timelimit_module(user, course_id, student_module_cache,
+                timer_context = update_timelimit_module(user, course_id, section_model_data_cache,
                                                         section_descriptor, section_module)
                 if 'timer_expiration_duration' in timer_context:
                     context.update(timer_context)

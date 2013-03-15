@@ -6,7 +6,7 @@ import logging
 import json
 import time
 import random
-
+from uuid import uuid4
 from urlparse import urlsplit, urlunsplit
 
 from django.contrib.auth.models import User, Group
@@ -17,14 +17,19 @@ from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 
 import xmodule.modulestore.django
+from xmodule.modulestore.mongo import MongoModuleStore
+from xmodule.templates import update_templates
+#from terrain.factories import CourseFactory, ItemFactory
+from xmodule.tests.factories import CourseFactory, ItemFactory
+from capa.tests.response_xml_factory import OptionResponseXMLFactory
 
 # Need access to internal func to put users in the right group
 from courseware import grades
-from courseware.model_data import ModelDataCache
+from courseware.model_data import ModelDataCache, StudentModule
 from courseware.access import (has_access, _course_staff_group_name,
                                course_beta_test_group_name)
 
-from student.models import Registration
+from student.models import Registration, CourseEnrollment
 from xmodule.error_module import ErrorDescriptor
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore import Location
@@ -55,6 +60,7 @@ def mongo_store_config(data_dir):
 
     Use of this config requires mongo to be running
     '''
+    collection_name = 'modulestore_%s' % uuid4().hex
     return {
         'default': {
             'ENGINE': 'xmodule.modulestore.mongo.MongoModuleStore',
@@ -62,7 +68,18 @@ def mongo_store_config(data_dir):
                 'default_class': 'xmodule.raw_module.RawDescriptor',
                 'host': 'localhost',
                 'db': 'test_xmodule',
-                'collection': 'modulestore',
+                'collection': collection_name,
+                'fs_root': data_dir,
+                'render_template': 'mitxmako.shortcuts.render_to_string',
+            }
+        },
+       'direct': {
+            'ENGINE': 'xmodule.modulestore.mongo.MongoModuleStore',
+            'OPTIONS': {
+                'default_class': 'xmodule.raw_module.RawDescriptor',
+                'host': 'localhost',
+                'db': 'test_xmodule',
+                'collection': collection_name,
                 'fs_root': data_dir,
                 'render_template': 'mitxmako.shortcuts.render_to_string',
             }
@@ -954,3 +971,206 @@ class TestCourseGrader(LoginEnrollmentTestCase):
         # Now we answer the final question (worth half of the grade)
         self.submit_question_answer('FinalQuestion', ['Correct', 'Correct'])
         self.check_grade_percent(1.0)   # Hooray! We got 100%
+
+TEST_COURSE_ORG = 'edx'
+TEST_COURSE_NAME = 'Test Course'
+TEST_COURSE_NUMBER = '1.23x'
+TEST_SECTION_NAME = "Problem"
+
+@override_settings(MODULESTORE=TEST_DATA_MONGO_MODULESTORE)
+class TestRegrading(PageLoader):
+    '''Check that all students' answers to a problem can be regraded once 
+       definition of what is correct has been redefined
+    '''
+    
+    @staticmethod
+    def get_user_email(username):
+        return '{0}@test.com'.format(username)
+    
+    @staticmethod
+    def get_user_password(username):
+        return 'foo'
+
+    def login_username(self, username):
+        self.login(TestRegrading.get_user_email(username), TestRegrading.get_user_password(username))
+        self.current_user = username
+
+
+    def setUp(self):
+        # define the 'direct' module store, so that templates can be loaded into it:
+        xmodule.modulestore.django._MODULESTORES = {}
+        self.module_store = modulestore('direct')
+        self.module_store.collection.drop()
+        update_templates()
+        # make sure that the 'default' datastore used by LMS is the same:
+        # NOPE.  Should work because 'default' and 'direct' are configured identically.
+        # xmodule.modulestore.django._MODULESTORES['default'] = self.module_store
+        
+        # Create the course
+        course = CourseFactory.create(org=TEST_COURSE_ORG, 
+                                      number=TEST_COURSE_NUMBER,
+                                      display_name=TEST_COURSE_NAME)
+
+        # Add a chapter to the course to contain problems
+        chapter = ItemFactory.create(parent_location=course.location,
+                                     display_name=TEST_SECTION_NAME)
+
+        problem_section = ItemFactory.create(parent_location=chapter.location,
+                                             template='i4x://edx/templates/sequential/Empty',
+                                             display_name=TEST_SECTION_NAME)
+        
+        factory = OptionResponseXMLFactory()
+        factory_args = {'question_text': 'The correct answer is Correct Option',
+                        'options': ['Incorrect Option', 'Correct Option'],
+                        'correct_option': 'Correct Option',
+                        'num_responses': 2}
+        problem_xml = factory.build_xml(**factory_args)
+        problem_item = ItemFactory.create(parent_location=problem_section.location,
+                                          template="i4x://edx/templates/problem/Blank_Common_Problem",
+                                          display_name=str("H1P1"),
+                                          data=problem_xml)
+
+
+        # import_from_xml(module_store, TEST_DATA_DIR, ['edX/graded/2012_Fall'])
+#        import_from_xml(self.module_store, TEST_DATA_DIR, ['graded'])
+
+        # self.graded_course = self.module_store.get_courses()[0]
+        self.graded_course = course
+        
+        # create a test student
+        #self.students = []
+        def create_student(username):
+            email = TestRegrading.get_user_email(username)
+            self.create_account(username, email, TestRegrading.get_user_password(username))
+            self.activate_user(email)
+            # It doesn't work to call self.enroll(), as it tries to access the default
+            # modulestore() when looking for the course being enrolled in.
+            # But the template code is hardwired to use modulestore('direct').
+            #self.enroll(self.graded_course)
+            user = User.objects.get(username=username)
+            CourseEnrollment.objects.get_or_create(user=user, course_id=self.graded_course.id)
+
+            #self.students.append(username)
+        create_student('u1')
+        create_student('u2')
+        create_student('u3')
+        create_student('u4')
+        self.logout()
+        
+    def render_problem(self, problem_url_name):
+        modx_url = reverse('modx_dispatch',
+                            kwargs={
+                                'course_id': self.graded_course.id,
+                                'location': TestRegrading.problem_location(problem_url_name),
+                                'dispatch': 'problem_get', })
+        resp = self.client.post(modx_url, {})
+        return resp
+        
+    def submit_question_answer(self, problem_url_name, responses):
+        modx_url = reverse('modx_dispatch',
+                            kwargs={
+                                'course_id': self.graded_course.id,
+                                'location': TestRegrading.problem_location(problem_url_name),
+                                'dispatch': 'problem_check', })
+
+        resp = self.client.post(modx_url, {
+            'input_i4x-edx-1_23x-problem-{0}_2_1'.format(problem_url_name): responses[0],
+            'input_i4x-edx-1_23x-problem-{0}_3_1'.format(problem_url_name): responses[1],
+        })
+        print "modx_url", modx_url, "responses", responses
+        print "resp", resp
+
+        return resp
+
+    @staticmethod    
+    def problem_location(problem_url_name):
+        """
+        The field names of a problem are hard to determine. This method only works
+        for the problems used in the edX/graded course, which has fields named in the
+        following form:
+        input_i4x-edX-graded-problem-H1P3_2_1
+        input_i4x-edX-graded-problem-H1P3_2_2
+        """
+        return "i4x://{org}/{number}/problem/{problem_url_name}".format(org=TEST_COURSE_ORG, 
+                                                         number=TEST_COURSE_NUMBER,
+                                                         problem_url_name=problem_url_name)
+        
+    def get_score(self, descriptor):
+#        model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
+#            self.graded_course.id, user(self.current_user), descriptor)
+        student_module = StudentModule.objects.get(
+            course_id=self.graded_course.id,
+            student=User.objects.get(username=self.current_user),
+            module_type=descriptor.location.category,
+            module_state_key=descriptor.location.url(),
+        )        
+        return (student_module.grade, student_module.max_grade)
+        
+    def check_score(self, expected_score):
+        (score, max_score) = self.get_score(self.descriptor)
+        self.assertEqual(score, expected_score, "Scores were not equal")
+        self.assertEqual(max_score, 2, "Scores were not equal")
+        
+    def testRegrading(self):
+        '''Run regrade scenario'''
+        # get descriptor:
+        problem_url_name = 'H1P1'
+        location = TestRegrading.problem_location(problem_url_name)
+        self.descriptor = self.module_store.get_instance(self.graded_course.id, location)
+
+        # first store answers for each of the separate users:
+        self.login_username('u1')
+        self.render_problem(problem_url_name)
+        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Incorrect Option'])
+        self.check_score(0)
+        self.logout()
+        self.login_username('u2')
+        self.render_problem(problem_url_name)
+        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Correct Option'])
+        self.check_score(1)
+        self.logout()
+        self.login_username('u3')
+        self.render_problem(problem_url_name)
+        self.submit_question_answer(problem_url_name, ['Correct Option', 'Incorrect Option'])
+        self.check_score(1)
+        self.logout()
+        self.login_username('u4')
+        self.render_problem(problem_url_name)
+        self.submit_question_answer(problem_url_name, ['Correct Option', 'Correct Option'])
+        self.check_score(2)
+        self.logout()
+
+        # update the data in the problem definition
+        # TODO: where do we get the current data?
+        # current_data = self.descriptor.
+        factory = OptionResponseXMLFactory()
+        factory_args = {'question_text': 'The correct answer is Correct Option',
+                        'options': ['Incorrect Option', 'Correct Option'],
+                        'correct_option': 'Incorrect Option',
+                        'num_responses': 2}
+        problem_xml = factory.build_xml(**factory_args)
+        self.module_store.update_item(location, problem_xml)
+
+        # confirm that simply rendering the problem again does not result in a change
+        # in the grade:        
+        self.login_username('u1')
+        self.render_problem(problem_url_name)
+        self.check_score(0)
+        # but if we re-submit the same answers, we get a different grade:
+        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Incorrect Option'])
+        self.check_score(2)
+        self.logout()
+        self.login_username('u2')
+        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Correct Option'])
+        self.check_score(1)
+        self.logout()
+        self.login_username('u3')
+        self.submit_question_answer(problem_url_name, ['Correct Option', 'Incorrect Option'])
+        self.check_score(1)
+        self.logout()
+        self.login_username('u4')
+        self.submit_question_answer(problem_url_name, ['Correct Option', 'Correct Option'])
+        self.check_score(0)
+        self.logout()
+        
+        
