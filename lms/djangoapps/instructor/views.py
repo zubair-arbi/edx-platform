@@ -208,6 +208,64 @@ def instructor_dashboard(request, course_id):
         track.views.server_track(request, 'dump-answer-dist-csv', {}, page='idashboard')
         return return_csv('answer_dist_{0}.csv'.format(course_id), get_answers_distribution(request, course_id))
 
+    elif "Regrade Problem" in action:
+        # get the form data 
+        # give the option of regrading an individual student
+        unique_student_identifier = request.POST.get('unique_student_identifier', '')
+        problem_to_regrade = request.POST.get('problem_to_regrade', '')
+
+        if problem_to_regrade[-4:] == ".xml":
+            problem_to_regrade = problem_to_regrade[:-4]
+
+        # try to uniquely id student by email address or username
+        # TODO: distinguish between a mis-defined student and no specific student
+        # (meaning all students)....
+        try:
+            if "@" in unique_student_identifier:
+                student_to_regrade = User.objects.get(email=unique_student_identifier)
+            elif unique_student_identifier is not None:
+                student_to_regrade = User.objects.get(username=unique_student_identifier)
+            msg += "Found a single student to regrade.  "
+        except:
+            student_to_regrade = None
+            msg += "<font color='red'>Couldn't find student with that email or username.  </font>"
+
+        if student_to_regrade is not None:
+            # find the module in question
+            try:
+                (org, course_name, run) = course_id.split("/")
+                module_state_key = "i4x://" + org + "/" + course_name + "/problem/" + problem_to_regrade
+                module_to_reset = StudentModule.objects.get(student_id=student_to_regrade.id,
+                                                          course_id=course_id,
+                                                          module_state_key=module_state_key)
+                msg += "Found module to reset.  "
+            except Exception as e:
+                msg += "<font color='red'>Couldn't find module with that urlname.  </font>"
+
+            # modify the problem's state
+            try:
+                # load the state json
+                problem_state = json.loads(module_to_reset.state)
+                old_number_of_attempts = problem_state["attempts"]
+                problem_state["attempts"] = 0
+
+                # save
+                module_to_reset.state = json.dumps(problem_state)
+                module_to_reset.save()
+                track.views.server_track(request,
+                                        '{instructor} reset attempts from {old_attempts} to 0 for {student} on problem {problem} in {course}'.format(
+                                            old_attempts=old_number_of_attempts,
+                                            student=student_to_regrade,
+                                            problem=module_to_reset.module_state_key,
+                                            instructor=request.user,
+                                            course=course_id),
+                                        {},
+                                        page='idashboard')
+                msg += "<font color='green'>Module state successfully reset!</font>"
+            except:
+                msg += "<font color='red'>Couldn't reset module state.  </font>"
+
+
     elif "Reset student's attempts" in action or "Delete student state for problem" in action:
         # get the form data
         unique_student_identifier = request.POST.get('unique_student_identifier', '')

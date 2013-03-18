@@ -446,6 +446,7 @@ class CapaModule(CapaFields, XModule):
             'problem_get': self.get_problem,
             'problem_check': self.check_problem,
             'problem_reset': self.reset_problem,
+            'problem_regrade': self.regrade_problem,
             'problem_save': self.save_problem,
             'problem_show': self.get_answer,
             'score_update': self.update_score,
@@ -778,6 +779,67 @@ class CapaModule(CapaFields, XModule):
 
         if hasattr(self.system, 'psychometrics_handler'):  # update PsychometricsData using callback
             self.system.psychometrics_handler(self.get_state_for_lcp())
+
+        # render problem into HTML
+        html = self.get_problem_html(encapsulate=False)
+
+        return {'success': success,
+                'contents': html,
+                }
+
+    def regrade_problem(self, get):
+        ''' Checks whether answers to a problem are correct, and
+            returns a map of correct/incorrect answers:
+
+            {'success' : 'correct' | 'incorrect' | AJAX alert msg string,
+             'contents' : html}
+            '''
+        event_info = dict()
+        event_info['state'] = self.lcp.get_state()
+        event_info['problem_id'] = self.location.url()
+
+        # Problem submitted. Student should reset before checking again
+        if not self.done:
+            event_info['failure'] = 'unanswered'
+            self.system.track_function('save_problem_regrade_fail', event_info)
+            raise NotFoundError('Problem must be answered before it can be graded again')
+
+        try:
+            correct_map = self.lcp.regrade_existing_answers()
+            self.set_state_from_lcp()
+        except StudentInputError as inst:
+            log.exception("StudentInputError in capa_module:problem_regrade")
+            return {'success': inst.message}
+        except Exception, err:
+            if self.system.DEBUG:
+                msg = "Error checking problem: " + str(err)
+                msg += '\nTraceback:\n' + traceback.format_exc()
+                return {'success': msg}
+            raise
+
+        # regrading should have no effect on attempts:
+        # self.attempts = self.attempts + 1
+        # self.lcp.done = True
+
+        self.set_state_from_lcp()
+        self.publish_grade()
+
+        # success = correct if ALL questions in this problem are correct
+        success = 'correct'
+        for answer_id in correct_map:
+            if not correct_map.is_correct(answer_id):
+                success = 'incorrect'
+
+        # NOTE: We are logging both full grading and queued-grading submissions. In the latter,
+        #       'success' will always be incorrect
+        event_info['correct_map'] = correct_map.get_dict()
+        event_info['success'] = success
+        event_info['attempts'] = self.attempts
+        self.system.track_function('save_problem_regrade', event_info)
+
+        # TODO: figure out if psychometrics should be called on regrading requests
+        if hasattr(self.system, 'psychometrics_handler'):  # update PsychometricsData using callback
+            self.system.psychometrics_handler(self.get_instance_state())
 
         # render problem into HTML
         html = self.get_problem_html(encapsulate=False)

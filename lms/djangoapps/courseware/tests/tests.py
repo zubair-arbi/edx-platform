@@ -19,8 +19,7 @@ from django.test.utils import override_settings
 import xmodule.modulestore.django
 from xmodule.modulestore.mongo import MongoModuleStore
 from xmodule.templates import update_templates
-#from terrain.factories import CourseFactory, ItemFactory
-from xmodule.tests.factories import CourseFactory, ItemFactory
+from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from capa.tests.response_xml_factory import OptionResponseXMLFactory
 
 # Need access to internal func to put users in the right group
@@ -640,7 +639,7 @@ class TestViewAuth(LoginEnrollmentTestCase):
             urls = reverse_urls(['about_course'], course)
             urls.append(reverse('courses'))
             # Need separate test for change_enrollment, since it's a POST view
-            #urls.append(reverse('change_enrollment'))
+            # urls.append(reverse('change_enrollment'))
 
             return urls
 
@@ -928,7 +927,7 @@ class TestCourseGrader(LoginEnrollmentTestCase):
         # Only get half of the first problem correct
         self.submit_question_answer('H1P1', ['Correct', 'Incorrect'])
         self.check_grade_percent(0.06)
-        self.assertEqual(earned_hw_scores(), [1.0, 0, 0])   # Order matters
+        self.assertEqual(earned_hw_scores(), [1.0, 0, 0])  # Order matters
         self.assertEqual(score_for_hw('Homework1'), [1.0, 0.0])
 
         # Get both parts of the first problem correct
@@ -961,16 +960,16 @@ class TestCourseGrader(LoginEnrollmentTestCase):
 
         # Third homework
         self.submit_question_answer('H3P1', ['Correct', 'Correct'])
-        self.check_grade_percent(0.42)   # Score didn't change
+        self.check_grade_percent(0.42)  # Score didn't change
         self.assertEqual(earned_hw_scores(), [4.0, 4.0, 2.0])
 
         self.submit_question_answer('H3P2', ['Correct', 'Correct'])
-        self.check_grade_percent(0.5)   # Now homework2 dropped. Score changes
+        self.check_grade_percent(0.5)  # Now homework2 dropped. Score changes
         self.assertEqual(earned_hw_scores(), [4.0, 4.0, 4.0])
 
         # Now we answer the final question (worth half of the grade)
         self.submit_question_answer('FinalQuestion', ['Correct', 'Correct'])
-        self.check_grade_percent(1.0)   # Hooray! We got 100%
+        self.check_grade_percent(1.0)  # Hooray! We got 100%
 
 TEST_COURSE_ORG = 'edx'
 TEST_COURSE_NAME = 'Test Course'
@@ -1007,7 +1006,7 @@ class TestRegrading(PageLoader):
         # xmodule.modulestore.django._MODULESTORES['default'] = self.module_store
         
         # Create the course
-        course = CourseFactory.create(org=TEST_COURSE_ORG, 
+        course = CourseFactory.create(org=TEST_COURSE_ORG,
                                       number=TEST_COURSE_NUMBER,
                                       display_name=TEST_COURSE_NAME)
 
@@ -1020,9 +1019,9 @@ class TestRegrading(PageLoader):
                                              display_name=TEST_SECTION_NAME)
         
         factory = OptionResponseXMLFactory()
-        factory_args = {'question_text': 'The correct answer is Correct Option',
-                        'options': ['Incorrect Option', 'Correct Option'],
-                        'correct_option': 'Correct Option',
+        factory_args = {'question_text': 'The correct answer is Option 2',
+                        'options': ['Option 1', 'Option 2'],
+                        'correct_option': 'Option 2',
                         'num_responses': 2}
         problem_xml = factory.build_xml(**factory_args)
         problem_item = ItemFactory.create(parent_location=problem_section.location,
@@ -1038,7 +1037,7 @@ class TestRegrading(PageLoader):
         self.graded_course = course
         
         # create a test student
-        #self.students = []
+        # self.students = []
         def create_student(username):
             email = TestRegrading.get_user_email(username)
             self.create_account(username, email, TestRegrading.get_user_password(username))
@@ -1046,11 +1045,11 @@ class TestRegrading(PageLoader):
             # It doesn't work to call self.enroll(), as it tries to access the default
             # modulestore() when looking for the course being enrolled in.
             # But the template code is hardwired to use modulestore('direct').
-            #self.enroll(self.graded_course)
+            # self.enroll(self.graded_course)
             user = User.objects.get(username=username)
             CourseEnrollment.objects.get_or_create(user=user, course_id=self.graded_course.id)
 
-            #self.students.append(username)
+            # self.students.append(username)
         create_student('u1')
         create_student('u2')
         create_student('u3')
@@ -1081,6 +1080,21 @@ class TestRegrading(PageLoader):
         print "resp", resp
 
         return resp
+        
+    def regrade_question_answer(self, problem_url_name):
+        modx_url = reverse('modx_dispatch',
+                            kwargs={
+                                'course_id': self.graded_course.id,
+                                'location': TestRegrading.problem_location(problem_url_name),
+                                'dispatch': 'problem_regrade', })
+
+        resp = self.client.post(modx_url, {
+                                           # add arguments here eventually
+                                           })
+        print "modx_url", modx_url
+        print "resp", resp
+
+        return resp
 
     @staticmethod    
     def problem_location(problem_url_name):
@@ -1091,11 +1105,11 @@ class TestRegrading(PageLoader):
         input_i4x-edX-graded-problem-H1P3_2_1
         input_i4x-edX-graded-problem-H1P3_2_2
         """
-        return "i4x://{org}/{number}/problem/{problem_url_name}".format(org=TEST_COURSE_ORG, 
+        return "i4x://{org}/{number}/problem/{problem_url_name}".format(org=TEST_COURSE_ORG,
                                                          number=TEST_COURSE_NUMBER,
                                                          problem_url_name=problem_url_name)
         
-    def get_score(self, descriptor):
+    def get_student_module(self, descriptor):
 #        model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
 #            self.graded_course.id, user(self.current_user), descriptor)
         student_module = StudentModule.objects.get(
@@ -1104,12 +1118,14 @@ class TestRegrading(PageLoader):
             module_type=descriptor.location.category,
             module_state_key=descriptor.location.url(),
         )        
-        return (student_module.grade, student_module.max_grade)
+        return student_module
         
-    def check_score(self, expected_score):
-        (score, max_score) = self.get_score(self.descriptor)
-        self.assertEqual(score, expected_score, "Scores were not equal")
-        self.assertEqual(max_score, 2, "Scores were not equal")
+    def check_state(self, expected_score, expected_max_score, expected_attempts):
+        module = self.get_student_module(self.descriptor)
+        self.assertEqual(module.grade, expected_score, "Scores were not equal")
+        self.assertEqual(module.max_grade, expected_max_score, "Max scores were not equal")
+        attempts = json.loads(module.state)['attempts']
+        self.assertEqual(attempts, expected_attempts, "Attempts were not equal")
         
     def testRegrading(self):
         '''Run regrade scenario'''
@@ -1121,32 +1137,32 @@ class TestRegrading(PageLoader):
         # first store answers for each of the separate users:
         self.login_username('u1')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Incorrect Option'])
-        self.check_score(0)
+        self.submit_question_answer(problem_url_name, ['Option 1', 'Option 1'])
+        self.check_state(0,2,1)
         self.logout()
         self.login_username('u2')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Correct Option'])
-        self.check_score(1)
+        self.submit_question_answer(problem_url_name, ['Option 1', 'Option 2'])
+        self.check_state(1,2,1)
         self.logout()
         self.login_username('u3')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Correct Option', 'Incorrect Option'])
-        self.check_score(1)
+        self.submit_question_answer(problem_url_name, ['Option 2', 'Option 1'])
+        self.check_state(1,2,1)
         self.logout()
         self.login_username('u4')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Correct Option', 'Correct Option'])
-        self.check_score(2)
+        self.submit_question_answer(problem_url_name, ['Option 2', 'Option 2'])
+        self.check_state(2,2,1)
         self.logout()
 
         # update the data in the problem definition
         # TODO: where do we get the current data?
         # current_data = self.descriptor.
         factory = OptionResponseXMLFactory()
-        factory_args = {'question_text': 'The correct answer is Correct Option',
-                        'options': ['Incorrect Option', 'Correct Option'],
-                        'correct_option': 'Incorrect Option',
+        factory_args = {'question_text': 'The correct answer is Option 1',
+                        'options': ['Option 1', 'Option 2'],
+                        'correct_option': 'Option 1',
                         'num_responses': 2}
         problem_xml = factory.build_xml(**factory_args)
         self.module_store.update_item(location, problem_xml)
@@ -1155,22 +1171,21 @@ class TestRegrading(PageLoader):
         # in the grade:        
         self.login_username('u1')
         self.render_problem(problem_url_name)
-        self.check_score(0)
-        # but if we re-submit the same answers, we get a different grade:
-        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Incorrect Option'])
-        self.check_score(2)
+        self.check_state(0,2,1)
+        
+        # okay, now we're ready to try to regrade the problem
+        self.regrade_question_answer(problem_url_name)
+        self.check_state(2,2,1)
         self.logout()
         self.login_username('u2')
-        self.submit_question_answer(problem_url_name, ['Incorrect Option', 'Correct Option'])
-        self.check_score(1)
+        self.regrade_question_answer(problem_url_name)
+        self.check_state(1,2,1)
         self.logout()
         self.login_username('u3')
-        self.submit_question_answer(problem_url_name, ['Correct Option', 'Incorrect Option'])
-        self.check_score(1)
+        self.regrade_question_answer(problem_url_name)
+        self.check_state(1,2,1)
         self.logout()
         self.login_username('u4')
-        self.submit_question_answer(problem_url_name, ['Correct Option', 'Correct Option'])
-        self.check_score(0)
+        self.regrade_question_answer(problem_url_name)
+        self.check_state(0,2,1)
         self.logout()
-        
-        
