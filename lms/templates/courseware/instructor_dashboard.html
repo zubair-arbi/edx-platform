@@ -192,19 +192,67 @@ function goto( mode)
     </ul>
     <hr width="40%" style="align:left">
 
+    <hr width="40%" style="align:left">
   %endif
 
     <H2>Student-specific grade inspection and adjustment</h2>
-    <p>edX email address or their username: </p>
-    <p><input type="text" name="unique_student_identifier">  <input type="submit" name="action" value="Get link to student's progress page"></p>
-    <p>and, if you want to reset the number of attempts for a problem, the urlname of that problem</p>
-    <p> <input type="text" name="problem_to_reset" size="60"> <input type="submit" name="action" value="Reset student's attempts">  </p>
+    <p>Specify the student's edX email address or their username here:
+      <input type="text" name="unique_student_identifier"> </p>
 
+    <div>
+      <p>Click here to have link to student's progress page appear below</p>
+      <p><input type="submit" name="action" value="Get link to student's progress page"></p>
+      <p></p>
+    </div>
+    <div>
+      <p>To reset the student's number of attempts for a problem, specify the student above,
+	 and the urlname of the problem here:</p>
+      <p><input type="text" name="student_problem_to_reset" size="60">
+	 <input type="submit" name="action" value="Reset student's attempts"></p>
+      <p></p>
+    </div>
+    <div>
+      <p>To request that the student's existing submission for a problem be regraded, specify the student above,
+	 and the urlname of the problem here:</p>
+      <p><input type="text" name="student_problem_to_regrade" size="60">
+	 <input type="submit" name="action" value="Regrade student's problem submission">
+	 <input type="submit" name="action" value="Regrade student's problem submission if improved"></p>
+      <p></p>
+    </div>
     %if instructor_access:
-    <p> You may also delete the entire state of a student for a problem:
-    <input type="submit" name="action" value="Delete student state for problem">  </p>
-    <p>To delete the state of other XBlocks specify modulename/urlname, eg
+    <div>
+      <p>To delete the entire state of a student for a problem, specify the student above, and the url of the problem here:</p>
+      <p><input type="text" name="student_problem_to_delete">
+	 <input type="submit" name="action" value="Delete student state for problem"></p>
+      <p>To delete the state of other XBlocks specify modulename/urlname, eg
        <tt>combinedopenended/Humanities_SA_Peer</tt></p>
+    </div>
+    %endif
+
+    <hr width="40%" style="align:left">
+
+    <H2>Problem-specific grade inspection and adjustment</h2>
+
+    <div>
+      <p>To reset the number of attempts for all students on a problem, specify the urlname of the problem here:</p>
+      <p><input type="text" name="problem_to_reset">
+	 <input type="submit" name="action" value="Reset ALL students' attempts"></p>
+      <p></p>
+    </div>
+    <div>
+      <p>To request that all students' existing submissions for a problem be regraded,
+	 specify the urlname of the problem here:</p>
+      <p><input type="text" name="problem_to_regrade">
+	 <input type="submit" name="action" value="Regrade ALL students' problem submissions">
+	 <input type="submit" name="action" value="Regrade ALL students' problem submissions if improved"></p>
+      <p></p>
+    </div>
+    %if instructor_access:
+    <div>
+      <p>To delete the entire state of all students for a problem, specify the url of the problem here:</p>
+      <p><input type="text" name="problem_to_delete">
+	 <input type="submit" name="action" value="Delete ALL students' state for problem"></p>
+    </div>
     %endif
 
  %endif

@@ -56,7 +56,7 @@ class ModelDataCache(object):
         self.course_id = course_id
         self.user = user
 
-        if user.is_authenticated():
+        if not user.is_anonymous:
             for scope, fields in self._fields_to_cache().items():
                 for field_object in self._retrieve_fields(scope, fields):
                     self.cache[self._cache_key_from_field_object(scope, field_object)] = field_object
@@ -69,9 +69,9 @@ class ModelDataCache(object):
         course_id: the course in the context of which we want StudentModules.
         user: the django user for whom to load modules.
         descriptor: An XModuleDescriptor
-        depth is the number of levels of descendent modules to load StudentModules for, in addition to
-            the supplied descriptor. If depth is None, load all descendent StudentModules
-        descriptor_filter is a function that accepts a descriptor and return wether the StudentModule
+        depth is the number of levels of descendant modules to load StudentModules for, in addition to
+            the supplied descriptor. If depth is None, load all descendant StudentModules
+        descriptor_filter is a function that accepts a descriptor and return whether the StudentModule
             should be cached
         select_for_update: Flag indicating whether the rows should be locked until end of transaction
         """

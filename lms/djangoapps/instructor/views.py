@@ -29,6 +29,9 @@ from courseware.access import (has_access, get_access_group_name,
                                course_beta_test_group_name)
 from courseware.courses import get_course_with_access
 from courseware.models import StudentModule
+from courseware.model_data import ModelDataCache
+from courseware.module_render import get_module
+
 from django_comment_client.models import (Role,
                                           FORUM_ROLE_ADMINISTRATOR,
                                           FORUM_ROLE_MODERATOR,
@@ -143,6 +146,15 @@ def instructor_dashboard(request, course_id):
         (group, created) = Group.objects.get_or_create(name=name)
         return group
 
+    def get_module_state_key(course_id, problem_url_name):
+        if problem_url_name[-4:] == ".xml":
+            problem_url_name = problem_url_name[:-4]
+            
+        (org, course_name, run) = course_id.split("/")
+        module_state_key = "i4x://" + org + "/" + course_name + "/problem/" + problem_url_name
+        return module_state_key
+        
+        
     # process actions from form POST
     action = request.POST.get('action', '')
     use_offline = request.POST.get('use_offline_grades', False)
@@ -208,72 +220,93 @@ def instructor_dashboard(request, course_id):
         track.views.server_track(request, 'dump-answer-dist-csv', {}, page='idashboard')
         return return_csv('answer_dist_{0}.csv'.format(course_id), get_answers_distribution(request, course_id))
 
-    elif "Regrade Problem" in action:
+    elif 'Regrade Problem' in action:
         # get the form data 
-        # give the option of regrading an individual student
-        unique_student_identifier = request.POST.get('unique_student_identifier', '')
         problem_to_regrade = request.POST.get('problem_to_regrade', '')
+        module_state_key = get_module_state_key(course_id, problem_to_regrade)
 
-        if problem_to_regrade[-4:] == ".xml":
-            problem_to_regrade = problem_to_regrade[:-4]
+        # find the modules in question
+        modules_to_regrade = StudentModule.objects.find(course_id=course_id,
+                                                        module_state_key=module_state_key)
 
-        # try to uniquely id student by email address or username
-        # TODO: distinguish between a mis-defined student and no specific student
-        # (meaning all students)....
-        try:
-            if "@" in unique_student_identifier:
-                student_to_regrade = User.objects.get(email=unique_student_identifier)
-            elif unique_student_identifier is not None:
-                student_to_regrade = User.objects.get(username=unique_student_identifier)
-            msg += "Found a single student to regrade.  "
-        except:
-            student_to_regrade = None
-            msg += "<font color='red'>Couldn't find student with that email or username.  </font>"
-
-        if student_to_regrade is not None:
-            # find the module in question
+        # give the option of regrading an individual student. If not specified,
+        # then regrades all students who have responded to a problem so far
+        unique_student_identifier = request.POST.get('unique_student_identifier', None)
+        if unique_student_identifier is not None:
+            # try to uniquely id student by email address or username
             try:
-                (org, course_name, run) = course_id.split("/")
-                module_state_key = "i4x://" + org + "/" + course_name + "/problem/" + problem_to_regrade
-                module_to_reset = StudentModule.objects.get(student_id=student_to_regrade.id,
-                                                          course_id=course_id,
-                                                          module_state_key=module_state_key)
-                msg += "Found module to reset.  "
-            except Exception as e:
-                msg += "<font color='red'>Couldn't find module with that urlname.  </font>"
-
-            # modify the problem's state
-            try:
-                # load the state json
-                problem_state = json.loads(module_to_reset.state)
-                old_number_of_attempts = problem_state["attempts"]
-                problem_state["attempts"] = 0
-
-                # save
-                module_to_reset.state = json.dumps(problem_state)
-                module_to_reset.save()
-                track.views.server_track(request,
-                                        '{instructor} reset attempts from {old_attempts} to 0 for {student} on problem {problem} in {course}'.format(
-                                            old_attempts=old_number_of_attempts,
-                                            student=student_to_regrade,
-                                            problem=module_to_reset.module_state_key,
-                                            instructor=request.user,
-                                            course=course_id),
-                                        {},
-                                        page='idashboard')
-                msg += "<font color='green'>Module state successfully reset!</font>"
+                if "@" in unique_student_identifier:
+                    student_to_regrade = User.objects.get(email=unique_student_identifier)
+                elif unique_student_identifier is not None:
+                    student_to_regrade = User.objects.get(username=unique_student_identifier)
+                msg += "Found a single student to regrade.  "
+                modules_to_regrade = modules_to_regrade.filter(student_id=student_to_regrade.id)
             except:
-                msg += "<font color='red'>Couldn't reset module state.  </font>"
+                modules_to_regrade = None
+                msg += "<font color='red'>Couldn't find student with that email or username.  </font>"
 
+        num_regraded = 0
+        num_attempted = 0
+        if modules_to_regrade is not None:
+            module_descriptor = modulestore().get_instance(course_id, module_state_key)
+            for module_to_regrade in modules_to_regrade:
+                num_attempted += 1
+                try:
+                    student = module_to_regrade.student
+                    # regrade the student's problem submission
+                    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(course_id, student, 
+                                                                                       module_descriptor)
+                    # request is passed to get_module to provide xqueue-related URL information
+                    instance = get_module(student, request, module_state_key, model_data_cache, 
+                                          course_id, grade_bucket_type='regrade')
+                    if instance is None:
+                        # Either permissions just changed, or someone is trying to be clever
+                        # and load something they shouldn't have access to.
+                        log.debug("No module {loc} for student {student}--access denied?".format(loc=module_state_key,
+                                                                                                 student=student))
+                    elif not hasattr(instance, 'regrade_problem'):
+                        # TODO: if the first instance doesn't have a regrade method, we should
+                        # probably assume that no other instances will either.
+                        pass
+                    else:
+                        # Let the module handle the AJAX
+                        # (we could do this, or we could just call the instance.regrade_problem method directly, if
+                        # it exists.  That way we don't have to go through json.)
+                        # ajax_return = instance.handle_ajax('problem_regrade', {})
+                        result = instance.regrade_problem({})
+                        if 'success' not in result:
+                            pass
+                        elif result['success'] != 'correct' and result['success'] != 'incorrect':
+                            log.debug("error processing regrade call for problem {loc} and student {student}: "
+                                      "{msg}".format(msg=result['success'], loc=module_state_key, student=student))
+                        else:
+                            track.views.server_track(request,
+                                                     '{instructor} regrade problem {problem} for student {student} '
+                                                     'in {course}'.format(student=student.id,
+                                                                          problem=module_to_regrade.module_state_key,
+                                                                          instructor=request.user,
+                                                                          course=course_id),
+                                                     {},
+                                                     page='idashboard')
+                            num_regraded += 1
+                except:
+                    pass
+                
+            if num_attempted == 0:
+                msg += "<font color='red'>Couldn't find any modules with that urlname.  </font>"
+            elif num_regraded == 0:
+                msg += "<font color='red'>Problem failed to be regraded for any of {0} students!</font>".format(num_attempted)
+            elif num_regraded == num_attempted:
+                msg += "<font color='green'>Problem successfully regraded for {0} students!</font>".format(num_attempted)
+            elif num_regraded < num_attempted:
+                msg += "<font color='red'>Problem regraded for {0} of {1} students!</font>".format(num_regraded, num_attempted)
 
     elif "Reset student's attempts" in action or "Delete student state for problem" in action:
         # get the form data
         unique_student_identifier = request.POST.get('unique_student_identifier', '')
         problem_to_reset = request.POST.get('problem_to_reset', '')
-
-        if problem_to_reset[-4:] == ".xml":
-            problem_to_reset = problem_to_reset[:-4]
-
+        module_state_key = get_module_state_key(course_id, problem_to_reset)
+        
         # try to uniquely id student by email address or username
         try:
             if "@" in unique_student_identifier:
@@ -293,10 +326,10 @@ def instructor_dashboard(request, course_id):
                 (org, course_name, run) = course_id.split("/")
                 module_state_key = "i4x://" + org + "/" + course_name + "/" + problem_to_reset
                 module_to_reset = StudentModule.objects.get(student_id=student_to_reset.id,
-                                                          course_id=course_id,
-                                                          module_state_key=module_state_key)
+                                                            course_id=course_id,
+                                                            module_state_key=module_state_key)
                 msg += "Found module to reset.  "
-            except Exception as e:
+            except Exception:
                 msg += "<font color='red'>Couldn't find module with that urlname.  </font>"
 
         if "Delete student state for problem" in action:
