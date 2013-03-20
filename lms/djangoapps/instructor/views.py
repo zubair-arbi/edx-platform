@@ -262,7 +262,7 @@ def instructor_dashboard(request, course_id):
                                         course=course_id),
                                     {},
                                     page='idashboard')
-            msg += "<a href='{0}' target='_blank'> Progress page for username: {1} with email address: {2}</a>.".format(progress_url, student.username, student_to_reset.email)
+            msg += "<a href='{0}' target='_blank'> Progress page for username: {1} with email address: {2}</a>.".format(progress_url, student.username, student.email)
         except:
             msg += "<font color='red'>Couldn't find student with that username.  </font>"
 
@@ -650,6 +650,10 @@ def instructor_dashboard(request, course_id):
 
 
 def _get_module_state_key(course_id, problem_url_name):
+    # check to see if it is already a full location URL:
+    if problem_url_name.startswith('i4x:'):
+        return problem_url_name
+    
     if problem_url_name[-4:] == ".xml":
         problem_url_name = problem_url_name[:-4]
 
@@ -677,8 +681,8 @@ def _update_problem_module_state(request, course_id, problem_url, student, updat
         return "<font color='red'>Couldn't find problem with that urlname.  </font>"
 
     # find the module in question
-    modules_to_update = StudentModule.objects.find(course_id=course_id,
-                                                   module_state_key=module_state_key)
+    modules_to_update = StudentModule.objects.filter(course_id=course_id,
+                                                     module_state_key=module_state_key)
 
     # give the option of regrading an individual student. If not specified,
     # then regrades all students who have responded to a problem so far
@@ -698,16 +702,23 @@ def _update_problem_module_state(request, course_id, problem_url, student, updat
             return msg
 
     # done with looping through all modules, so just return final statistics:
-    if num_attempted == 0:
-        msg = "<font color='red'>Unable to find any students with submissions to be {action}.  </font>"
+    if student is not None:
+        if num_attempted == 0:
+            msg = "<font color='red'>Unable to find submission to be {action} for student '{student}' and problem '{problem}'.  </font>"
+        elif num_updated == 0:
+            msg = "<font color='red'>Problem failed to be {action} for student '{student}' and problem '{problem}'!</font>"
+        else:
+            msg = "<font color='green'>Problem successfully {action} for student '{student}' and problem '{problem}'</font>"
+    elif num_attempted == 0:
+        msg = "<font color='red'>Unable to find any students with submissions to be {action} for problem '{problem}'.  </font>"
     elif num_updated == 0:
-        msg = "<font color='red'>Problem failed to be {action} for any of {attempted} students!</font>"
+        msg = "<font color='red'>Problem failed to be {action} for any of {attempted} students for problem '{problem}'!</font>"
     elif num_updated == num_attempted:
-        msg = "<font color='green'>Problem successfully {action} for {attempted} students!</font>"
+        msg = "<font color='green'>Problem successfully {action} for {attempted} students for problem '{problem}'!</font>"
     elif num_updated < num_attempted:
-        msg = "<font color='red'>Problem {action} for {updated} of {attempted} students!</font>"
+        msg = "<font color='red'>Problem {action} for {updated} of {attempted} students for problem '{problem}'!</font>"
 
-    msg = msg.format(action=action_name, updated=num_updated, attempted=num_attempted)
+    msg = msg.format(action=action_name, updated=num_updated, attempted=num_attempted, student=student, problem=module_state_key)
     return msg
 
 def _update_problem_module_state_for_student(request, course_id, problem_url, student_identifier, 
@@ -805,23 +816,26 @@ def _reset_problem_attempts_module_state(request, module_to_reset, module_descri
     # modify the problem's state
     # load the state json and change state
     problem_state = json.loads(module_to_reset.state)
-    old_number_of_attempts = problem_state["attempts"]
-    problem_state["attempts"] = 0
-    # convert back to json and save
-    module_to_reset.state = json.dumps(problem_state)
-    module_to_reset.save()
-    # write out tracking info
-    track.views.server_track(request,
-                             '{instructor} reset attempts from {old_attempts} to 0 for {student} '
-                             'on problem {problem} in {course}'.format(
-                                            old_attempts=old_number_of_attempts,
-                                            student=module_to_reset.student,
-                                            problem=module_to_reset.module_state_key,
-                                            instructor=request.user,
-                                            course=module_to_reset.course_id),
-                             {},
-                             page='idashboard')
-
+    if 'attempts' in problem_state:
+        old_number_of_attempts = problem_state["attempts"]
+        if old_number_of_attempts > 0:
+            problem_state["attempts"] = 0
+            # convert back to json and save
+            module_to_reset.state = json.dumps(problem_state)
+            module_to_reset.save()
+            # write out tracking info
+            track.views.server_track(request,
+                                     '{instructor} reset attempts from {old_attempts} to 0 for {student} '
+                                     'on problem {problem} in {course}'.format(old_attempts=old_number_of_attempts,
+                                                                               student=module_to_reset.student,
+                                                                               problem=module_to_reset.module_state_key,
+                                                                               instructor=request.user,
+                                                                               course=module_to_reset.course_id),
+                                     {},
+                                     page='idashboard')
+            
+    # consider the reset to be successful, even if no update was performed.  (It's just "optimized".)
+    return True
 
 def _reset_problem_attempts_for_student(request, course_id, problem_url, student_identifier):
     action_name = 'reset'
@@ -840,6 +854,7 @@ def _delete_problem_module_state(request, module_to_delete, module_descriptor):
     delete the state
     '''
     module_to_delete.delete()
+    return True
 
 def _delete_problem_state_for_student(request, course_id, problem_url, student_ident):
     action_name = 'deleted'
