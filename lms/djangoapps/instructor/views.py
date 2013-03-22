@@ -11,7 +11,7 @@ import requests
 from requests.status_codes import codes
 import urllib
 from collections import OrderedDict
-import json
+#import json
 
 from StringIO import StringIO
 
@@ -21,7 +21,7 @@ from django.http import HttpResponse
 from django_future.csrf import ensure_csrf_cookie
 from django.views.decorators.cache import cache_control
 from mitxmako.shortcuts import render_to_response
-import requests
+# import requests
 from django.core.urlresolvers import reverse
 
 from courseware import grades
@@ -39,11 +39,12 @@ from django_comment_client.models import (Role,
 from django_comment_client.utils import has_forum_access
 from psychometrics import psychoanalyze
 from student.models import CourseEnrollment, CourseEnrollmentAllowed
-from xmodule.course_module import CourseDescriptor
-from xmodule.modulestore import Location
+#from xmodule.course_module import CourseDescriptor
+#from xmodule.modulestore import Location
 from xmodule.modulestore.django import modulestore
-from xmodule.modulestore.exceptions import InvalidLocationError, ItemNotFoundError, NoPathToItem
-from xmodule.modulestore.search import path_to_location
+#from xmodule.modulestore.exceptions import InvalidLocationError, ItemNotFoundError, NoPathToItem
+from xmodule.modulestore.exceptions import ItemNotFoundError
+#from xmodule.modulestore.search import path_to_location
 import track.views
 
 from .offline_gradecalc import student_grades, offline_grades_available
@@ -676,7 +677,10 @@ def _update_problem_module_state(request, course_id, problem_url, student, updat
     module_state_key = _get_module_state_key(course_id, problem_url)
 
     # find the problem descriptor, if any:
-    module_descriptor = modulestore().get_instance(course_id, module_state_key)
+    try:
+        module_descriptor = modulestore().get_instance(course_id, module_state_key)
+    except ItemNotFoundError:
+        return "<font color='red'>Couldn't find problem with that urlname.  </font>"
     if module_descriptor is None:
         return "<font color='red'>Couldn't find problem with that urlname.  </font>"
 
@@ -740,7 +744,7 @@ def _update_problem_module_state_for_student(request, course_id, problem_url, st
 def _update_problem_module_state_for_all_students(request, course_id, problem_url, update_fcn, action_name):
     return _update_problem_module_state(request, course_id, problem_url, None, update_fcn, action_name)
 
-def _regrade_problem_module_state(request, module_to_regrade, module_descriptor, keep_better):
+def _regrade_problem_module_state(request, module_to_regrade, module_descriptor ): #, keep_better):
     ''' 
     Takes an XModule descriptor and a corresponding StudentModule object, and 
     performs regrading on the student's problem submission.
@@ -778,7 +782,8 @@ def _regrade_problem_module_state(request, module_to_regrade, module_descriptor,
     # (we could do this, or we could just call the instance.regrade_problem method directly, if
     # it exists.  That way we don't have to go through json.)
     # ajax_return = instance.handle_ajax('problem_regrade', {})
-    result = instance.regrade_problem({ 'keep_existing_if_better': keep_better })
+#    result = instance.regrade_problem({ 'keep_existing_if_better': keep_better })
+    result = instance.regrade_problem({ 'keep_existing_if_better': False })
     if 'success' not in result:
         # don't consider these fatal
         log.debug("error processing regrade call for problem {loc} and student {student}: "

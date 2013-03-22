@@ -977,25 +977,13 @@ TEST_COURSE_NUMBER = '1.23x'
 TEST_SECTION_NAME = "Problem"
 
 @override_settings(MODULESTORE=TEST_DATA_MONGO_MODULESTORE)
-class TestRegrading(PageLoader):
+class TestRegradingBase(PageLoader):
     '''Check that all students' answers to a problem can be regraded once 
        definition of what is correct has been redefined
     '''
+    graded_course = None
     
-    @staticmethod
-    def get_user_email(username):
-        return '{0}@test.com'.format(username)
-    
-    @staticmethod
-    def get_user_password(username):
-        return 'foo'
-
-    def login_username(self, username):
-        self.login(TestRegrading.get_user_email(username), TestRegrading.get_user_password(username))
-        self.current_user = username
-
-
-    def setUp(self):
+    def initialize_course(self):
         # define the 'direct' module store, so that templates can be loaded into it:
         xmodule.modulestore.django._MODULESTORES = {}
         self.module_store = modulestore('direct')
@@ -1010,52 +998,71 @@ class TestRegrading(PageLoader):
                                       number=TEST_COURSE_NUMBER,
                                       display_name=TEST_COURSE_NAME)
 
-        # Add a chapter to the course to contain problems
+        # Add a chapter to the course 
         chapter = ItemFactory.create(parent_location=course.location,
                                      display_name=TEST_SECTION_NAME)
 
-        problem_section = ItemFactory.create(parent_location=chapter.location,
+        # add a sequence to the course to which the problems can be added
+        self.problem_section = ItemFactory.create(parent_location=chapter.location,
                                              template='i4x://edx/templates/sequential/Empty',
                                              display_name=TEST_SECTION_NAME)
+        self.graded_course = course
+
+    @staticmethod
+    def get_user_email(username):
+        return '{0}@test.com'.format(username)
+    
+    @staticmethod
+    def get_user_password(username):
+        return 'foo'
+
+    def login_username(self, username):
+        self.login(TestRegradingBase.get_user_email(username), TestRegradingBase.get_user_password(username))
+        self.current_user = username
+
+    def create_student(self, username):
+        email = TestRegradingBase.get_user_email(username)
+        self.create_account(username, email, TestRegradingBase.get_user_password(username))
+        self.activate_user(email)
+        # It doesn't work to call self.enroll(), as it tries to access the default
+        # modulestore() when looking for the course being enrolled in.
+        # But the template code is hardwired to use modulestore('direct').
+        # self.enroll(self.graded_course)
+        thisuser = User.objects.get(username=username)
+        CourseEnrollment.objects.get_or_create(user=thisuser, course_id=self.graded_course.id)
+        return thisuser
         
+    @staticmethod    
+    def problem_location(problem_url_name):
+        """
+        Create an internal location for a test problem.
+        """
+        return "i4x://{org}/{number}/problem/{problem_url_name}".format(org=TEST_COURSE_ORG,
+                                                                        number=TEST_COURSE_NUMBER,
+                                                                        problem_url_name=problem_url_name)
+        
+    def define_problem(self, problem_url_name):
+        factory = OptionResponseXMLFactory()
+        factory_args = {'question_text': 'The correct answer is Option 1',
+                        'options': ['Option 1', 'Option 2'],
+                        'correct_option': 'Option 1',
+                        'num_responses': 2}
+        problem_xml = factory.build_xml(**factory_args)
+        ItemFactory.create(parent_location=self.problem_section.location,
+                           template="i4x://edx/templates/problem/Blank_Common_Problem",
+                           display_name=str(problem_url_name),
+                           data=problem_xml)
+    
+    def redefine_problem(self, problem_url_name):
         factory = OptionResponseXMLFactory()
         factory_args = {'question_text': 'The correct answer is Option 2',
                         'options': ['Option 1', 'Option 2'],
                         'correct_option': 'Option 2',
                         'num_responses': 2}
         problem_xml = factory.build_xml(**factory_args)
-        problem_item = ItemFactory.create(parent_location=problem_section.location,
-                                          template="i4x://edx/templates/problem/Blank_Common_Problem",
-                                          display_name=str("H1P1"),
-                                          data=problem_xml)
+        location = TestRegrading.problem_location(problem_url_name)        
+        self.module_store.update_item(location, problem_xml)
 
-
-        # import_from_xml(module_store, TEST_DATA_DIR, ['edX/graded/2012_Fall'])
-#        import_from_xml(self.module_store, TEST_DATA_DIR, ['graded'])
-
-        # self.graded_course = self.module_store.get_courses()[0]
-        self.graded_course = course
-        
-        # create a test student
-        # self.students = []
-        def create_student(username):
-            email = TestRegrading.get_user_email(username)
-            self.create_account(username, email, TestRegrading.get_user_password(username))
-            self.activate_user(email)
-            # It doesn't work to call self.enroll(), as it tries to access the default
-            # modulestore() when looking for the course being enrolled in.
-            # But the template code is hardwired to use modulestore('direct').
-            # self.enroll(self.graded_course)
-            user = User.objects.get(username=username)
-            CourseEnrollment.objects.get_or_create(user=user, course_id=self.graded_course.id)
-
-            # self.students.append(username)
-        create_student('u1')
-        create_student('u2')
-        create_student('u3')
-        create_student('u4')
-        self.logout()
-        
     def render_problem(self, problem_url_name):
         modx_url = reverse('modx_dispatch',
                             kwargs={
@@ -1066,15 +1073,21 @@ class TestRegrading(PageLoader):
         return resp
         
     def submit_student_answer(self, problem_url_name, responses):
+        def get_input_id(response_id):
+            return 'input_i4x-{0}-{1}-problem-{2}_{3}'.format(TEST_COURSE_ORG.lower(), 
+                                                              TEST_COURSE_NUMBER.replace('.', '_'), 
+                                                              problem_url_name, response_id)
+
         modx_url = reverse('modx_dispatch',
                             kwargs={
                                 'course_id': self.graded_course.id,
-                                'location': TestRegrading.problem_location(problem_url_name),
+                                'location': TestRegradingBase.problem_location(problem_url_name),
                                 'dispatch': 'problem_check', })
 
         resp = self.client.post(modx_url, {
-            'input_i4x-edx-1_23x-problem-{0}_2_1'.format(problem_url_name): responses[0],
-            'input_i4x-edx-1_23x-problem-{0}_3_1'.format(problem_url_name): responses[1],
+            get_input_id('2_1'): responses[0],
+            get_input_id('3_1'): responses[1],
+#            'input_i4x-edx-1_23x-problem-{0}_3_1'.format(problem_url_name): responses[1],
         })
         return resp
         
@@ -1082,7 +1095,7 @@ class TestRegrading(PageLoader):
         modx_url = reverse('modx_dispatch',
                             kwargs={
                                 'course_id': self.graded_course.id,
-                                'location': TestRegrading.problem_location(problem_url_name),
+                                'location': TestRegradingBase.problem_location(problem_url_name),
                                 'dispatch': 'problem_regrade', })
 
         resp = self.client.post(modx_url, {
@@ -1094,23 +1107,10 @@ class TestRegrading(PageLoader):
         modx_url = reverse('modx_dispatch',
                             kwargs={
                                 'course_id': self.graded_course.id,
-                                'location': TestRegrading.problem_location(problem_url_name),
+                                'location': TestRegradingBase.problem_location(problem_url_name),
                                 'dispatch': 'problem_show', })
         return self.client.post(modx_url, {})
 
-    @staticmethod    
-    def problem_location(problem_url_name):
-        """
-        The field names of a problem are hard to determine. This method only works
-        for the problems used in the edX/graded course, which has fields named in the
-        following form:
-        input_i4x-edX-graded-problem-H1P3_2_1
-        input_i4x-edX-graded-problem-H1P3_2_2
-        """
-        return "i4x://{org}/{number}/problem/{problem_url_name}".format(org=TEST_COURSE_ORG,
-                                                         number=TEST_COURSE_NUMBER,
-                                                         problem_url_name=problem_url_name)
-        
     def get_student_module(self, descriptor):
 #        model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
 #            self.graded_course.id, user(self.current_user), descriptor)
@@ -1122,8 +1122,8 @@ class TestRegrading(PageLoader):
         )        
         return student_module
         
-    def check_state(self, expected_score, expected_max_score, expected_attempts):
-        module = self.get_student_module(self.descriptor)
+    def check_state(self, descriptor, expected_score, expected_max_score, expected_attempts):
+        module = self.get_student_module(descriptor)
         self.assertEqual(module.grade, expected_score, "Scores were not equal")
         self.assertEqual(module.max_grade, expected_max_score, "Max scores were not equal")
         state = json.loads(module.state)
@@ -1134,66 +1134,68 @@ class TestRegrading(PageLoader):
             self.assertTrue('student_answers' in state)
             self.assertGreater(len(state['correct_map']), 0)
             self.assertGreater(len(state['student_answers']), 0)
+
+
+
+
+class TestRegrading(TestRegradingBase):
         
+    def setUp(self):
+        self.initialize_course()
+        self.create_student('u1')
+        self.create_student('u2')
+        self.create_student('u3')
+        self.create_student('u4')
+        self.logout()
+
     def testRegrading(self):
         '''Run regrade scenario'''
         # get descriptor:
         problem_url_name = 'H1P1'
+        self.define_problem(problem_url_name)
         location = TestRegrading.problem_location(problem_url_name)
-        self.descriptor = self.module_store.get_instance(self.graded_course.id, location)
-
+        descriptor = self.module_store.get_instance(self.graded_course.id, location)
+        
         # first store answers for each of the separate users:
         self.login_username('u1')
-        self.render_problem(problem_url_name)
         self.submit_student_answer(problem_url_name, ['Option 1', 'Option 1'])
-        self.check_state(0,2,1)
+        self.check_state(descriptor,2,2,1)
         self.logout()
         self.login_username('u2')
-        self.render_problem(problem_url_name)
         self.submit_student_answer(problem_url_name, ['Option 1', 'Option 2'])
-        self.check_state(1,2,1)
+        self.check_state(descriptor,1,2,1)
         self.logout()
         self.login_username('u3')
-        self.render_problem(problem_url_name)
         self.submit_student_answer(problem_url_name, ['Option 2', 'Option 1'])
-        self.check_state(1,2,1)
+        self.check_state(descriptor,1,2,1)
         self.logout()
         self.login_username('u4')
-        self.render_problem(problem_url_name)
         self.submit_student_answer(problem_url_name, ['Option 2', 'Option 2'])
-        self.check_state(2,2,1)
+        self.check_state(descriptor,0,2,1)
         self.logout()
 
         # update the data in the problem definition
-        # TODO: where do we get the current data?
-        # current_data = self.descriptor.
-        factory = OptionResponseXMLFactory()
-        factory_args = {'question_text': 'The correct answer is Option 1',
-                        'options': ['Option 1', 'Option 2'],
-                        'correct_option': 'Option 1',
-                        'num_responses': 2}
-        problem_xml = factory.build_xml(**factory_args)
-        self.module_store.update_item(location, problem_xml)
+        self.redefine_problem(problem_url_name)
 
         # confirm that simply rendering the problem again does not result in a change
         # in the grade:        
         self.login_username('u1')
         self.render_problem(problem_url_name)
-        self.check_state(0,2,1)
+        self.check_state(descriptor,2,2,1)
         
         # okay, now we're ready to try to regrade the problem
         self.regrade_student_answer(problem_url_name)
-        self.check_state(2,2,1)
+        self.check_state(descriptor,0,2,1)
         self.logout()
         self.login_username('u2')
         self.regrade_student_answer(problem_url_name)
-        self.check_state(1,2,1)
+        self.check_state(descriptor,1,2,1)
         self.logout()
         self.login_username('u3')
         self.regrade_student_answer(problem_url_name)
-        self.check_state(1,2,1)
+        self.check_state(descriptor,1,2,1)
         self.logout()
         self.login_username('u4')
         self.regrade_student_answer(problem_url_name)
-        self.check_state(0,2,1)
+        self.check_state(descriptor,2,2,1)
         self.logout()

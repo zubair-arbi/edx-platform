@@ -209,3 +209,102 @@ class TestInstructorDashboardForumAdmin(LoginEnrollmentTestCase):
             added_roles.sort()
             roles = ', '.join(added_roles)
             self.assertTrue(response.content.find('<td>{0}</td>'.format(roles)) >= 0, 'not finding roles "{0}"'.format(roles))
+            
+
+class TestRegrading(ct.TestRegradingBase):
+        
+    def setUp(self):
+        self.initialize_course()
+        self.instructor = self.create_student('instructor')
+        def make_instructor(theuser, course):
+            group_name = _course_staff_group_name(course.location)
+            g = Group.objects.create(name=group_name)
+            g.user_set.add(theuser)
+        make_instructor(self.instructor, self.graded_course)
+
+        self.create_student('u1')
+        self.create_student('u2')
+        self.create_student('u3')
+        self.create_student('u4')
+        self.logout()
+
+    def create_multiple_students(self, number):
+        for i in range(number):
+            self.create_student('student{0}'.format(i))
+            self.logout()
+
+    def submit_answers_for_multiple_students(self, number, problem_url_name):
+        location = TestRegrading.problem_location(problem_url_name)
+        descriptor = self.module_store.get_instance(self.graded_course.id, location)
+        for i in range(number):
+            self.login_username('student{0}'.format(i))
+            answer_1 = 'Option 1' if i%2==0 else 'Option 2'
+            answer_2 = 'Option 1' if i%4<2 else 'Option 2'
+            self.submit_student_answer(problem_url_name, [answer_1, answer_2])
+            # calculate number correct assuming that 'Option 1' is correct:
+            num_correct = 0
+            num_correct += 1 if i%2==0 else 0
+            num_correct += 1 if i%4<2 else 0
+            self.check_state(descriptor,num_correct,2,1)
+            self.logout()
+
+    def check_state_after_regrade(self, number, problem_url_name):
+        location = TestRegrading.problem_location(problem_url_name)
+        descriptor = self.module_store.get_instance(self.graded_course.id, location)
+        for i in range(number):
+            # TODO: this should not need to login to check state:
+            self.login_username('student{0}'.format(i))
+            # calculate number correct assuming that 'Option 2' is now correct:
+            num_correct = 0
+            num_correct += 1 if i%2!=0 else 0
+            num_correct += 1 if i%4>=2 else 0
+            self.check_state(descriptor,num_correct,2,1)
+            self.logout()
+        
+    def testRegrading(self):
+        '''Run regrade scenario'''
+        # create a problem, and create multiple students:
+        problem_url_name = 'H1P1'
+        self.define_problem(problem_url_name)
+        num_students = 10
+        self.create_multiple_students(num_students)
+        
+        # have each student submit answers to the problem
+        self.submit_answers_for_multiple_students(num_students, problem_url_name)
+
+        # update the data in the problem definition
+        self.redefine_problem(problem_url_name)
+
+        # make call to dashboard's view as the instructor:
+        self.login_username(self.instructor.username)        
+        url = reverse('instructor_dashboard', kwargs={'course_id': self.graded_course.id})
+        action = "Regrade ALL students' problem submissions"
+        problem_argname = 'problem_to_regrade'
+
+        requested_url_name = 'garbage'        
+        response = self.client.post(url, {'action': action, problem_argname: requested_url_name})
+        self.assertTrue(response.content.find("Couldn't find problem with that urlname") >= 0)
+        requested_url_name = problem_url_name
+        
+        response = self.client.post(url, {'action': action, problem_argname: requested_url_name})
+        self.assertTrue(response.content.find("Problem successfully regraded") >= 0)
+        self.check_state_after_regrade(num_students, problem_url_name)
+        
+        
+#        
+#        
+#        username = 'unknown'
+#        for action in ['Add', 'Remove']:
+#            for rolename in FORUM_ROLES:
+#                response = self.client.post(url, {'action': action_name(action, rolename), FORUM_ADMIN_USER[rolename]: username})
+#                self.assertTrue(response.content.find('Error: unknown username "{0}"'.format(username)) >= 0)
+        
+        # okay, now we're ready to try to regrade the problem
+#        self.regrade_student_answer(problem_url_name)
+#        self.check_state(descriptor,0,2,1)
+#        self.logout()
+#        self.login_username('u2')
+#        self.regrade_student_answer(problem_url_name)
+#        self.check_state(descriptor,1,2,1)
+#        self.logout()
+            
