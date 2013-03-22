@@ -868,7 +868,7 @@ class TestCourseGrader(LoginEnrollmentTestCase):
         grade_summary = self.get_grade_summary()
         self.assertEqual(grade_summary['percent'], percent)
 
-    def submit_question_answer(self, problem_url_name, responses):
+    def submit_student_answer(self, problem_url_name, responses):
         """
         The field names of a problem are hard to determine. This method only works
         for the problems used in the edX/graded course, which has fields named in the
@@ -925,20 +925,20 @@ class TestCourseGrader(LoginEnrollmentTestCase):
             return [s.earned for s in hw_section['scores']]
 
         # Only get half of the first problem correct
-        self.submit_question_answer('H1P1', ['Correct', 'Incorrect'])
+        self.submit_student_answer('H1P1', ['Correct', 'Incorrect'])
         self.check_grade_percent(0.06)
         self.assertEqual(earned_hw_scores(), [1.0, 0, 0])  # Order matters
         self.assertEqual(score_for_hw('Homework1'), [1.0, 0.0])
 
         # Get both parts of the first problem correct
         self.reset_question_answer('H1P1')
-        self.submit_question_answer('H1P1', ['Correct', 'Correct'])
+        self.submit_student_answer('H1P1', ['Correct', 'Correct'])
         self.check_grade_percent(0.13)
         self.assertEqual(earned_hw_scores(), [2.0, 0, 0])
         self.assertEqual(score_for_hw('Homework1'), [2.0, 0.0])
 
         # This problem is shown in an ABTest
-        self.submit_question_answer('H1P2', ['Correct', 'Correct'])
+        self.submit_student_answer('H1P2', ['Correct', 'Correct'])
         self.check_grade_percent(0.25)
         self.assertEqual(earned_hw_scores(), [4.0, 0.0, 0])
         self.assertEqual(score_for_hw('Homework1'), [2.0, 2.0])
@@ -954,21 +954,21 @@ class TestCourseGrader(LoginEnrollmentTestCase):
         # This problem is also weighted to be 4 points (instead of default of 2)
         # If the problem was unweighted the percent would have been 0.38 so we
         # know it works.
-        self.submit_question_answer('H2P1', ['Correct', 'Correct'])
+        self.submit_student_answer('H2P1', ['Correct', 'Correct'])
         self.check_grade_percent(0.42)
         self.assertEqual(earned_hw_scores(), [4.0, 4.0, 0])
 
         # Third homework
-        self.submit_question_answer('H3P1', ['Correct', 'Correct'])
+        self.submit_student_answer('H3P1', ['Correct', 'Correct'])
         self.check_grade_percent(0.42)  # Score didn't change
         self.assertEqual(earned_hw_scores(), [4.0, 4.0, 2.0])
 
-        self.submit_question_answer('H3P2', ['Correct', 'Correct'])
+        self.submit_student_answer('H3P2', ['Correct', 'Correct'])
         self.check_grade_percent(0.5)  # Now homework2 dropped. Score changes
         self.assertEqual(earned_hw_scores(), [4.0, 4.0, 4.0])
 
         # Now we answer the final question (worth half of the grade)
-        self.submit_question_answer('FinalQuestion', ['Correct', 'Correct'])
+        self.submit_student_answer('FinalQuestion', ['Correct', 'Correct'])
         self.check_grade_percent(1.0)  # Hooray! We got 100%
 
 TEST_COURSE_ORG = 'edx'
@@ -1065,7 +1065,7 @@ class TestRegrading(PageLoader):
         resp = self.client.post(modx_url, {})
         return resp
         
-    def submit_question_answer(self, problem_url_name, responses):
+    def submit_student_answer(self, problem_url_name, responses):
         modx_url = reverse('modx_dispatch',
                             kwargs={
                                 'course_id': self.graded_course.id,
@@ -1076,12 +1076,9 @@ class TestRegrading(PageLoader):
             'input_i4x-edx-1_23x-problem-{0}_2_1'.format(problem_url_name): responses[0],
             'input_i4x-edx-1_23x-problem-{0}_3_1'.format(problem_url_name): responses[1],
         })
-        print "modx_url", modx_url, "responses", responses
-        print "resp", resp
-
         return resp
         
-    def regrade_question_answer(self, problem_url_name):
+    def regrade_student_answer(self, problem_url_name):
         modx_url = reverse('modx_dispatch',
                             kwargs={
                                 'course_id': self.graded_course.id,
@@ -1091,10 +1088,15 @@ class TestRegrading(PageLoader):
         resp = self.client.post(modx_url, {
                                            # add arguments here eventually
                                            })
-        print "modx_url", modx_url
-        print "resp", resp
-
         return resp
+
+    def show_correct_answer(self, problem_url_name):
+        modx_url = reverse('modx_dispatch',
+                            kwargs={
+                                'course_id': self.graded_course.id,
+                                'location': TestRegrading.problem_location(problem_url_name),
+                                'dispatch': 'problem_show', })
+        return self.client.post(modx_url, {})
 
     @staticmethod    
     def problem_location(problem_url_name):
@@ -1124,8 +1126,14 @@ class TestRegrading(PageLoader):
         module = self.get_student_module(self.descriptor)
         self.assertEqual(module.grade, expected_score, "Scores were not equal")
         self.assertEqual(module.max_grade, expected_max_score, "Max scores were not equal")
-        attempts = json.loads(module.state)['attempts']
+        state = json.loads(module.state)
+        attempts = state['attempts']
         self.assertEqual(attempts, expected_attempts, "Attempts were not equal")
+        if attempts > 0:
+            self.assertTrue('correct_map' in state)
+            self.assertTrue('student_answers' in state)
+            self.assertGreater(len(state['correct_map']), 0)
+            self.assertGreater(len(state['student_answers']), 0)
         
     def testRegrading(self):
         '''Run regrade scenario'''
@@ -1137,22 +1145,22 @@ class TestRegrading(PageLoader):
         # first store answers for each of the separate users:
         self.login_username('u1')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Option 1', 'Option 1'])
+        self.submit_student_answer(problem_url_name, ['Option 1', 'Option 1'])
         self.check_state(0,2,1)
         self.logout()
         self.login_username('u2')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Option 1', 'Option 2'])
+        self.submit_student_answer(problem_url_name, ['Option 1', 'Option 2'])
         self.check_state(1,2,1)
         self.logout()
         self.login_username('u3')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Option 2', 'Option 1'])
+        self.submit_student_answer(problem_url_name, ['Option 2', 'Option 1'])
         self.check_state(1,2,1)
         self.logout()
         self.login_username('u4')
         self.render_problem(problem_url_name)
-        self.submit_question_answer(problem_url_name, ['Option 2', 'Option 2'])
+        self.submit_student_answer(problem_url_name, ['Option 2', 'Option 2'])
         self.check_state(2,2,1)
         self.logout()
 
@@ -1174,18 +1182,18 @@ class TestRegrading(PageLoader):
         self.check_state(0,2,1)
         
         # okay, now we're ready to try to regrade the problem
-        self.regrade_question_answer(problem_url_name)
+        self.regrade_student_answer(problem_url_name)
         self.check_state(2,2,1)
         self.logout()
         self.login_username('u2')
-        self.regrade_question_answer(problem_url_name)
+        self.regrade_student_answer(problem_url_name)
         self.check_state(1,2,1)
         self.logout()
         self.login_username('u3')
-        self.regrade_question_answer(problem_url_name)
+        self.regrade_student_answer(problem_url_name)
         self.check_state(1,2,1)
         self.logout()
         self.login_username('u4')
-        self.regrade_question_answer(problem_url_name)
+        self.regrade_student_answer(problem_url_name)
         self.check_state(0,2,1)
         self.logout()

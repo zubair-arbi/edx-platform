@@ -56,7 +56,7 @@ class ModelDataCache(object):
         self.course_id = course_id
         self.user = user
 
-        if not user.is_anonymous:
+        if user.is_authenticated():
             for scope, fields in self._fields_to_cache().items():
                 for field_object in self._retrieve_fields(scope, fields):
                     self.cache[self._cache_key_from_field_object(scope, field_object)] = field_object
