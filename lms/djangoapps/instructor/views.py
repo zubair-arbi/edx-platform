@@ -215,20 +215,11 @@ def instructor_dashboard(request, course_id):
     elif "Regrade student's problem submission" in action:
         problem_url = request.POST.get('student_problem_to_regrade', '')
         student_ident = request.POST.get('unique_student_identifier', '')
-        msg += _regrade_problem_for_student(request, course_id, problem_url, student_ident, keep_better=False)
-
-    elif "Regrade student's problem submission if improved" in action:
-        problem_url = request.POST.get('student_problem_to_regrade', '')
-        student_ident = request.POST.get('unique_student_identifier', '')
-        msg += _regrade_problem_for_student(request, course_id, problem_url, student_ident, keep_better=True)
+        msg += _regrade_problem_for_student(request, course_id, problem_url, student_ident)
 
     elif "Regrade ALL students' problem submissions" in action:
         problem_url = request.POST.get('problem_to_regrade', '')
-        msg += _regrade_problem_for_all_students(request, course_id, problem_url, keep_better=False)
-
-    elif "Regrade ALL students' problem submissions if improved" in action:
-        problem_url = request.POST.get('problem_to_regrade', '')
-        msg += _regrade_problem_for_all_students(request, course_id, problem_url, keep_better=True)
+        msg += _regrade_problem_for_all_students(request, course_id, problem_url)
 
     elif "Reset student's attempts" in action:
         problem_url = request.POST.get('student_problem_to_reset', '')
@@ -668,7 +659,7 @@ def _get_module_state_key(course_id, problem_url_name):
 class UpdateProblemModuleStateError(Exception):
     pass
 
-def _update_problem_module_state(request, course_id, problem_url, student, update_fcn, action_name):
+def _update_problem_module_state(request, course_id, problem_url, student, update_fcn, action_name, filter_fcn):
     '''
     Performs generic update by visiting StudentModule instances with the update_fcn provided
 
@@ -693,6 +684,9 @@ def _update_problem_module_state(request, course_id, problem_url, student, updat
     if student is not None:
         modules_to_update = modules_to_update.filter(student_id=student.id)
 
+    if filter_fcn is not None:
+        modules_to_update = filter_fcn(modules_to_update)
+        
     num_updated = 0
     num_attempted = 0
     for module_to_update in modules_to_update:
@@ -726,7 +720,7 @@ def _update_problem_module_state(request, course_id, problem_url, student, updat
     return msg
 
 def _update_problem_module_state_for_student(request, course_id, problem_url, student_identifier, 
-                                             update_fcn, action_name):
+                                             update_fcn, action_name, filter_fcn=None):
     msg = ''
     # try to uniquely id student by email address or username
     try:
@@ -735,16 +729,16 @@ def _update_problem_module_state_for_student(request, course_id, problem_url, st
         elif student_identifier is not None:
             student_to_update = User.objects.get(username=student_identifier)
         msg = "Found a single student to be {action}.  ".format(action=action_name)
-        msg += _update_problem_module_state(request, course_id, problem_url, student_to_update, update_fcn, action_name)
+        msg += _update_problem_module_state(request, course_id, problem_url, student_to_update, update_fcn, action_name, filter_fcn)
     except:
         msg = "<font color='red'>Couldn't find student with that email or username.  </font>"
 
     return msg
 
-def _update_problem_module_state_for_all_students(request, course_id, problem_url, update_fcn, action_name):
-    return _update_problem_module_state(request, course_id, problem_url, None, update_fcn, action_name)
+def _update_problem_module_state_for_all_students(request, course_id, problem_url, update_fcn, action_name, filter_fcn=None):
+    return _update_problem_module_state(request, course_id, problem_url, None, update_fcn, action_name, filter_fcn)
 
-def _regrade_problem_module_state(request, module_to_regrade, module_descriptor ): #, keep_better):
+def _regrade_problem_module_state(request, module_to_regrade, module_descriptor ):
     ''' 
     Takes an XModule descriptor and a corresponding StudentModule object, and 
     performs regrading on the student's problem submission.
@@ -772,20 +766,14 @@ def _regrade_problem_module_state(request, module_to_regrade, module_descriptor 
         raise UpdateProblemModuleStateError(msg)
 
     if not hasattr(instance, 'regrade_problem'):
-        # TODO: if the first instance doesn't have a regrade method, we should
+        # if the first instance doesn't have a regrade method, we should
         # probably assume that no other instances will either.  
-        # (It's not really a problem?)
         msg = "Specified problem does not support regrading."
         raise UpdateProblemModuleStateError(msg)
 
-    # Let the module handle the AJAX
-    # (we could do this, or we could just call the instance.regrade_problem method directly, if
-    # it exists.  That way we don't have to go through json.)
-    # ajax_return = instance.handle_ajax('problem_regrade', {})
-#    result = instance.regrade_problem({ 'keep_existing_if_better': keep_better })
-    result = instance.regrade_problem({ 'keep_existing_if_better': False })
+    result = instance.regrade_problem()
     if 'success' not in result:
-        # don't consider these fatal
+        # don't consider these fatal, but false means that the individual call didn't complete:
         log.debug("error processing regrade call for problem {loc} and student {student}: "
                  "unexpected response {msg}".format(msg=result, loc=module_state_key, student=student))
         return False
@@ -804,18 +792,22 @@ def _regrade_problem_module_state(request, module_to_regrade, module_descriptor 
                                  page='idashboard')
         return True
 
-def _regrade_problem_for_student(request, course_id, problem_url, student_identifier, keep_better=True):
-    action_name = 'regraded'
-    update_fcn = _regrade_problem_module_state
-    return _update_problem_module_state_for_student(request, course_id, problem_url, student_identifier,
-                                                    update_fcn, action_name)
+def filter_problem_module_state_for_done(modules_to_update):
+    return modules_to_update.filter(state__contains='"done": true')
 
-def _regrade_problem_for_all_students(request, course_id, problem_url, keep_better=True):
+def _regrade_problem_for_student(request, course_id, problem_url, student_identifier):
     action_name = 'regraded'
-    # need to add partial-bind for keep_better argument
     update_fcn = _regrade_problem_module_state
+    filter_fcn = filter_problem_module_state_for_done
+    return _update_problem_module_state_for_student(request, course_id, problem_url, student_identifier,
+                                                    update_fcn, action_name, filter_fcn)
+
+def _regrade_problem_for_all_students(request, course_id, problem_url):
+    action_name = 'regraded'
+    update_fcn = _regrade_problem_module_state
+    filter_fcn = filter_problem_module_state_for_done
     return _update_problem_module_state_for_all_students(request, course_id, problem_url,
-                                                         update_fcn, action_name)
+                                                         update_fcn, action_name, filter_fcn)
 
 def _reset_problem_attempts_module_state(request, module_to_reset, module_descriptor):
     # modify the problem's state

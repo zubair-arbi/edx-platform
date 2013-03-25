@@ -20,7 +20,7 @@ import xmodule.modulestore.django
 from xmodule.modulestore.mongo import MongoModuleStore
 from xmodule.templates import update_templates
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
-from capa.tests.response_xml_factory import OptionResponseXMLFactory
+from capa.tests.response_xml_factory import OptionResponseXMLFactory, NumericalResponseXMLFactory
 
 # Need access to internal func to put users in the right group
 from courseware import grades
@@ -1041,7 +1041,7 @@ class TestRegradingBase(PageLoader):
                                                                         number=TEST_COURSE_NUMBER,
                                                                         problem_url_name=problem_url_name)
         
-    def define_problem(self, problem_url_name):
+    def define_option_problem(self, problem_url_name):
         factory = OptionResponseXMLFactory()
         factory_args = {'question_text': 'The correct answer is Option 1',
                         'options': ['Option 1', 'Option 2'],
@@ -1053,11 +1053,31 @@ class TestRegradingBase(PageLoader):
                            display_name=str(problem_url_name),
                            data=problem_xml)
     
-    def redefine_problem(self, problem_url_name):
+    def redefine_option_problem(self, problem_url_name):
         factory = OptionResponseXMLFactory()
         factory_args = {'question_text': 'The correct answer is Option 2',
                         'options': ['Option 1', 'Option 2'],
                         'correct_option': 'Option 2',
+                        'num_responses': 2}
+        problem_xml = factory.build_xml(**factory_args)
+        location = TestRegrading.problem_location(problem_url_name)        
+        self.module_store.update_item(location, problem_xml)
+
+    def define_numerical_problem(self, problem_url_name):
+        factory = NumericalResponseXMLFactory()
+        factory_args = {'question_text': 'The correct answer is 1',
+                        'answer': '1',
+                        'num_responses': 2}
+        problem_xml = factory.build_xml(**factory_args)
+        ItemFactory.create(parent_location=self.problem_section.location,
+                           template="i4x://edx/templates/problem/Blank_Common_Problem",
+                           display_name=str(problem_url_name),
+                           data=problem_xml)
+    
+    def redefine_numerical_problem(self, problem_url_name):
+        factory = NumericalResponseXMLFactory()
+        factory_args = {'question_text': 'The correct answer is 2',
+                        'answer': '2',
                         'num_responses': 2}
         problem_xml = factory.build_xml(**factory_args)
         location = TestRegrading.problem_location(problem_url_name)        
@@ -1087,7 +1107,6 @@ class TestRegradingBase(PageLoader):
         resp = self.client.post(modx_url, {
             get_input_id('2_1'): responses[0],
             get_input_id('3_1'): responses[1],
-#            'input_i4x-edx-1_23x-problem-{0}_3_1'.format(problem_url_name): responses[1],
         })
         return resp
         
@@ -1152,7 +1171,7 @@ class TestRegrading(TestRegradingBase):
         '''Run regrade scenario'''
         # get descriptor:
         problem_url_name = 'H1P1'
-        self.define_problem(problem_url_name)
+        self.define_option_problem(problem_url_name)
         location = TestRegrading.problem_location(problem_url_name)
         descriptor = self.module_store.get_instance(self.graded_course.id, location)
         
@@ -1175,7 +1194,7 @@ class TestRegrading(TestRegradingBase):
         self.logout()
 
         # update the data in the problem definition
-        self.redefine_problem(problem_url_name)
+        self.redefine_option_problem(problem_url_name)
 
         # confirm that simply rendering the problem again does not result in a change
         # in the grade:        

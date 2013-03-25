@@ -732,6 +732,8 @@ class CapaModule(CapaFields, XModule):
 
         try:
             correct_map = self.lcp.grade_answers(answers)
+            self.attempts = self.attempts + 1
+            self.lcp.done = True
             self.set_state_from_lcp()
 
         except (StudentInputError, ResponseError, LoncapaProblemError) as inst:
@@ -758,10 +760,6 @@ class CapaModule(CapaFields, XModule):
                 return {'success': msg}
             raise
 
-        self.attempts = self.attempts + 1
-        self.lcp.done = True
-
-        self.set_state_from_lcp()
         self.publish_grade()
 
         # success = correct if ALL questions in this problem are correct
@@ -787,7 +785,7 @@ class CapaModule(CapaFields, XModule):
                 'contents': html,
                 }
 
-    def regrade_problem(self, get):
+    def regrade_problem(self):
         ''' Checks whether answers to a problem are correct, and
             returns a map of correct/incorrect answers:
 
@@ -798,7 +796,6 @@ class CapaModule(CapaFields, XModule):
         event_info['state'] = self.lcp.get_state()
         event_info['problem_id'] = self.location.url()
 
-        # Problem submitted. Student should reset before checking again
         if not self.done:
             event_info['failure'] = 'unanswered'
             self.system.track_function('save_problem_regrade_fail', event_info)
@@ -806,6 +803,8 @@ class CapaModule(CapaFields, XModule):
 
         try:
             correct_map = self.lcp.regrade_existing_answers()
+            # regrading should have no effect on attempts, so don't
+            # need to increment here, or mark done.  Just save.
             self.set_state_from_lcp()
         except StudentInputError as inst:
             log.exception("StudentInputError in capa_module:problem_regrade")
@@ -817,11 +816,6 @@ class CapaModule(CapaFields, XModule):
                 return {'success': msg}
             raise
 
-        # regrading should have no effect on attempts:
-        # self.attempts = self.attempts + 1
-        # self.lcp.done = True
-
-        self.set_state_from_lcp()
         self.publish_grade()
 
         # success = correct if ALL questions in this problem are correct

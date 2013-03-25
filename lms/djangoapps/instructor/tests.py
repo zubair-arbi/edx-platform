@@ -211,7 +211,7 @@ class TestInstructorDashboardForumAdmin(LoginEnrollmentTestCase):
             self.assertTrue(response.content.find('<td>{0}</td>'.format(roles)) >= 0, 'not finding roles "{0}"'.format(roles))
             
 
-class TestRegrading(ct.TestRegradingBase):
+class TestProblemStateManagement(ct.TestRegradingBase):
         
     def setUp(self):
         self.initialize_course()
@@ -222,89 +222,210 @@ class TestRegrading(ct.TestRegradingBase):
             g.user_set.add(theuser)
         make_instructor(self.instructor, self.graded_course)
 
-        self.create_student('u1')
-        self.create_student('u2')
-        self.create_student('u3')
-        self.create_student('u4')
-        self.logout()
-
     def create_multiple_students(self, number):
         for i in range(number):
             self.create_student('student{0}'.format(i))
             self.logout()
 
-    def submit_answers_for_multiple_students(self, number, problem_url_name):
-        location = TestRegrading.problem_location(problem_url_name)
-        descriptor = self.module_store.get_instance(self.graded_course.id, location)
+    def submit_answers_for_multiple_students(self, number, problem_url_name, answer_prefix='Option '):
         for i in range(number):
             self.login_username('student{0}'.format(i))
-            answer_1 = 'Option 1' if i%2==0 else 'Option 2'
-            answer_2 = 'Option 1' if i%4<2 else 'Option 2'
-            self.submit_student_answer(problem_url_name, [answer_1, answer_2])
-            # calculate number correct assuming that 'Option 1' is correct:
-            num_correct = 0
-            num_correct += 1 if i%2==0 else 0
-            num_correct += 1 if i%4<2 else 0
-            self.check_state(descriptor,num_correct,2,1)
+            answer_1 = '1' if i%2==0 else '2'
+            answer_2 = '1' if i%4<2 else '2'
+            self.submit_student_answer(problem_url_name, [answer_prefix + answer_1, answer_prefix + answer_2])
             self.logout()
-
-    def check_state_after_regrade(self, number, problem_url_name):
-        location = TestRegrading.problem_location(problem_url_name)
+            
+    def check_problem_state(self, number, problem_url_name, regraded=False, num_attempts=1):
+        location = ct.TestRegradingBase.problem_location(problem_url_name)
         descriptor = self.module_store.get_instance(self.graded_course.id, location)
         for i in range(number):
             # TODO: this should not need to login to check state:
             self.login_username('student{0}'.format(i))
-            # calculate number correct assuming that 'Option 2' is now correct:
+            # if regraded, calculate number correct assuming that answer #2 is correct:
             num_correct = 0
-            num_correct += 1 if i%2!=0 else 0
-            num_correct += 1 if i%4>=2 else 0
-            self.check_state(descriptor,num_correct,2,1)
+            if regraded:
+                num_correct += 1 if i%2!=0 else 0
+                num_correct += 1 if i%4>=2 else 0
+            else:
+                num_correct += 1 if i%2==0 else 0
+                num_correct += 1 if i%4<2 else 0
+            self.check_state(descriptor,num_correct,2,num_attempts)
             self.logout()
         
-    def testRegrading(self):
-        '''Run regrade scenario'''
+    def display_problem_for_multiple_students(self, number, problem_url_name):
+        for i in range(number):
+            self.login_username('student{0}'.format(i))
+            self.render_problem(problem_url_name)
+            self.logout()
+
+    def request_regrade(self, requested_url_name):
+        self.login_username(self.instructor.username)
+        url = reverse('instructor_dashboard', kwargs={'course_id':self.graded_course.id})
+        action = "Regrade ALL students' problem submissions"
+        problem_argname = 'problem_to_regrade'
+        response = self.client.post(url, {'action':action, problem_argname:requested_url_name})
+        return response
+
+    def request_reset(self, requested_url_name):
+        self.login_username(self.instructor.username)
+        url = reverse('instructor_dashboard', kwargs={'course_id':self.graded_course.id})
+        action = "Reset ALL students' attempts"
+        problem_argname = 'problem_to_reset'
+        response = self.client.post(url, {'action':action, problem_argname:requested_url_name})
+        return response
+
+    def request_delete(self, requested_url_name):
+        self.login_username(self.instructor.username)
+        url = reverse('instructor_dashboard', kwargs={'course_id':self.graded_course.id})
+        action = "Delete ALL students' state for problem"
+        problem_argname = 'problem_to_delete'
+        response = self.client.post(url, {'action':action, problem_argname:requested_url_name})
+        return response
+
+    def testRegradingOnUndefinedProblem(self):
+        '''Regrade a problem that is not even defined'''
+        response = self.request_regrade('garbage')
+        self.assertTrue(response.content.find("Couldn't find problem with that urlname") >= 0)
+
+    def testRegradingOnNewProblem(self):
+        '''Regrade a problem that is defined but that has not been displayed'''
+        problem_url_name = 'H1P1'
+        self.define_numerical_problem(problem_url_name)
+        response = self.request_regrade(problem_url_name)
+        self.assertTrue(response.content.find("Unable to find any students with submissions to be regraded") >= 0)
+
+    def testRegradingOnDisplayedProblem(self):
+        '''Regrade a problem that is defined and displayed but that has not been answered'''
+        problem_url_name = 'H1P1'
+        self.define_numerical_problem(problem_url_name)
+        num_students = 10
+        self.create_multiple_students(num_students)
+        self.display_problem_for_multiple_students(num_students, problem_url_name)
+        response = self.request_regrade(problem_url_name)
+        self.assertTrue(response.content.find("Unable to find any students with submissions to be regraded") >= 0)
+
+    def testRegradingOnPartiallyUnansweredProblem(self):
+        '''Regrade a problem that is viewed but not answered by all students'''
         # create a problem, and create multiple students:
         problem_url_name = 'H1P1'
-        self.define_problem(problem_url_name)
+        self.define_option_problem(problem_url_name)
+        num_students = 10
+        self.create_multiple_students(num_students)
+
+        # display the problem to all students, so a StudentModule entry is created for all,
+        # but only half the students provide answers:
+        self.display_problem_for_multiple_students(num_students, problem_url_name)
+        self.submit_answers_for_multiple_students(num_students/2, problem_url_name)
+        self.check_problem_state(num_students/2, problem_url_name)
+
+        # update the data in the problem definition, and
+        # make call to dashboard's view as the instructor:
+        self.redefine_option_problem(problem_url_name)
+        response = self.request_regrade(problem_url_name)
+        
+        # it should only have attempted to regrade the half that submitted answers, and those should succeed:
+        self.assertTrue(response.content.find("Problem successfully regraded for {0} students".format(num_students/2)) >= 0)
+        self.check_problem_state(num_students/2, problem_url_name, regraded=True)
+        
+    def testRegradingOnAnsweredProblem(self):
+        '''Regrade a problem that is answered by all students'''
+        # create a problem, and create multiple students:
+        problem_url_name = 'H1P1'
+        self.define_option_problem(problem_url_name)
         num_students = 10
         self.create_multiple_students(num_students)
         
-        # have each student submit answers to the problem
+        # have all students submit answers to the problem
         self.submit_answers_for_multiple_students(num_students, problem_url_name)
+        self.check_problem_state(num_students, problem_url_name)
 
-        # update the data in the problem definition
-        self.redefine_problem(problem_url_name)
+        # update the data in the problem definition, and
+        # make call to dashboard's view as the instructor:
+        self.redefine_option_problem(problem_url_name)
+        response = self.request_regrade(problem_url_name)
+
+        # all students should be properly regraded
+        self.assertTrue(response.content.find("Problem successfully regraded for {0} students".format(num_students)) >= 0)
+        self.check_problem_state(num_students, problem_url_name, regraded=True)
+        
+    def testRegradingOnMisansweredProblem(self):
+        '''
+        Run regrade on problems that were not answered with valid responses by any students
+        (by changing the problem type)
+        '''
+        # create a problem, and create multiple students:
+        problem_url_name = 'H1P1'
+        self.define_option_problem(problem_url_name)
+        num_students = 10
+        self.create_multiple_students(num_students)
+        
+        # all students submit answers to the problem
+        self.submit_answers_for_multiple_students(num_students, problem_url_name)
+        self.check_problem_state(num_students, problem_url_name)
+
+        # update the data in the problem definition to be numerical instead of an option pick, and
+        # make call to dashboard's view as the instructor:
+        self.redefine_numerical_problem(problem_url_name)
+        response = self.request_regrade(problem_url_name)
+
+        # all problems should fail to be regraded, because the students' answers are not numerical:
+        self.assertTrue(response.content.find("Problem failed to be regraded for any of {0} students".format(num_students)) >= 0)
+        self.check_problem_state(num_students, problem_url_name, regraded=False)
+        
+    def testRegradingOnPartiallyMisansweredProblem(self):
+        '''Run regrade on problems that were answered by all students, but not all answers being valid.'''
+        # create a problem, and create multiple students:
+        problem_url_name = 'H1P1'
+        self.define_option_problem(problem_url_name)
+        num_students = 10
+        self.create_multiple_students(num_students)
+
+        # all students submit answers to the problem
+        self.submit_answers_for_multiple_students(num_students, problem_url_name)
+        self.check_problem_state(num_students, problem_url_name)
+
+        # update the data in the problem definition to be numerical instead of an option pick
+        self.redefine_numerical_problem(problem_url_name)
+        
+        # half the students re-submit good "numerical" answers to the problem
+        # (by removing the default answer prefix)
+        self.submit_answers_for_multiple_students(num_students/2, problem_url_name, answer_prefix='')
 
         # make call to dashboard's view as the instructor:
-        self.login_username(self.instructor.username)        
-        url = reverse('instructor_dashboard', kwargs={'course_id': self.graded_course.id})
-        action = "Regrade ALL students' problem submissions"
-        problem_argname = 'problem_to_regrade'
+        response = self.request_regrade(problem_url_name)
+        self.assertTrue(response.content.find("Problem regraded for {0} of {1} students".format(num_students/2, 
+                                                                                                num_students)) >= 0)
+        self.check_problem_state(num_students/2, problem_url_name, regraded=True, num_attempts=2)
+ 
+ 
+# Things still to test:
+# 
+#  problem requires queuing (how do we know?)
+#  
 
-        requested_url_name = 'garbage'        
-        response = self.client.post(url, {'action': action, problem_argname: requested_url_name})
-        self.assertTrue(response.content.find("Couldn't find problem with that urlname") >= 0)
-        requested_url_name = problem_url_name
+    def testTimingOfRegradingOnAnsweredProblem(self):
+        '''Regrade a problem that is answered by all students'''
+        # create a problem, and create multiple students:
+        problem_url_name = 'H1P1'
+        self.define_option_problem(problem_url_name)
+        num_students = 10000
+        self.create_multiple_students(num_students)
         
-        response = self.client.post(url, {'action': action, problem_argname: requested_url_name})
-        self.assertTrue(response.content.find("Problem successfully regraded") >= 0)
-        self.check_state_after_regrade(num_students, problem_url_name)
+        # have all students submit answers to the problem
+        self.submit_answers_for_multiple_students(num_students, problem_url_name)
+        # self.check_problem_state(num_students, problem_url_name)
+
+        # update the data in the problem definition, and
+        # make call to dashboard's view as the instructor:
+        self.redefine_option_problem(problem_url_name)
+        import time
+        before = time.time()
+        response = self.request_regrade(problem_url_name)
+        after = time.time()
+        f=open("/home/brian/regrade_time.txt", "w")
+        print >>f, "Regraded {0} students in {1} seconds".format(num_students, after-before)
+        f.close()
         
-        
-#        
-#        
-#        username = 'unknown'
-#        for action in ['Add', 'Remove']:
-#            for rolename in FORUM_ROLES:
-#                response = self.client.post(url, {'action': action_name(action, rolename), FORUM_ADMIN_USER[rolename]: username})
-#                self.assertTrue(response.content.find('Error: unknown username "{0}"'.format(username)) >= 0)
-        
-        # okay, now we're ready to try to regrade the problem
-#        self.regrade_student_answer(problem_url_name)
-#        self.check_state(descriptor,0,2,1)
-#        self.logout()
-#        self.login_username('u2')
-#        self.regrade_student_answer(problem_url_name)
-#        self.check_state(descriptor,1,2,1)
-#        self.logout()
-            
+        # all students should be properly regraded
+        self.assertTrue(response.content.find("Problem successfully regraded for {0} students".format(num_students)) >= 0)
+        # self.check_problem_state(num_students, problem_url_name, regraded=True)
