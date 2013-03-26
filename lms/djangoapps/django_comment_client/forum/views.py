@@ -2,23 +2,25 @@ import json
 import logging
 
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.http import HttpResponse, Http404
-from django.utils import simplejson
+from django.http import Http404
+
 from django.core.context_processors import csrf
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 
 from mitxmako.shortcuts import render_to_response, render_to_string
 from courseware.courses import get_course_with_access
-from course_groups.cohorts import is_course_cohorted, get_cohort_id, is_commentable_cohorted, get_cohorted_commentables, get_cohort, get_course_cohorts, get_cohort_by_id
+from course_groups.cohorts import is_course_cohorted
+from course_groups.cohorts import get_cohort_id
+from course_groups.cohorts import is_commentable_cohorted
+from course_groups.cohorts import get_cohorted_commentables
+from course_groups.cohorts import get_cohort
+from course_groups.cohorts import get_course_cohorts
+from course_groups.cohorts import get_cohort_by_id
 from courseware.access import has_access
 
-from urllib import urlencode
-from operator import methodcaller
-from django_comment_client.permissions import check_permissions_by_view, cached_has_permission
+from django_comment_client.permissions import cached_has_permission
 from django_comment_client.utils import (merge_dict, extract, strip_none,
-                                         strip_blank, get_courseware_context)
+                                         get_courseware_context)
 
 import django_comment_client.utils as utils
 import comment_client as cc
@@ -27,7 +29,7 @@ import xml.sax.saxutils as saxutils
 THREADS_PER_PAGE = 20
 INLINE_THREADS_PER_PAGE = 20
 PAGES_NEARBY_DELTA = 2
-escapedict = {'"': '&quot;'}
+ESCAPEDICT = {'"': '&quot;'}
 log = logging.getLogger("edx.discussions")
 
 
@@ -52,7 +54,8 @@ def get_threads(request, course_id, discussion_id=None, per_page=THREADS_PER_PAG
         # If the user did not select a sort key, use their last used sort key
         cc_user = cc.User.from_django_user(request.user)
         cc_user.retrieve()
-        # TODO: After the comment service is updated this can just be user.default_sort_key because the service returns the default value
+        # TODO: After the comment service is updated this can just be user.default_sort_key 
+        #       because the service returns the default value
         default_query_params['sort_key'] = cc_user.get('default_sort_key') or default_query_params['sort_key']
     else:
         # If the user clicked a sort key, update their default sort key
@@ -60,13 +63,12 @@ def get_threads(request, course_id, discussion_id=None, per_page=THREADS_PER_PAG
         cc_user.default_sort_key = request.GET.get('sort_key')
         cc_user.save()
 
-
     #there are 2 dimensions to consider when executing a search with respect to group id
-    #is user a moderator
-    #did the user request a group
+    #  is user a moderator
+    #  did the user request a group
 
-    #if the user requested a group explicitly, give them that group, othewrise, if mod, show all, else if student, use cohort
-
+    #if the user requested a group explicitly, give them that group, othewrise, 
+    #  if mod, show all, else if student, use cohort
     group_id = request.GET.get('group_id')
 
     if group_id == "all":
@@ -91,24 +93,22 @@ def get_threads(request, course_id, discussion_id=None, per_page=THREADS_PER_PAG
 
     #now add the group name if the thread has a group id
     for thread in threads:
-        
+
         if thread.get('group_id'):
             thread['group_name'] = get_cohort_by_id(course_id, thread.get('group_id')).name
             thread['group_string'] = "This post visible only to Group %s." % (thread['group_name'])
         else:
             thread['group_name'] = ""
             thread['group_string'] = "This post visible to everyone."
-        
+
         #patch for backward compatibility to comments service
         if not 'pinned' in thread:
             thread['pinned'] = False
-        
-
+            
     query_params['page'] = page
     query_params['num_pages'] = num_pages
 
     return threads, query_params
-
 
 def inline_discussion(request, course_id, discussion_id):
     """
@@ -142,14 +142,14 @@ def inline_discussion(request, course_id, discussion_id):
     cohorts_list = list()
 
     if is_cohorted:
-        cohorts_list.append({'name':'All Groups','id':None})
+        cohorts_list.append({'name': 'All Groups', 'id': None})
 
         #if you're a mod, send all cohorts and let you pick
 
         if is_moderator:
             cohorts = get_course_cohorts(course_id)
-            for c in cohorts:
-                cohorts_list.append({'name':c.name, 'id':c.id})
+            for ch in cohorts:
+                cohorts_list.append({'name': ch.name, 'id': ch.id})
 
         else:
             #students don't get to choose
@@ -215,23 +215,20 @@ def forum_form_discussion(request, course_id):
         cohorted_commentables = get_cohorted_commentables(course_id)
 
         user_cohort_id = get_cohort_id(request.user, course_id)
-
-    
         
-
         context = {
             'csrf': csrf(request)['csrf_token'],
             'course': course,
             #'recent_active_threads': recent_active_threads,
             #'trending_tags': trending_tags,
             'staff_access': has_access(request.user, course, 'staff'),
-            'threads': saxutils.escape(json.dumps(threads), escapedict),
+            'threads': saxutils.escape(json.dumps(threads), ESCAPEDCIT),
             'thread_pages': query_params['num_pages'],
-            'user_info': saxutils.escape(json.dumps(user_info), escapedict),
-            'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), escapedict),
+            'user_info': saxutils.escape(json.dumps(user_info), ESCAPEDCIT),
+            'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), ESCAPEDCIT),
             'course_id': course.id,
             'category_map': category_map,
-            'roles': saxutils.escape(json.dumps(utils.get_role_ids(course_id)), escapedict),
+            'roles': saxutils.escape(json.dumps(utils.get_role_ids(course_id)), ESCAPEDCIT),
             'is_moderator': cached_has_permission(request.user, "see_all_cohorts", course_id),
             'cohorts': cohorts,
             'user_cohort': user_cohort_id,
@@ -241,6 +238,7 @@ def forum_form_discussion(request, course_id):
         # print "start rendering.."
         return render_to_response('discussion/index.html', context)
 
+
 @login_required
 def single_thread(request, course_id, discussion_id, thread_id):
     course = get_course_with_access(request.user, course_id, 'load')
@@ -249,11 +247,11 @@ def single_thread(request, course_id, discussion_id, thread_id):
 
     try:
         thread = cc.Thread.find(thread_id).retrieve(recursive=True, user_id=request.user.id)
-        
+
         #patch for backward compatibility with comments service
         if not 'pinned' in thread.attributes:
             thread['pinned'] = False
-        
+
     except (cc.utils.CommentClientError, cc.utils.CommentClientUnknownError) as err:
         log.error("Error loading single thread.")
         raise Http404
@@ -314,22 +312,21 @@ def single_thread(request, course_id, discussion_id, thread_id):
 
         cohorts = get_course_cohorts(course_id)
         cohorted_commentables = get_cohorted_commentables(course_id)
-        user_cohort = get_cohort_id(request.user, course_id)
 
         context = {
             'discussion_id': discussion_id,
             'csrf': csrf(request)['csrf_token'],
             'init': '',   # TODO: What is this?
-            'user_info': saxutils.escape(json.dumps(user_info), escapedict),
-            'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), escapedict),
+            'user_info': saxutils.escape(json.dumps(user_info), ESCAPEDCIT),
+            'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), ESCAPEDCIT),
             'course': course,
             #'recent_active_threads': recent_active_threads,
             #'trending_tags': trending_tags,
             'course_id': course.id,   # TODO: Why pass both course and course.id to template?
             'thread_id': thread_id,
-            'threads': saxutils.escape(json.dumps(threads), escapedict),
+            'threads': saxutils.escape(json.dumps(threads), ESCAPEDCIT),
             'category_map': category_map,
-            'roles': saxutils.escape(json.dumps(utils.get_role_ids(course_id)), escapedict),
+            'roles': saxutils.escape(json.dumps(utils.get_role_ids(course_id)), ESCAPEDCIT),
             'thread_pages': query_params['num_pages'],
             'is_course_cohorted': is_course_cohorted(course_id),
             'is_moderator': cached_has_permission(request.user, "see_all_cohorts", course_id),
@@ -365,19 +362,18 @@ def user_profile(request, course_id, user_id):
                 'discussion_data': map(utils.safe_content, threads),
                 'page': query_params['page'],
                 'num_pages': query_params['num_pages'],
-                'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), escapedict),
+                'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), ESCAPEDCIT),
             })
         else:
-
 
             context = {
                 'course': course,
                 'user': request.user,
                 'django_user': User.objects.get(id=user_id),
                 'profiled_user': profiled_user.to_dict(),
-                'threads': saxutils.escape(json.dumps(threads), escapedict),
-                'user_info': saxutils.escape(json.dumps(user_info), escapedict),
-                'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), escapedict),
+                'threads': saxutils.escape(json.dumps(threads), ESCAPEDCIT),
+                'user_info': saxutils.escape(json.dumps(user_info), ESCAPEDCIT),
+                'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), ESCAPEDCIT),
 #                'content': content,
             }
 
@@ -418,9 +414,9 @@ def followed_threads(request, course_id, user_id):
                 'user': request.user,
                 'django_user': User.objects.get(id=user_id),
                 'profiled_user': profiled_user.to_dict(),
-                'threads': saxutils.escape(json.dumps(threads), escapedict),
-                'user_info': saxutils.escape(json.dumps(user_info), escapedict),
-                'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), escapedict),
+                'threads': saxutils.escape(json.dumps(threads), ESCAPEDCIT),
+                'user_info': saxutils.escape(json.dumps(user_info), ESCAPEDCIT),
+                'annotated_content_info': saxutils.escape(json.dumps(annotated_content_info), ESCAPEDCIT),
                 #                'content': content,
             }
 
