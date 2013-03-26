@@ -397,35 +397,3 @@ class TestProblemStateManagement(ct.TestRegradingBase):
                                                                                                 num_students)) >= 0)
         self.check_problem_state(num_students/2, problem_url_name, regraded=True, num_attempts=2)
  
- 
-# Things still to test:
-# 
-#  problem requires queuing (how do we know?)
-#  
-
-    def testTimingOfRegradingOnAnsweredProblem(self):
-        '''Regrade a problem that is answered by all students'''
-        # create a problem, and create multiple students:
-        problem_url_name = 'H1P1'
-        self.define_option_problem(problem_url_name)
-        num_students = 10000
-        self.create_multiple_students(num_students)
-        
-        # have all students submit answers to the problem
-        self.submit_answers_for_multiple_students(num_students, problem_url_name)
-        # self.check_problem_state(num_students, problem_url_name)
-
-        # update the data in the problem definition, and
-        # make call to dashboard's view as the instructor:
-        self.redefine_option_problem(problem_url_name)
-        import time
-        before = time.time()
-        response = self.request_regrade(problem_url_name)
-        after = time.time()
-        f=open("/home/brian/regrade_time.txt", "w")
-        print >>f, "Regraded {0} students in {1} seconds".format(num_students, after-before)
-        f.close()
-        
-        # all students should be properly regraded
-        self.assertTrue(response.content.find("Problem successfully regraded for {0} students".format(num_students)) >= 0)
-        # self.check_problem_state(num_students, problem_url_name, regraded=True)
