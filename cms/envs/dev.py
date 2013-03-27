@@ -112,6 +112,9 @@ CACHE_TIMEOUT = 0
 # Dummy secret key for dev
 SECRET_KEY = '85920908f28904ed733fe576320db18cabd7b6cd'
 
+# Mixpanel key for dev
+MIXPANEL_KEY = '29d0542207ada37d27e1c1a48940998a'
+
 ################################ DEBUG TOOLBAR #################################
 INSTALLED_APPS += ('debug_toolbar', 'debug_toolbar_mongo')
 MIDDLEWARE_CLASSES += ('django_comment_client.utils.QueryCountDebugMiddleware',
