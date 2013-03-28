@@ -39,11 +39,16 @@
                 "$last_login": "${ user.last_login }",
                 "username": "${ user.username }"
             });
-        % else:
-            console.log("mixpanel: no user");
+
+            var _kiq = _kiq || [];
+            _kiq.push(['identify', "${ user.email }" ]);
         % endif
     </script>
+
+    <!-- Qualaroo for edx.org -->
+    <script type="text/javascript" src="//s3.amazonaws.com/ki.js/48221/9SN.js" async="true"></script>
     <!-- end Mixpanel -->
+
     <%block name="header_extras"></%block>
   </head>
 
