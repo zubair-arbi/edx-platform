@@ -100,6 +100,7 @@ class CapaFields(object):
     seed = StringyInteger(help="Random seed for this student", scope=Scope.student_state)
     weight = StringyFloat(help="How much to weight this problem by", scope=Scope.settings)
     markdown = String(help="Markdown source of this module", scope=Scope.settings)
+    score_by_attempt = Boolean(help="Compute grade score by attempt", scope=Scope.settings)
 
 
 class CapaModule(CapaFields, XModule):

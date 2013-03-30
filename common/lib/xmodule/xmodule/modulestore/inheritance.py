@@ -5,6 +5,8 @@ INHERITABLE_METADATA = (
     'graded', 'start', 'due', 'graceperiod', 'showanswer', 'rerandomize',
     # TODO (ichuang): used for Fall 2012 xqa server access
     'xqa_key',
+    # grading by attempt instead of using score
+    'score_by_attempt',
     # How many days early to show a course element to beta testers (float)
     # intended to be set per-course, but can be overridden in for specific
     # elements.  Can be a float.
