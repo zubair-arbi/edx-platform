@@ -257,6 +257,7 @@ def get_module_for_descriptor(user, request, descriptor, model_data_cache, cours
         )
         student_module.grade = event.get('value')
         student_module.max_grade = event.get('max_value')
+        student_module.done = 'f'                              # for grading by attempt
         student_module.save()
 
         #Bin score into range and increment stats

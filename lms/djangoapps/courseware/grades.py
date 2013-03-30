@@ -376,8 +376,13 @@ def get_score(course_id, user, problem_descriptor, module_creator, model_data_ca
     student_module = model_data_cache.find(key)
 
     if student_module is not None and student_module.max_grade is not None:
-        correct = student_module.grade if student_module.grade is not None else 0
-        total = student_module.max_grade
+        # if score_by_attempt is True
+        if getattr(problem_descriptor,'score_by_attempt',False):
+            correct = 0 if student_module.done=='na' else 1
+            total = 1
+        else:
+            correct = student_module.grade if student_module.grade is not None else 0
+            total = student_module.max_grade
     else:
         # If the problem was not in the cache, or hasn't been graded yet,
         # we need to instantiate the problem.
