@@ -385,7 +385,15 @@ Inherited
   When this content should be shown to students.  Note that anyone with staff access to the course will always see everything.
 
 `showanswer`
-  When to show answer. For 'attempted', will show answer after first attempt. Values: never, attempted, answered, closed. Default: closed. Optional.
+  When to show answer. Optional. Possible values:
+   `closed` - Default. After the student uses all attempts.
+   `never` - never display the solution tag to students
+   `always` - Show Answer button is always available
+   `attempted` - After the student first attempts a problem
+   `answered` - After a student correctly answers a problem
+   `finished` - After the problem closes or after a student gets it correct
+   `past_due` - Only after the due date + graceperiod have expired
+
 
 `graded`
   Whether this section will count towards the students grade. "true" or "false". Defaults to "false".
