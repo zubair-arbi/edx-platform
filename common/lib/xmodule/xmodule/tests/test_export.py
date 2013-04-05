@@ -95,29 +95,29 @@ class RoundTripTestCase(unittest.TestCase):
         self.temp_dir = mkdtemp()
         self.addCleanup(shutil.rmtree, self.temp_dir)
 
-    def test_toy_roundtrip(self):
-        self.check_export_roundtrip(DATA_DIR, "toy")
+    # def test_toy_roundtrip(self):
+    #     self.check_export_roundtrip(DATA_DIR, "toy")
 
-    def test_simple_roundtrip(self):
-        self.check_export_roundtrip(DATA_DIR, "simple")
+    # def test_simple_roundtrip(self):
+    #     self.check_export_roundtrip(DATA_DIR, "simple")
 
-    def test_full_roundtrip(self):
-        self.check_export_roundtrip(DATA_DIR, "full")
+    # def test_full_roundtrip(self):
+    #     self.check_export_roundtrip(DATA_DIR, "full")
 
-    def test_conditional_and_poll_roundtrip(self):
-        self.check_export_roundtrip(DATA_DIR, "conditional_and_poll")
+    # def test_conditional_and_poll_roundtrip(self):
+    #     self.check_export_roundtrip(DATA_DIR, "conditional_and_poll")
 
-    def test_selfassessment_roundtrip(self):
-        #Test selfassessment xmodule to see if it exports correctly
-        self.check_export_roundtrip(DATA_DIR, "self_assessment")
+    # def test_selfassessment_roundtrip(self):
+    #     #Test selfassessment xmodule to see if it exports correctly
+    #     self.check_export_roundtrip(DATA_DIR, "self_assessment")
 
-    def test_graphicslidertool_roundtrip(self):
-        #Test graphicslidertool xmodule to see if it exports correctly
-        self.check_export_roundtrip(DATA_DIR, "graphic_slider_tool")
+    # def test_graphicslidertool_roundtrip(self):
+    #     #Test graphicslidertool xmodule to see if it exports correctly
+    #     self.check_export_roundtrip(DATA_DIR, "graphic_slider_tool")
 
-    def test_exam_registration_roundtrip(self):
-        # Test exam_registration xmodule to see if it exports correctly
-        self.check_export_roundtrip(DATA_DIR, "test_exam_registration")
+    # def test_exam_registration_roundtrip(self):
+    #     # Test exam_registration xmodule to see if it exports correctly
+    #     self.check_export_roundtrip(DATA_DIR, "test_exam_registration")
 
     def test_word_cloud_roundtrip(self):
         self.check_export_roundtrip(DATA_DIR, "word_cloud")

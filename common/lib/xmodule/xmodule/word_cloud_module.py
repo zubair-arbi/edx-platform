@@ -8,6 +8,9 @@ If student have answered - words he entered and cloud.
 Stunent can change his answer.
 """
 
+import blablabla
+Error!!!
+
 import cgi
 import json
 import logging
