@@ -15,7 +15,6 @@ from scipy.optimize import curve_fit
 from django.conf import settings
 from django.db.models import Sum, Max
 from psychometrics.models import *
-from xmodule.modulestore import Location
 
 log = logging.getLogger("mitx.psychometrics")
 
@@ -66,7 +65,7 @@ class StatVar(object):
             if x > self.max:
                 self.max = x
         self.sum += x
-        self.sum2 += x**2
+        self.sum2 += x ** 2
         self.cnt += 1
 
     def avg(self):
@@ -77,11 +76,11 @@ class StatVar(object):
     def var(self):
         if self.cnt is None:
             return 0
-        return (self.sum2 / 1.0 / self.cnt / (self.unit**2)) - (self.avg()**2)
+        return (self.sum2 / 1.0 / self.cnt / (self.unit ** 2)) - (self.avg() ** 2)
 
     def sdv(self):
         v = self.var()
-        if v>0:
+        if v > 0:
             return math.sqrt(v)
         else:
             return 0
@@ -112,7 +111,7 @@ def make_histogram(ydata, bins=None):
     hist = dict(zip(bins, [0] * nbins))
     for y in ydata:
         for b in bins[::-1]:    # in reverse order
-            if y>b:
+            if y > b:
                 hist[b] += 1
                 break
     # hist['bins'] = bins
@@ -128,7 +127,7 @@ def problems_with_psychometric_data(course_id):
     '''
     pmdset = PsychometricData.objects.using(db).filter(studentmodule__course_id=course_id)
     plist = [p['studentmodule__module_state_key'] for p in pmdset.values('studentmodule__module_state_key').distinct()]
-    problems = dict( (p, pmdset.filter(studentmodule__module_state_key=p).count()) for p in plist )
+    problems = dict((p, pmdset.filter(studentmodule__module_state_key=p).count()) for p in plist)
 
     return problems
 
@@ -241,18 +240,21 @@ def generate_plots_for_problem(problem):
         ylast = 0
         for x in xdat:
             y = gset.filter(attempts=x).count() / ngset
-            ydat.append( y + ylast )
+            ydat.append(y + ylast)
             ylast = y + ylast
         yset['ydat'] = ydat
 
         if len(ydat) > 3:         # try to fit to logistic function if enough data points
-            cfp = curve_fit(func_2pl, xdat, ydat, [1.0, max_attempts / 2.0])
-            yset['fitparam'] = cfp
-            yset['fitpts'] = func_2pl(np.array(xdat), *cfp[0])
-            yset['fiterr'] = [yd - yf for (yd, yf) in zip(ydat, yset['fitpts'])]
-            fitx = np.linspace(xdat[0], xdat[-1], 100)
-            yset['fitx'] = fitx
-            yset['fity'] = func_2pl(np.array(fitx), *cfp[0])
+            try:
+                cfp = curve_fit(func_2pl, xdat, ydat, [1.0, max_attempts / 2.0])
+                yset['fitparam'] = cfp
+                yset['fitpts'] = func_2pl(np.array(xdat), *cfp[0])
+                yset['fiterr'] = [yd - yf for (yd, yf) in zip(ydat, yset['fitpts'])]
+                fitx = np.linspace(xdat[0], xdat[-1], 100)
+                yset['fitx'] = fitx
+                yset['fity'] = func_2pl(np.array(fitx), *cfp[0])
+            except Exception as err:
+                log.debug('Error in psychoanalyze curve fitting: %s' % err)
 
         dataset['grade_%d' % grade] = yset
 
@@ -289,7 +291,7 @@ def generate_plots_for_problem(problem):
                           'info': '',
                           'data': jsdata,
                           'cmd': '[%s], %s' % (','.join(jsplots), axisopts),
-                })
+                          })
 
     #log.debug('plots = %s' % plots)
     return msg, plots
@@ -297,12 +299,18 @@ def generate_plots_for_problem(problem):
 #-----------------------------------------------------------------------------
 
 
-def make_psychometrics_data_update_handler(studentmodule):
+def make_psychometrics_data_update_handler(course_id, user, module_state_key):
     """
     Construct and return a procedure which may be called to update
     the PsychometricsData instance for the given StudentModule instance.
     """
-    sm = studentmodule
+    sm, status = StudentModule.objects.get_or_create(
+                       course_id=course_id,
+                       student=user,
+                       module_state_key=module_state_key,
+                       defaults={'state': '{}', 'module_type': 'problem'},
+                 )
+
     try:
         pmd = PsychometricData.objects.using(db).get(studentmodule=sm)
     except PsychometricData.DoesNotExist:
@@ -323,7 +331,11 @@ def make_psychometrics_data_update_handler(studentmodule):
             return
 
         pmd.done = done
-        pmd.attempts = state['attempts']
+        try:
+            pmd.attempts = state.get('attempts', 0)
+        except:
+            log.exception("no attempts for %s (state=%s)" % (sm, sm.state))
+
         try:
             checktimes = eval(pmd.checktimes)                   # update log of attempt timestamps
         except:

@@ -65,7 +65,7 @@ class Command(BaseCommand):
             else:
                 try:
                     registration = TestCenterRegistration.objects.get(client_authorization_id=client_authorization_id)
-                    Command.datadog_error("Found authorization record for user {}".format(registration.testcenter_user.user.username), eacfile)
+                    Command.datadog_error("Found authorization record for user {}".format(registration.testcenter_user.user.username), eacfile.name)
                     # now update the record:
                     registration.upload_status = row['Status']
                     registration.upload_error_message =  row['Message']
@@ -116,4 +116,3 @@ class Command(BaseCommand):
                     tcuser.save()
                 except TestCenterUser.DoesNotExist:
                     Command.datadog_error(" Failed to find record for client_candidate_id {}".format(client_candidate_id), vcdcfile.name)
-

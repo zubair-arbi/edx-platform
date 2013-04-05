@@ -8,7 +8,6 @@ sessions. Assumes structure:
         /log  # Where we're going to write log files
 """
 from .common import *
-from logsettings import get_logger_config
 import os
 from path import path
 
@@ -23,7 +22,7 @@ MITX_FEATURES['ENABLE_DISCUSSION_SERVICE'] = False
 WIKI_ENABLED = True
 
 # Makes the tests run much faster...
-SOUTH_TESTS_MIGRATE = False # To disable migrations and use syncdb instead
+SOUTH_TESTS_MIGRATE = False   # To disable migrations and use syncdb instead
 
 # Nose Test Runner
 INSTALLED_APPS += ('django_nose',)
@@ -57,7 +56,7 @@ XQUEUE_INTERFACE = {
     },
     "basic_auth": ('anant', 'agarwal'),
 }
-XQUEUE_WAITTIME_BETWEEN_REQUESTS = 5 # seconds
+XQUEUE_WAITTIME_BETWEEN_REQUESTS = 5   # seconds
 
 
 # Don't rely on a real staff grading backend
@@ -116,7 +115,14 @@ CACHES = {
         'KEY_PREFIX': 'general',
         'VERSION': 4,
         'KEY_FUNCTION': 'util.memcache.safe_key',
-    }
+    },
+
+    'mongo_metadata_inheritance': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': '/var/tmp/mongo_metadata_inheritance',
+        'TIMEOUT': 300,
+        'KEY_FUNCTION': 'util.memcache.safe_key',
+    } 
 }
 
 # Dummy secret key for dev

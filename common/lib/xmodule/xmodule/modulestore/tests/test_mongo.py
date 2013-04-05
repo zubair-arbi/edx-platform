@@ -1,6 +1,7 @@
 import pymongo
 
-from nose.tools import assert_equals, assert_raises, assert_not_equals, with_setup
+from mock import Mock
+from nose.tools import assert_equals, assert_raises, assert_not_equals, with_setup, assert_false
 from pprint import pprint
 
 from xmodule.modulestore import Location
@@ -102,4 +103,3 @@ class TestMongoModuleStore(object):
     def test_path_to_location(self):
         '''Make sure that path_to_location works'''
         check_path_to_location(self.store)
-

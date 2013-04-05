@@ -4,8 +4,11 @@ var $modalCover;
 var $newComponentItem;
 var $changedInput;
 var $spinner;
+var $newComponentTypePicker;
+var $newComponentTemplatePickers;
+var $newComponentButton;
 
-$(document).ready(function() {
+$(document).ready(function () {
     $body = $('body');
     $modal = $('.history-modal');
     $modalCover = $('<div class="modal-cover">');
@@ -13,10 +16,6 @@ $(document).ready(function() {
     // pipelining (note, this doesn't happen on local runtimes). So if we set it on window, when we can access it from other
     // scopes (namely the course-info tab)
     window.$modalCover = $modalCover;
-    
-    // Control whether template caching in local memory occurs (see template_loader.js). Caching screws up development but may
-    // be a good optimization in production (it works fairly well)
-    window.cachetemplates = false;
 
     $body.append($modalCover);
     $newComponentItem = $('.new-component-item');
@@ -31,25 +30,76 @@ $(document).ready(function() {
 
     $modal.bind('click', hideModal);
     $modalCover.bind('click', hideModal);
-    $('.assets .upload-button').bind('click', showUploadModal);
+    $('.uploads .upload-button').bind('click', showUploadModal);
     $('.upload-modal .close-button').bind('click', hideModal);
 
-    $body.on('click', '.embeddable-xml-input', function(){ $(this).select(); });
+    $body.on('click', '.embeddable-xml-input', function () {
+        $(this).select();
+    });
 
     $('.unit .item-actions .delete-button').bind('click', deleteUnit);
     $('.new-unit-item').bind('click', createNewUnit);
 
+    $('body').addClass('js');
+
+    // lean/simple modal
+    $('a[rel*=modal]').leanModal({overlay : 0.80, closeButton: '.action-modal-close' });
+    $('a.action-modal-close').click(function(e){
+        (e).preventDefault();
+    });
+
+    // nav - dropdown related
+    $body.click(function (e) {
+        $('.nav-dropdown .nav-item .wrapper-nav-sub').removeClass('is-shown');
+        $('.nav-dropdown .nav-item .title').removeClass('is-selected');
+    });
+
+    $('.nav-dropdown .nav-item .title').click(function (e) {
+
+        $subnav = $(this).parent().find('.wrapper-nav-sub');
+        $title = $(this).parent().find('.title');
+        e.preventDefault();
+        e.stopPropagation();
+
+        if ($subnav.hasClass('is-shown')) {
+            $subnav.removeClass('is-shown');
+            $title.removeClass('is-selected');
+        }
+
+        else {
+            $('.nav-dropdown .nav-item .title').removeClass('is-selected');
+            $('.nav-dropdown .nav-item .wrapper-nav-sub').removeClass('is-shown');
+            $title.addClass('is-selected');
+            $subnav.addClass('is-shown');
+        }
+    });
+
+    // general link management - new window/tab
+    $('a[rel="external"]').attr('title', 'This link will open in a new browser window/tab').bind('click', linkNewWindow);
+
+    // general link management - lean modal window
+    $('a[rel="modal"]').attr('title', 'This link will open in a modal window').leanModal({overlay: 0.50, closeButton: '.action-modal-close' });
+    $('.action-modal-close').click(function (e) {
+        (e).preventDefault();
+    });
+
+    // general link management - smooth scrolling page links
+    $('a[rel*="view"][href^="#"]').bind('click', smoothScrollLink);
+
+    // tender feedback window scrolling
+    $('a.show-tender').bind('click', smoothScrollTop);
+
     // toggling overview section details
-    $(function(){
-      if($('.courseware-section').length > 0) {
-        $('.toggle-button-sections').addClass('is-shown');
-      }
+    $(function () {
+        if ($('.courseware-section').length > 0) {
+            $('.toggle-button-sections').addClass('is-shown');
+        }
     });
     $('.toggle-button-sections').bind('click', toggleSections);
 
-    // autosave when a field is updated on the subsection page
-    $body.on('keyup', '.subsection-display-name-input, .unit-subtitle, .policy-list-value', checkForNewValue);
-    $('.subsection-display-name-input, .unit-subtitle, .policy-list-name, .policy-list-value').each(function(i) {
+    // autosave when leaving input field
+    $body.on('change', '.subsection-display-name-input', saveSubsection);
+    $('.subsection-display-name-input').each(function () {
         this.val = $(this).val();
     });
     $("#start_date, #start_time, #due_date, #due_time").bind('change', autosaveInput);
@@ -61,75 +111,18 @@ $(document).ready(function() {
     // add new/delete section
     $('.new-courseware-section-button').bind('click', addNewSection);
     $('.delete-section-button').bind('click', deleteSection);
-    
+
     // add new/delete subsection
     $('.new-subsection-item').bind('click', addNewSubsection);
     $('.delete-subsection-button').bind('click', deleteSubsection);
-    // add/remove policy metadata button click handlers
-    $('.add-policy-data').bind('click', addPolicyMetadata);
-    $('.remove-policy-data').bind('click', removePolicyMetadata);
-    $body.on('click', '.policy-list-element .save-button', savePolicyMetadata);
-    $body.on('click', '.policy-list-element .cancel-button', cancelPolicyMetadata);
 
     $('.sync-date').bind('click', syncReleaseDate);
 
     // import form setup
     $('.import .file-input').bind('change', showImportSubmit);
-    $('.import .choose-file-button, .import .choose-file-button-inline').bind('click', function(e) {
+    $('.import .choose-file-button, .import .choose-file-button-inline').bind('click', function (e) {
         e.preventDefault();
         $('.import .file-input').click();
-    });
-
-    // making the unit list draggable. Note: sortable didn't work b/c it considered
-    // drop points which the user hovered over as destinations and proactively changed
-    // the dom; so, if the user subsequently dropped at an illegal spot, the reversion
-    // point was the last dom change.
-    $('.unit').draggable({
-    	axis: 'y',
-    	handle: '.drag-handle',
-    	stack: '.unit',  
-    	revert: "invalid"
-    });
-    
-    // Subsection reordering
-    $('.id-holder').draggable({
-    	axis: 'y',
-    	handle: '.section-item .drag-handle',
-    	stack: '.id-holder',
-    	revert: "invalid"
-    });
-    
-    // Section reordering
-    $('.courseware-section').draggable({
-    	axis: 'y',
-    	handle: 'header .drag-handle',
-    	stack: '.courseware-section',
-    	revert: "invalid"
-    });
-    
-    
-    $('.sortable-unit-list').droppable({
-    	accept : '.unit',
-    	greedy: true,
-    	tolerance: "pointer",
-    	hoverClass: "dropover",
-    	drop: onUnitReordered
-    });
-    $('.subsection-list > ol').droppable({
-    	// why don't we have a more useful class for subsections than id-holder?
-    	accept : '.id-holder', // '.unit, .id-holder',
-    	tolerance: "pointer",
-    	hoverClass: "dropover",
-    	drop: onSubsectionReordered,
-    	greedy: true
-    });
-    
-    // Section reordering
-    $('.courseware-overview').droppable({
-    	accept : '.courseware-section',
-    	tolerance: "pointer",
-    	drop: onSectionReordered,
-    	greedy: true
     });
 
     $('.new-course-button').bind('click', addNewCourse);
@@ -150,40 +143,71 @@ $(document).ready(function() {
     $body.on('click', '.section-published-date .schedule-button', editSectionPublishDate);
     $body.on('click', '.edit-subsection-publish-settings .save-button', saveSetSectionScheduleDate);
     $body.on('click', '.edit-subsection-publish-settings .cancel-button', hideModal);
-    $body.on('change', '.edit-subsection-publish-settings .start-date', function() {
-        if($('.edit-subsection-publish-settings').find('.start-time').val() == '') {
-            $('.edit-subsection-publish-settings').find('.start-time').val('12:00am');    
+    $body.on('change', '.edit-subsection-publish-settings .start-date', function () {
+        if ($('.edit-subsection-publish-settings').find('.start-time').val() == '') {
+            $('.edit-subsection-publish-settings').find('.start-time').val('12:00am');
         }
     });
-    $('.edit-subsection-publish-settings').on('change', '.start-date, .start-time', function() {
+    $('.edit-subsection-publish-settings').on('change', '.start-date, .start-time', function () {
         $('.edit-subsection-publish-settings').find('.save-button').show();
     });
 });
 
-// function collapseAll(e) {
-//     $('.branch').addClass('collapsed');
-//     $('.expand-collapse-icon').removeClass('collapse').addClass('expand');
-// }
+function smoothScrollLink(e) {
+    (e).preventDefault();
+
+    $.smoothScroll({ 
+        offset: -200, 
+        easing: 'swing', 
+        speed: 1000,
+        scrollElement: null,
+        scrollTarget: $(this).attr('href')
+    });
+}
+
+function smoothScrollTop(e) {
+    (e).preventDefault();
+
+    $.smoothScroll({ 
+        offset: -200, 
+        easing: 'swing', 
+        speed: 1000,
+        scrollElement: null,
+        scrollTarget: $('#view-top')
+    });
+}
+
+function linkNewWindow(e) {
+    window.open($(e.target).attr('href'));
+    e.preventDefault();
+}
+
+// On AWS instances, base.js gets wrapped in a separate scope as part of Django static
+// pipelining (note, this doesn't happen on local runtimes). So if we set it on window,
+// when we can access it from other scopes (namely the checklists)
+window.cmsLinkNewWindow = linkNewWindow;
 
 function toggleSections(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  $section = $('.courseware-section');
-  sectionCount = $section.length;
-  $button = $(this);
-  $labelCollapsed = $('<i class="ss-icon ss-symbolicons-block">up</i> <span class="label">Collapse All Sections</span>');
-  $labelExpanded = $('<i class="ss-icon ss-symbolicons-block">down</i> <span class="label">Expand All Sections</span>');
+    $section = $('.courseware-section');
+    sectionCount = $section.length;
+    $button = $(this);
+    $labelCollapsed = $('<i class="ss-icon ss-symbolicons-block">up</i> <span class="label">Collapse All Sections</span>');
+    $labelExpanded = $('<i class="ss-icon ss-symbolicons-block">down</i> <span class="label">Expand All Sections</span>');
 
-  var buttonLabel = $button.hasClass('is-activated') ? $labelCollapsed : $labelExpanded;
-  $button.toggleClass('is-activated').html(buttonLabel);
+    var buttonLabel = $button.hasClass('is-activated') ? $labelCollapsed : $labelExpanded;
+    $button.toggleClass('is-activated').html(buttonLabel);
 
-  if($button.hasClass('is-activated')) {
-      $section.addClass('collapsed');
-      $section.find('.expand-collapse-icon').removeClass('collapsed').addClass('expand');
-  } else {
-      $section.removeClass('collapsed');
-      $section.find('.expand-collapse-icon').removeClass('expand').addClass('collapse');
-  }
+    if ($button.hasClass('is-activated')) {
+        $section.addClass('collapsed');
+        // first child in order to avoid the icons on the subsection lists which are not in the first child
+        $section.find('header .expand-collapse-icon').removeClass('collapse').addClass('expand');
+    } else {
+        $section.removeClass('collapsed');
+        // first child in order to avoid the icons on the subsection lists which are not in the first child
+        $section.find('header .expand-collapse-icon').removeClass('expand').addClass('collapse');
+    }
 }
 
 function editSectionPublishDate(e) {
@@ -193,16 +217,16 @@ function editSectionPublishDate(e) {
     $modal.attr('data-id', $(this).attr('data-id'));
     $modal.find('.start-date').val($(this).attr('data-date'));
     $modal.find('.start-time').val($(this).attr('data-time'));
-    if($modal.find('.start-date').val() == '' && $modal.find('.start-time').val() == '') {
+    if ($modal.find('.start-date').val() == '' && $modal.find('.start-time').val() == '') {
         $modal.find('.save-button').hide();
-    }    
+    }
     $modal.find('.section-name').html('"' + $(this).closest('.courseware-section').find('.section-name-span').text() + '"');
     $modalCover.show();
 }
 
 function showImportSubmit(e) {
     var filepath = $(this).val();
-    if(filepath.substr(filepath.length - 6, 6) == 'tar.gz') {
+    if (filepath.substr(filepath.length - 6, 6) == 'tar.gz') {
         $('.error-block').hide();
         $('.file-name').html($(this).val().replace('C:\\fakepath\\', ''));
         $('.file-name-block').show();
@@ -221,192 +245,44 @@ function syncReleaseDate(e) {
     $("#start_time").val("");
 }
 
-function addPolicyMetadata(e) {
-    e.preventDefault();
-    var template =$('#add-new-policy-element-template > li');
-    var newNode = template.clone();
-    var _parent_el = $(this).parent('ol:.policy-list');
-    newNode.insertBefore('.add-policy-data');
-    $('.remove-policy-data').bind('click', removePolicyMetadata);
-    newNode.find('.policy-list-name').focus();
-}
-
-function savePolicyMetadata(e) {
-    e.preventDefault();
-
-    var $policyElement = $(this).parents('.policy-list-element');
-    saveSubsection()
-    $policyElement.removeClass('new-policy-list-element');
-    $policyElement.find('.policy-list-name').attr('disabled', 'disabled');
-    $policyElement.removeClass('editing');
-}
-
-function cancelPolicyMetadata(e) {
-    e.preventDefault();
-
-    var $policyElement = $(this).parents('.policy-list-element');
-    if(!$policyElement.hasClass('editing')) {
-        $policyElement.remove();
-    } else {
-        $policyElement.removeClass('new-policy-list-element');
-        $policyElement.find('.policy-list-name').val($policyElement.data('currentValues')[0]);
-        $policyElement.find('.policy-list-value').val($policyElement.data('currentValues')[1]);
-    }
-    $policyElement.removeClass('editing');
-}
-
-function removePolicyMetadata(e) {
-    e.preventDefault();
-
-    if(!confirm('Are you sure you wish to delete this item. It cannot be reversed!'))
-       return;
-   
-    policy_name = $(this).data('policy-name');
-    var _parent_el = $(this).parent('li:.policy-list-element');
-    if ($(_parent_el).hasClass("new-policy-list-element")) {
-        _parent_el.remove();        
-    } else {
-        _parent_el.appendTo("#policy-to-delete");
-    }
-    saveSubsection()
-}
-
-function expandSection(event) {
-	$(event.delegateTarget).removeClass('collapsed'); 
-	$(event.delegateTarget).find('.expand-collapse-icon').removeClass('expand').addClass('collapse');
-}
-
-function onUnitReordered(event, ui) {
-	// a unit's been dropped on this subsection,
-	//       figure out where it came from and where it slots in. 
-	_handleReorder(event, ui, 'subsection-id', 'li:.leaf');
-}
-
-function onSubsectionReordered(event, ui) {
-	// a subsection has been dropped on this section,
-	//       figure out where it came from and where it slots in. 
-	_handleReorder(event, ui, 'section-id', 'li:.branch');
-}
-
-function onSectionReordered(event, ui) {
-	// a section moved w/in the overall (cannot change course via this, so no parentage change possible, just order)
-	_handleReorder(event, ui, 'course-id', '.courseware-section');
-}
-
-function _handleReorder(event, ui, parentIdField, childrenSelector) {
-	// figure out where it came from and where it slots in. 
-	var subsection_id = $(event.target).data(parentIdField);
-	var _els = $(event.target).children(childrenSelector);
-	var children = _els.map(function(idx, el) { return $(el).data('id'); }).get();
-	// if new to this parent, figure out which parent to remove it from and do so
-	if (!_.contains(children, ui.draggable.data('id'))) {
-		var old_parent = ui.draggable.parent();
-		var old_children = old_parent.children(childrenSelector).map(function(idx, el) { return $(el).data('id'); }).get();
-		old_children = _.without(old_children, ui.draggable.data('id'));
-		$.ajax({
-			url: "/save_item",
-			type: "POST",
-			dataType: "json",
-			contentType: "application/json",
-			data:JSON.stringify({ 'id' : old_parent.data(parentIdField), 'children' : old_children})
-		});
-	}
-	else {
-		// staying in same parent
-		// remove so that the replacement in the right place doesn't double it
-		children = _.without(children, ui.draggable.data('id'));
-	}
-	// add to this parent (figure out where)
-	for (var i = 0; i < _els.length; i++) {
-		if (!ui.draggable.is(_els[i]) && ui.offset.top < $(_els[i]).offset().top) {
-			// insert at i in children and _els
-			ui.draggable.insertBefore($(_els[i]));
-			// TODO figure out correct way to have it remove the style: top:n; setting (and similar line below)
-			ui.draggable.attr("style", "position:relative;");
-			children.splice(i, 0, ui.draggable.data('id'));
-			break;
-		}
-	}
-	// see if it goes at end (the above loop didn't insert it)
-	if (!_.contains(children, ui.draggable.data('id'))) {
-		$(event.target).append(ui.draggable);
-		ui.draggable.attr("style", "position:relative;"); // STYLE hack too
-		children.push(ui.draggable.data('id'));
-	}
-	$.ajax({
-		url: "/save_item",
-		type: "POST",
-		dataType: "json",
-		contentType: "application/json",
-		data:JSON.stringify({ 'id' : subsection_id, 'children' : children})
-	});
-
-}
-
-function getEdxTimeFromDateTimeVals(date_val, time_val, format) {
+function getEdxTimeFromDateTimeVals(date_val, time_val) {
     var edxTimeStr = null;
 
     if (date_val != '') {
-        if (time_val == '') 
+        if (time_val == '')
             time_val = '00:00';
 
         // Note, we are using date.js utility which has better parsing abilities than the built in JS date parsing
-        date = Date.parse(date_val + " " + time_val);
-        if (format == null)
-            format = 'yyyy-MM-ddTHH:mm';
-
-        edxTimeStr = date.toString(format);
+        var date = Date.parse(date_val + " " + time_val);
+        edxTimeStr = date.toString('yyyy-MM-ddTHH:mm');
     }
 
     return edxTimeStr;
 }
 
-function getEdxTimeFromDateTimeInputs(date_id, time_id, format) {
-    var input_date = $('#'+date_id).val();
-    var input_time = $('#'+time_id).val();
+function getEdxTimeFromDateTimeInputs(date_id, time_id) {
+    var input_date = $('#' + date_id).val();
+    var input_time = $('#' + time_id).val();
 
-    return getEdxTimeFromDateTimeVals(input_date, input_time, format);
-}
-
-function checkForNewValue(e) {
-    if($(this).parents('.new-policy-list-element')[0]) {
-        return;
-    }
-
-    if(this.val) {
-        this.hasChanged = this.val != $(this).val();    
-    } else {
-        this.hasChanged = false;
-    }
-
-    this.val = $(this).val();
-    if(this.hasChanged) {
-        if(this.saveTimer) {
-            clearTimeout(this.saveTimer);
-        }
-
-        this.saveTimer = setTimeout(function() {
-            $changedInput = $(e.target);
-            saveSubsection();
-            this.saveTimer = null;
-        }, 500);
-    }
+    return getEdxTimeFromDateTimeVals(input_date, input_time);
 }
 
 function autosaveInput(e) {
-    if(this.saveTimer) {
+    var self = this;
+    if (this.saveTimer) {
         clearTimeout(this.saveTimer);
     }
 
-    this.saveTimer = setTimeout(function() {        
+    this.saveTimer = setTimeout(function () {
         $changedInput = $(e.target);
         saveSubsection();
-        this.saveTimer = null;
+        self.saveTimer = null;
     }, 500);
 }
 
 function saveSubsection() {
-    if($changedInput && !$changedInput.hasClass('no-spinner')) {
+    // Spinner is no longer used by subsection name, but is still used by date and time pickers on the right.
+    if ($changedInput && !$changedInput.hasClass('no-spinner')) {
         $spinner.css({
             'position': 'absolute',
             'top': Math.floor($changedInput.position().top + ($changedInput.outerHeight() / 2) + 3),
@@ -416,69 +292,54 @@ function saveSubsection() {
         $changedInput.after($spinner);
         $spinner.show();
     }
-    
+
     var id = $('.subsection-body').data('id');
 
     // pull all 'normalized' metadata editable fields on page
     var metadata_fields = $('input[data-metadata-name]');
-    
+
     var metadata = {};
-    for(var i=0; i< metadata_fields.length;i++) {
-	   var el = metadata_fields[i];
-	   metadata[$(el).data("metadata-name")] = el.value;
-    } 
-
-    // now add 'free-formed' metadata which are presented to the user as dual input fields (name/value)
-    $('ol.policy-list > li.policy-list-element').each( function(i, element) {
-        var name = $(element).children('.policy-list-name').val();
-        metadata[name] = $(element).children('.policy-list-value').val();
-    });
-
-    // now add any 'removed' policy metadata which is stored in a separate hidden div
-    // 'null' presented to the server means 'remove'
-    $("#policy-to-delete > li.policy-list-element").each(function(i, element) {
-        var name = $(element).children('.policy-list-name').val();
-        if (name != "")
-           metadata[name] = null;
-    });
+    for (var i = 0; i < metadata_fields.length; i++) {
+        var el = metadata_fields[i];
+        metadata[$(el).data("metadata-name")] = el.value;
+    }
 
     // Piece back together the date/time UI elements into one date/time string
-    // NOTE: our various "date/time" metadata elements don't always utilize the same formatting string
-    // so make sure we're passing back the correct format
     metadata['start'] = getEdxTimeFromDateTimeInputs('start_date', 'start_time');
-    metadata['due'] = getEdxTimeFromDateTimeInputs('due_date', 'due_time', 'MMMM dd HH:mm');
+    metadata['due'] = getEdxTimeFromDateTimeInputs('due_date', 'due_time');
 
     $.ajax({
-	    url: "/save_item",
-		type: "POST",
-		dataType: "json",
-		contentType: "application/json",
-		data:JSON.stringify({ 'id' : id, 'metadata' : metadata}),
-		success: function() {
+        url: "/save_item",
+        type: "POST",
+        dataType: "json",
+        contentType: "application/json",
+        data: JSON.stringify({ 'id': id, 'metadata': metadata}),
+        success: function () {
             $spinner.delay(500).fadeOut(150);
-	    },
-		error: function() {
+            $changedInput = null;
+        },
+        error: function () {
             showToastMessage('There has been an error while saving your changes.');
-	    }
-	});
+        }
+    });
 }
 
 
 function createNewUnit(e) {
     e.preventDefault();
 
-    parent = $(this).data('parent');
-    template = $(this).data('template');
+    var parent = $(this).data('parent');
+    var template = $(this).data('template');
 
     $.post('/clone_item',
-	   {'parent_location' : parent,
-		   'template' : template,
-		   'display_name': 'New Unit'
-		   },
-	   function(data) {
-	       // redirect to the edit page
-	       window.location = "/edit/" + data['id'];
-	   });
+        {'parent_location': parent,
+            'template': template,
+            'display_name': 'New Unit'
+        },
+        function (data) {
+            // redirect to the edit page
+            window.location = "/edit/" + data['id'];
+        });
 }
 
 function deleteUnit(e) {
@@ -497,16 +358,16 @@ function deleteSection(e) {
 }
 
 function _deleteItem($el) {
-     if(!confirm('Are you sure you wish to delete this item. It cannot be reversed!'))
-       return;
-          
+    if (!confirm('Are you sure you wish to delete this item. It cannot be reversed!'))
+        return;
+
     var id = $el.data('id');
-    
-    $.post('/delete_item', 
-       {'id': id, 'delete_children' : true, 'delete_all_versions' : true}, 
-       function(data) {
-           $el.remove();
-       });
+
+    $.post('/delete_item',
+        {'id': id, 'delete_children': true, 'delete_all_versions': true},
+        function (data) {
+            $el.remove();
+        });
 }
 
 function showUploadModal(e) {
@@ -533,7 +394,7 @@ function startUpload(e) {
     $('.upload-modal .progress-bar').removeClass('loaded').show();
 }
 
-function resetUploadBar(){
+function resetUploadBar() {
     var percentVal = '0%';
     $('.upload-modal .progress-fill').width(percentVal);
     $('.upload-modal .progress-fill').html(percentVal);
@@ -546,7 +407,7 @@ function showUploadFeedback(event, position, total, percentComplete) {
 }
 
 function displayFinishedUpload(xhr) {
-    if(xhr.status = 200){
+    if (xhr.status = 200) {
         markAsLoaded();
     }
 
@@ -570,10 +431,10 @@ function displayFinishedUpload(xhr) {
 function markAsLoaded() {
     $('.upload-modal .copy-button').css('display', 'inline-block');
     $('.upload-modal .progress-bar').addClass('loaded');
-}    
+}
 
 function hideModal(e) {
-    if(e) {
+    if (e) {
         e.preventDefault();
     }
     // Unit editors do not want the modal cover to hide when users click outside
@@ -587,7 +448,7 @@ function hideModal(e) {
 }
 
 function onKeyUp(e) {
-    if(e.which == 87) {
+    if (e.which == 87) {
         $body.toggleClass('show-wip hide-wip');
     }
 }
@@ -637,14 +498,14 @@ function showToastMessage(message, $button, lifespan) {
     var $content = $('<div class="notification-content"></div>');
     $content.html(message);
     $toast.append($content);
-    if($button) {
+    if ($button) {
         $button.addClass('action-button');
         $button.bind('click', hideToastMessage);
         $content.append($button);
     }
     $closeBtn.bind('click', hideToastMessage);
 
-    if($('.toast-notification')[0]) {
+    if ($('.toast-notification')[0]) {
         var targetY = $('.toast-notification').offset().top + $('.toast-notification').outerHeight();
         $toast.css('top', (targetY + 10) + 'px');
     }
@@ -652,8 +513,8 @@ function showToastMessage(message, $button, lifespan) {
     $body.prepend($toast);
     $toast.fadeIn(200);
 
-    if(lifespan) {
-        $toast.timer = setTimeout(function() {
+    if (lifespan) {
+        $toast.timer = setTimeout(function () {
             $toast.fadeOut(300);
         }, lifespan * 1000);
     }
@@ -679,7 +540,7 @@ function addNewSection(e, isTemplate) {
 }
 
 function checkForCancel(e) {
-    if(e.which == 27) {
+    if (e.which == 27) {
         $body.unbind('keyup', checkForCancel);
         e.data.$cancelButton.click();
     }
@@ -695,11 +556,11 @@ function saveNewSection(e) {
     var display_name = $(this).find('.new-section-name').val();
 
     $.post('/clone_item', {
-            'parent_location' : parent,
-            'template' : template,
+            'parent_location': parent,
+            'template': template,
             'display_name': display_name,
         },
-        function(data) {
+        function (data) {
             if (data.id != undefined)
                 location.reload();
         }
@@ -718,7 +579,7 @@ function addNewCourse(e) {
     $(e.target).hide();
     var $newCourse = $($('#new-course-template').html());
     var $cancelButton = $newCourse.find('.new-course-cancel');
-    $('.new-course-button').after($newCourse);
+    $('.inner-wrapper').prepend($newCourse);
     $newCourse.find('.new-course-name').focus().select();
     $newCourse.find('form').bind('submit', saveNewCourse);
     $cancelButton.bind('click', cancelNewCourse);
@@ -734,18 +595,18 @@ function saveNewCourse(e) {
     var number = $newCourse.find('.new-course-number').val();
     var display_name = $newCourse.find('.new-course-name').val();
 
-    if (org == '' || number == '' || display_name == ''){
+    if (org == '' || number == '' || display_name == '') {
         alert('You must specify all fields in order to create a new course.');
         return;
     }
 
     $.post('/create_new_course', {
-        'template' : template,
-        'org' : org,
-        'number' : number,
-        'display_name': display_name
+            'template': template,
+            'org': org,
+            'number': number,
+            'display_name': display_name
         },
-        function(data) {
+        function (data) {
             if (data.id != undefined) {
                 window.location = '/' + data.id.replace(/.*:\/\//, '');
             } else if (data.ErrMsg != undefined) {
@@ -789,13 +650,13 @@ function saveNewSubsection(e) {
     var display_name = $(this).find('.new-subsection-name-input').val();
 
     $.post('/clone_item', {
-        'parent_location' : parent,
-        'template' : template,
-        'display_name': display_name
+            'parent_location': parent,
+            'template': template,
+            'display_name': display_name
         },
-        function(data) {
+        function (data) {
             if (data.id != undefined) {
-                location.reload();             
+                location.reload();
             }
         }
     );
@@ -842,21 +703,20 @@ function saveEditSectionName(e) {
     }
 
     var $_this = $(this);
-        // call into server to commit the new order
+    // call into server to commit the new order
     $.ajax({
         url: "/save_item",
         type: "POST",
         dataType: "json",
         contentType: "application/json",
-        data:JSON.stringify({ 'id' : id, 'metadata' : {'display_name' : display_name}})
-    }).success(function()
-    {
-        $spinner.delay(250).fadeOut(250);
-        $_this.closest('h3').find('.section-name-span').html(display_name).show();
-        $_this.hide();
-        $_this.closest('.section-name').bind('click', editSectionName);
-        e.stopPropagation();
-    });
+        data: JSON.stringify({ 'id': id, 'metadata': {'display_name': display_name}})
+    }).success(function () {
+            $spinner.delay(250).fadeOut(250);
+            $_this.closest('h3').find('.section-name-span').html(display_name).show();
+            $_this.hide();
+            $_this.closest('.section-name').bind('click', editSectionName);
+            e.stopPropagation();
+        });
 }
 
 function setSectionScheduleDate(e) {
@@ -887,21 +747,20 @@ function saveSetSectionScheduleDate(e) {
         type: "POST",
         dataType: "json",
         contentType: "application/json",
-        data:JSON.stringify({ 'id' : id, 'metadata' : {'start' : start}})
-    }).success(function()
-    {
-        var $thisSection = $('.courseware-section[data-id="' + id + '"]');
-        $thisSection.find('.section-published-date').html('<span class="published-status"><strong>Will Release:</strong> ' + input_date + ' at ' + input_time + '</span><a href="#" class="edit-button" data-date="' + input_date + '" data-time="' + input_time + '" data-id="' + id + '">Edit</a>');
-        $thisSection.find('.section-published-date').animate({
-            'background-color': 'rgb(182,37,104)'
-        }, 300).animate({
-            'background-color': '#edf1f5'
-        }, 300).animate({
-            'background-color': 'rgb(182,37,104)'
-        }, 300).animate({
-            'background-color': '#edf1f5'
-        }, 300);
-        
-        hideModal();
-    });
+        data: JSON.stringify({ 'id': id, 'metadata': {'start': start}})
+    }).success(function () {
+            var $thisSection = $('.courseware-section[data-id="' + id + '"]');
+            $thisSection.find('.section-published-date').html('<span class="published-status"><strong>Will Release:</strong> ' + input_date + ' at ' + input_time + '</span><a href="#" class="edit-button" data-date="' + input_date + '" data-time="' + input_time + '" data-id="' + id + '">Edit</a>');
+            $thisSection.find('.section-published-date').animate({
+                'background-color': 'rgb(182,37,104)'
+            }, 300).animate({
+                    'background-color': '#edf1f5'
+                }, 300).animate({
+                    'background-color': 'rgb(182,37,104)'
+                }, 300).animate({
+                    'background-color': '#edf1f5'
+                }, 300);
+
+            hideModal();
+        });
 }

@@ -1,11 +1,15 @@
+#pylint: disable=C0111
+#pylint: disable=W0621
+
 from lettuce import world, step
 from re import sub
 from nose.tools import assert_equals
 from xmodule.modulestore.django import modulestore
-from courses import *
+from common import *
 
 from logging import getLogger
 logger = getLogger(__name__)
+
 
 def check_for_errors():
     e = world.browser.find_by_css('.outside-app')
@@ -13,6 +17,7 @@ def check_for_errors():
         assert False, 'there was a server error at %s' % (world.browser.url)
     else:
         assert True
+
 
 @step(u'I verify all the content of each course')
 def i_verify_all_the_content_of_each_course(step):
@@ -30,21 +35,22 @@ def i_verify_all_the_content_of_each_course(step):
         pass
 
     for test_course in registered_courses:
-        test_course.find_by_css('a').click()
+        test_course.css_click('a')
         check_for_errors()
 
         # Get the course. E.g. 'MITx/6.002x/2012_Fall'
-        current_course = sub('/info','', sub('.*/courses/', '', world.browser.url))
-        validate_course(current_course,ids)
+        current_course = sub('/info', '', sub('.*/courses/', '', world.browser.url))
+        validate_course(current_course, ids)
 
-        world.browser.find_link_by_text('Courseware').click()
-        assert world.browser.is_element_present_by_id('accordion',wait_time=2)
+        world.click_link('Courseware')
+        assert world.is_css_present('accordion')
         check_for_errors()
         browse_course(current_course)
 
         # clicking the user link gets you back to the user's home page
-        world.browser.find_by_css('.user-link').click()
+        world.css_click('.user-link')
         check_for_errors()
+
 
 def browse_course(course_id):
 
@@ -78,7 +84,7 @@ def browse_course(course_id):
         num_rendered_sections = len(rendered_sections)
 
         msg = ('%d sections expected, %d sections found on page, %s - %d - %s' %
-                (num_sections, num_rendered_sections, course_id, chapter_it, chapters[chapter_it]['chapter_name']))
+               (num_sections, num_rendered_sections, course_id, chapter_it, chapters[chapter_it]['chapter_name']))
         #logger.debug(msg)
         assert num_sections == num_rendered_sections, msg
 
@@ -91,7 +97,7 @@ def browse_course(course_id):
             world.browser.find_by_css('#accordion > nav > div')[chapter_it].find_by_tag('li')[section_it].find_by_tag('a').click()
 
             ## sometimes the course-content takes a long time to load
-            assert world.browser.is_element_present_by_css('.course-content',wait_time=5)
+            assert world.is_css_present('.course-content')
 
             ## look for server error div
             check_for_errors()
@@ -108,8 +114,8 @@ def browse_course(course_id):
                 rendered_tabs = 0
                 num_rendered_tabs = 0
 
-            msg = ('%d tabs expected, %d tabs found, %s - %d - %s' % 
-                        (num_tabs, num_rendered_tabs, course_id, section_it, sections[section_it]['section_name']))
+            msg = ('%d tabs expected, %d tabs found, %s - %d - %s' %
+                   (num_tabs, num_rendered_tabs, course_id, section_it, sections[section_it]['section_name']))
             #logger.debug(msg)
 
             # Save the HTML to a file for later comparison
@@ -132,9 +138,9 @@ def browse_course(course_id):
                 tab_class = tabs[tab_it]['class']
                 if tab_children != 0:
                     rendered_items = world.browser.find_by_css('div#seq_content > section > ol > li > section')
-                    num_rendered_items = len(rendered_items)              
+                    num_rendered_items = len(rendered_items)
                     msg = ('%d items expected, %d items found, %s - %d - %s - tab %d' %
-                        (tab_children, num_rendered_items, course_id, section_it, sections[section_it]['section_name'], tab_it))
+                           (tab_children, num_rendered_items, course_id, section_it, sections[section_it]['section_name'], tab_it))
                     #logger.debug(msg)
                     assert tab_children == num_rendered_items, msg
 
