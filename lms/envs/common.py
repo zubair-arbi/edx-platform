@@ -89,7 +89,10 @@ MITX_FEATURES = {
 
     # Give a UI to show a student's submission history in a problem by the
     # Staff Debug tool.
-    'ENABLE_STUDENT_HISTORY_VIEW': True
+    'ENABLE_STUDENT_HISTORY_VIEW': True,
+
+    # segment.io for LMS
+    'SEGMENT_IO_LMS': True
 }
 
 # Used for A/B testing

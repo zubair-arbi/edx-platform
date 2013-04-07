@@ -232,3 +232,6 @@ PEARSON_TEST_PASSWORD = "12345"
 
 ANALYTICS_SERVER_URL = "http://127.0.0.1:9000/"
 ANALYTICS_API_KEY = ""
+
+# segment-io key for dev
+SEGMENT_IO_LMS_KEY = 'd4ynvjnpzu'
