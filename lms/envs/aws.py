@@ -81,6 +81,9 @@ COMMENTS_SERVICE_URL = ENV_TOKENS.get("COMMENTS_SERVICE_URL", '')
 COMMENTS_SERVICE_KEY = ENV_TOKENS.get("COMMENTS_SERVICE_KEY", '')
 CERT_QUEUE = ENV_TOKENS.get("CERT_QUEUE", 'test-pull')
 
+# load segment.io key, provide a dummy if it does not exist
+SEGMENT_IO_LMS_KEY = ENV_TOKENS.get('SEGMENT_IO_LMS_KEY', 'uucyxrdda1')
+
 ############################## SECURE AUTH ITEMS ###############
 # Secret things: passwords, access keys, etc.
 with open(ENV_ROOT / CONFIG_PREFIX + "auth.json") as auth_file:
