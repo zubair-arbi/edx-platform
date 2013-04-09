@@ -214,15 +214,26 @@ def _cert_info(user, course, cert_status):
 
 def signin_user(request):
     """
-    This view will display the non-modal login form
+    This view will display the non-modal login.
+    If the user is logged in it will redirect
+    to the dashboard.
     """
+
+    if settings.COURSEWARE_ENABLED and request.user.is_authenticated():
+        return redirect(reverse('dashboard'))
+
     context = {}
     return render_to_response('login.html', context)
 
 def register_user(request):
     """
-    This view will display the non-modal registration form
+    This view will display the non-modal registration form.
+    If the user is logged in it will redirect
+    to the dashboard.
     """
+    if settings.COURSEWARE_ENABLED and request.user.is_authenticated():
+        return redirect(reverse('dashboard'))
+
     context = {}
     return render_to_response('register.html', context)
 
