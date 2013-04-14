@@ -100,6 +100,8 @@ class CapaFields(object):
     weight = StringyFloat(help="How much to weight this problem by", scope=Scope.settings)
     markdown = String(help="Markdown source of this module", scope=Scope.settings)
     source_code = String(help="Source code for LaTeX and Word problems. This feature is not well-supported.", scope=Scope.settings)
+    source_code_mimetype = String(help="Source code mimetype.  This feature used in Studio.", scope=Scope.settings)
+    source_code_encoding = String(help="Source code encoding (eg base64/gzip).  This feature used in Studio.", scope=Scope.settings)
 
 
 class CapaModule(CapaFields, XModule):

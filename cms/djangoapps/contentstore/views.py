@@ -1691,3 +1691,147 @@ def get_request_method(request):
         real_method = request.method
 
     return real_method
+
+
+@ensure_csrf_cookie
+@login_required
+def get_module_source_metadata(request, module_location):
+    """
+    Return source for module from module metadata, if it exists (and if user
+    has suitable access permissions).  This is used for client downloading
+    the source file, eg the word-format source for a problem, to edit.
+
+    used by word2edx input filter.
+    """
+    location = Location(module_location)
+    
+    # check that logged in user has permissions to this item
+    if not has_access(request.user, location):
+        raise PermissionDenied()
+
+    item_module = modulestore().get_item(location)
+
+    scode = getattr(item_module, 'source_code', '')
+    if not scode:
+        return HttpResponseBadRequest
+
+    encoding = getattr(item_module, 'source_code_encoding', '')
+    if 'base64' in encoding:
+        scode = base64.b64decode(scode)
+    if 'gzip' in encoding:
+        scode = gzip.GzipFile(fileobj=StringIO(scode)).read()
+    mimetype = getattr(item_module, 'source_code_mimetype', 'application/msword')
+    fn = getattr(item_module, 'display_name', 'problem.doc')
+    if not fn.endswith('.rtf') or fn.endswith('.doc'):
+        fn += '.doc'
+    response = HttpResponse(mimetype=mimetype)
+    response['Content-Disposition'] = 'attachment; filename=%s' % fn
+    
+    response.write(scode)
+    return response
+
+
+@ensure_csrf_cookie
+@login_required
+def save_module_source_metadata(request, module_location):
+    """
+    save metadata source_code for a specified problem.
+    used by word2edx input filter (eg word files stored as source_code in gzipped base64)
+    """
+    location = Location(module_location)
+    
+    item_module = modulestore().get_item(location)
+
+    scode_file = request.FILES.get('source_code','')
+    if not scode_file:
+        log.debug('Error, missing source_code in POST')
+        return HttpResponseBadRequest
+
+    # use specified source code encoding
+    encoding = getattr(item_module, 'source_code_encoding', '')
+    
+    scode = scode_file.read()
+    log.debug('scode len=%d' % len(scode))
+
+    if 'gzip' in encoding:
+        hdr = scode[:2]
+        if [ord(hdr[x]) for x in range(2)]==[31,139]:
+            log.debug("input already gzipped!")
+        else:
+            buf = StringIO()
+            gzip.GzipFile(fileobj=buf,mode='w').write(scode)
+            scode = buf.getvalue()
+
+    if 'base64' in encoding:
+        scode = base64.b64encode(scode)
+    
+    item_module.source_code = scode
+
+    # commit to datastore
+    store = get_modulestore(Location(module_location));
+    store.update_metadata(module_location, own_metadata(item_module))
+
+    log.debug('save_module_source_metadata succeeded, len=%d' % len(scode))
+
+    return HttpResponse(json.dumps({'Status': 'OK'}))
+    
+
+@ensure_csrf_cookie
+@login_required
+def save_module_source_images(request, module_location):
+    """
+    Save images for a specific problem module by uploading them as assets.
+    The images are provided in a POST as a json array of 
+       {'imurl': ..., 'imdata': ..., 'imfn': ...}
+    dicts.  The imdata is base64 encoded.  imfn is the image filename (local
+    to this specific problem, eg fig001.png).  imurl is the url used in the
+    xml definition (prior to substitution by the c4x url location).
+
+    used by word2edx input filter, to allow multiple images to be uploaded with the word file.
+    """
+    location = Location(module_location)
+    
+    # check that logged in user has permissions to this item
+    if not has_access(request.user, location):
+        raise PermissionDenied()
+
+    item_module = modulestore().get_item(location)
+
+    if (0):
+        log.debug('-----------------------------------------------------------------------------')
+        log.debug('body:')
+        log.debug(request.body)
+        log.debug('-----------------------------------------------------------------------------')
+
+    imtabs = json.loads(request.body).get('images')
+    immap = []
+    
+    for imtab in imtabs:
+        imfn = imtab['imfn']
+        filedata = base64.b64decode(imtab['imdata'])
+        mime_type = imtab['imtype']
+
+        filename = "%s-%s-%s" % (getattr(item_module, 'display_name', 'problem'), location.name, imfn)
+
+        content_loc = StaticContent.compute_location(location.org, location.course, filename)
+        content = StaticContent(content_loc, filename, mime_type, filedata)
+
+        # first let's save a thumbnail so we can get back a thumbnail location
+        (thumbnail_content, thumbnail_location) = contentstore().generate_thumbnail(content)
+
+        # delete cached thumbnail even if one couldn't be created this time (else the old thumbnail will continue to show)
+        del_cached_content(thumbnail_location)
+        # now store thumbnail location only if we could create it
+        if thumbnail_content is not None:
+            content.thumbnail_location = thumbnail_location
+
+        # then commit the content 
+        contentstore().save(content)
+        del_cached_content(content.location)
+        
+        immap.append(dict(imurl=imtab['imurl'], 
+                            conurl=StaticContent.get_url_path_from_location(content.location)))
+
+    log.debug('save_module_source_images immap=%s' % immap)
+    return HttpResponse(json.dumps(immap))
+    
