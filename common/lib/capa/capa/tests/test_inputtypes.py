@@ -23,6 +23,7 @@ import xml.sax.saxutils as saxutils
 
 from . import test_system
 from capa import inputtypes
+from mock import ANY
 
 # just a handy shortcut
 lookup_tag = inputtypes.registry.get_class_for_tag
@@ -59,6 +60,7 @@ class OptionInputTest(unittest.TestCase):
 
     def test_option_parsing(self):
         f = inputtypes.OptionInput.parse_options
+
         def check(input, options):
             """Take list of options, confirm that output is in the silly doubled format"""
             expected = [(o, o) for o in options]
@@ -102,6 +104,8 @@ class ChoiceGroupTest(unittest.TestCase):
                     'choices': [('foil1', '<text>This is foil One.</text>'),
                                 ('foil2', '<text>This is foil Two.</text>'),
                                 ('foil3', 'This is foil Three.'), ],
+                    'show_correctness': 'always',
+                    'submitted_message': 'Answer received.',
                     'name_array_suffix': expected_suffix,   # what is this for??
                     }
 
@@ -115,7 +119,6 @@ class ChoiceGroupTest(unittest.TestCase):
 
     def test_checkboxgroup(self):
         self.check_group('checkboxgroup', 'checkbox', '[]')
-
 
 
 class JavascriptInputTest(unittest.TestCase):
@@ -179,9 +182,9 @@ class TextLineTest(unittest.TestCase):
                     'hidden': False,
                     'inline': False,
                     'do_math': False,
+                    'trailing_text': '',
                     'preprocessor': None}
         self.assertEqual(context, expected)
-
 
     def test_math_rendering(self):
         size = "42"
@@ -206,10 +209,48 @@ class TextLineTest(unittest.TestCase):
                     'msg': '',
                     'hidden': False,
                     'inline': False,
+                    'trailing_text': '',
                     'do_math': True,
                     'preprocessor': {'class_name': preprocessorClass,
                                      'script_src': script}}
         self.assertEqual(context, expected)
+
+    def test_trailing_text_rendering(self):
+        size = "42"
+        # store (xml_text, expected)
+        trailing_text = []
+        # standard trailing text
+        trailing_text.append(('m/s', 'm/s'))
+        # unicode trailing text
+        trailing_text.append((u'\xc3', u'\xc3'))
+        # html escaped trailing text
+        # this is the only one we expect to change
+        trailing_text.append(('a &lt; b', 'a < b'))
+
+        for xml_text, expected_text in trailing_text:
+            xml_str = u"""<textline id="prob_1_2"
+                            size="{size}"
+                            trailing_text="{tt}"
+                            />""".format(size=size, tt=xml_text)
+
+            element = etree.fromstring(xml_str)
+
+            state = {'value': 'BumbleBee', }
+            the_input = lookup_tag('textline')(test_system, element, state)
+
+            context = the_input._get_render_context()
+
+            expected = {'id': 'prob_1_2',
+                        'value': 'BumbleBee',
+                        'status': 'unanswered',
+                        'size': size,
+                        'msg': '',
+                        'hidden': False,
+                        'inline': False,
+                        'do_math': False,
+                        'trailing_text': expected_text,
+                        'preprocessor': None}
+            self.assertEqual(context, expected)
 
 
 class FileSubmissionTest(unittest.TestCase):
@@ -227,7 +268,6 @@ class FileSubmissionTest(unittest.TestCase):
         />""".format(af=allowed_files,
                      rf=required_files,)
 
-
         element = etree.fromstring(xml_str)
 
         state = {'value': 'BumbleBee.py',
@@ -239,12 +279,12 @@ class FileSubmissionTest(unittest.TestCase):
         context = the_input._get_render_context()
 
         expected = {'id': 'prob_1_2',
-                   'status': 'queued',
-                   'msg': input_class.submitted_msg,
-                   'value': 'BumbleBee.py',
-                   'queue_len': '3',
-                   'allowed_files': '["runme.py", "nooooo.rb", "ohai.java"]',
-                   'required_files': '["cookies.py"]'}
+                    'status': 'queued',
+                    'msg': input_class.submitted_msg,
+                    'value': 'BumbleBee.py',
+                    'queue_len': '3',
+                    'allowed_files': '["runme.py", "nooooo.rb", "ohai.java"]',
+                    'required_files': '["cookies.py"]'}
 
         self.assertEqual(context, expected)
 
@@ -285,18 +325,163 @@ class CodeInputTest(unittest.TestCase):
 
         expected = {'id': 'prob_1_2',
                     'value': 'print "good evening"',
-                   'status': 'queued',
-                   'msg': input_class.submitted_msg,
-                   'mode': mode,
-                   'linenumbers': linenumbers,
-                   'rows': rows,
-                   'cols': cols,
-                   'hidden': '',
-                   'tabsize': int(tabsize),
-                   'queue_len': '3',
-                   }
+                    'status': 'queued',
+                    'msg': input_class.submitted_msg,
+                    'mode': mode,
+                    'linenumbers': linenumbers,
+                    'rows': rows,
+                    'cols': cols,
+                    'hidden': '',
+                    'tabsize': int(tabsize),
+                    'queue_len': '3'}
 
         self.assertEqual(context, expected)
+
+
+class MatlabTest(unittest.TestCase):
+    '''
+    Test Matlab input types
+    '''
+    def setUp(self):
+        self.rows = '10'
+        self.cols = '80'
+        self.tabsize = '4'
+        self.mode = ""
+        self.payload = "payload"
+        self.linenumbers = 'true'
+        self.xml = """<matlabinput id="prob_1_2"
+            rows="{r}" cols="{c}"
+            tabsize="{tabsize}" mode="{m}"
+            linenumbers="{ln}">
+                <plot_payload>
+                    {payload}
+                </plot_payload>
+            </matlabinput>""".format(r=self.rows,
+                                     c=self.cols,
+                                     tabsize=self.tabsize,
+                                     m=self.mode,
+                                     payload=self.payload,
+                                     ln=self.linenumbers)
+        elt = etree.fromstring(self.xml)
+        state = {'value': 'print "good evening"',
+                 'status': 'incomplete',
+                 'feedback': {'message': '3'}, }
+
+        self.input_class = lookup_tag('matlabinput')
+        self.the_input = self.input_class(test_system, elt, state)
+
+    def test_rendering(self):
+        context = self.the_input._get_render_context()
+
+        expected = {'id': 'prob_1_2',
+                    'value': 'print "good evening"',
+                    'status': 'queued',
+                    'msg': self.input_class.submitted_msg,
+                    'mode': self.mode,
+                    'rows': self.rows,
+                    'cols': self.cols,
+                    'queue_msg': '',
+                    'linenumbers': 'true',
+                    'hidden': '',
+                    'tabsize': int(self.tabsize),
+                    'queue_len': '3'}
+
+        self.assertEqual(context, expected)
+
+    def test_rendering_with_state(self):
+        state = {'value': 'print "good evening"',
+                 'status': 'incomplete',
+                 'input_state': {'queue_msg': 'message'},
+                 'feedback': {'message': '3'}, }
+        elt = etree.fromstring(self.xml)
+
+        the_input = self.input_class(test_system, elt, state)
+        context = the_input._get_render_context()
+
+        expected = {'id': 'prob_1_2',
+                    'value': 'print "good evening"',
+                    'status': 'queued',
+                    'msg': self.input_class.submitted_msg,
+                    'mode': self.mode,
+                    'rows': self.rows,
+                    'cols': self.cols,
+                    'queue_msg': 'message',
+                    'linenumbers': 'true',
+                    'hidden': '',
+                    'tabsize': int(self.tabsize),
+                    'queue_len': '3'}
+
+        self.assertEqual(context, expected)
+
+    def test_rendering_while_queued(self):
+        state = {'value': 'print "good evening"',
+                 'status': 'incomplete',
+                 'input_state': {'queuestate': 'queued'},
+                 }
+        elt = etree.fromstring(self.xml)
+
+        the_input = self.input_class(test_system, elt, state)
+        context = the_input._get_render_context()
+        expected = {'id': 'prob_1_2',
+                    'value': 'print "good evening"',
+                    'status': 'queued',
+                    'msg': self.input_class.plot_submitted_msg,
+                    'mode': self.mode,
+                    'rows': self.rows,
+                    'cols': self.cols,
+                    'queue_msg': '',
+                    'linenumbers': 'true',
+                    'hidden': '',
+                    'tabsize': int(self.tabsize),
+                    'queue_len': '1'}
+
+        self.assertEqual(context, expected)
+
+    def test_plot_data(self):
+        get = {'submission': 'x = 1234;'}
+        response = self.the_input.handle_ajax("plot", get)
+
+        test_system.xqueue['interface'].send_to_queue.assert_called_with(header=ANY, body=ANY)
+
+        self.assertTrue(response['success'])
+        self.assertTrue(self.the_input.input_state['queuekey'] is not None)
+        self.assertEqual(self.the_input.input_state['queuestate'], 'queued')
+
+    def test_ungraded_response_success(self):
+        queuekey = 'abcd'
+        input_state = {'queuekey': queuekey, 'queuestate': 'queued'}
+        state = {'value': 'print "good evening"',
+                 'status': 'incomplete',
+                 'input_state': input_state,
+                 'feedback': {'message': '3'}, }
+        elt = etree.fromstring(self.xml)
+
+        the_input = self.input_class(test_system, elt, state)
+        inner_msg = 'hello!'
+        queue_msg = json.dumps({'msg': inner_msg})
+
+        the_input.ungraded_response(queue_msg, queuekey)
+        self.assertTrue(input_state['queuekey'] is None)
+        self.assertTrue(input_state['queuestate'] is None)
+        self.assertEqual(input_state['queue_msg'], inner_msg)
+
+    def test_ungraded_response_key_mismatch(self):
+        queuekey = 'abcd'
+        input_state = {'queuekey': queuekey, 'queuestate': 'queued'}
+        state = {'value': 'print "good evening"',
+                 'status': 'incomplete',
+                 'input_state': input_state,
+                 'feedback': {'message': '3'}, }
+        elt = etree.fromstring(self.xml)
+
+        the_input = self.input_class(test_system, elt, state)
+        inner_msg = 'hello!'
+        queue_msg = json.dumps({'msg': inner_msg})
+
+        the_input.ungraded_response(queue_msg, 'abc')
+        self.assertEqual(input_state['queuekey'], queuekey)
+        self.assertEqual(input_state['queuestate'], 'queued')
+        self.assertFalse('queue_msg' in input_state)
 
 
 class SchematicTest(unittest.TestCase):
@@ -311,7 +496,6 @@ class SchematicTest(unittest.TestCase):
         analyses = 'fast, slow, and pink'
         initial_value = 'two large batteries'
         submit_analyses = 'maybe'
-
 
         xml_str = """<schematic id="prob_1_2"
         height="{h}"
@@ -342,8 +526,7 @@ class SchematicTest(unittest.TestCase):
                     'height': height,
                     'parts': parts,
                     'analyses': analyses,
-                    'submit_analyses': submit_analyses,
-                   }
+                    'submit_analyses': submit_analyses}
 
         self.assertEqual(context, expected)
 
@@ -482,26 +665,42 @@ class ChemicalEquationTest(unittest.TestCase):
     '''
     Check that chemical equation inputs work.
     '''
-
-    def test_rendering(self):
-        size = "42"
-        xml_str = """<chemicalequationinput id="prob_1_2" size="{size}"/>""".format(size=size)
+    def setUp(self):
+        self.size = "42"
+        xml_str = """<chemicalequationinput id="prob_1_2" size="{size}"/>""".format(size=self.size)
 
         element = etree.fromstring(xml_str)
 
         state = {'value': 'H2OYeah', }
-        the_input = lookup_tag('chemicalequationinput')(test_system, element, state)
+        self.the_input = lookup_tag('chemicalequationinput')(test_system, element, state)
 
-        context = the_input._get_render_context()
+
+    def test_rendering(self):
+        ''' Verify that the render context matches the expected render context'''
+        context = self.the_input._get_render_context()
 
         expected = {'id': 'prob_1_2',
                     'value': 'H2OYeah',
                     'status': 'unanswered',
                     'msg': '',
-                    'size': size,
+                    'size': self.size,
                     'previewer': '/static/js/capa/chemical_equation_preview.js',
                     }
         self.assertEqual(context, expected)
+
+    
+    def test_chemcalc_ajax_sucess(self):
+        ''' Verify that using the correct dispatch and valid data produces a valid response'''
+        
+        data = {'formula': "H"}
+        response = self.the_input.handle_ajax("preview_chemcalc", data)
+
+        self.assertTrue('preview' in response)
+        self.assertNotEqual(response['preview'], '')
+        self.assertEqual(response['error'], "")
+
+
+    
 
 
 class DragAndDropTest(unittest.TestCase):
@@ -539,14 +738,14 @@ class DragAndDropTest(unittest.TestCase):
                         "target_outline": "false",
                         "base_image": "/static/images/about_1.png",
                         "draggables": [
-{"can_reuse": "", "label": "Label 1", "id": "1", "icon": ""},
-{"can_reuse": "", "label": "cc", "id": "name_with_icon", "icon": "/static/images/cc.jpg", },
-{"can_reuse": "", "label": "arrow-left", "id": "with_icon", "icon": "/static/images/arrow-left.png", "can_reuse": ""},
-{"can_reuse": "", "label": "Label2", "id": "5", "icon": "", "can_reuse": ""},
-{"can_reuse": "", "label": "Mute", "id": "2", "icon": "/static/images/mute.png", "can_reuse": ""},
-{"can_reuse": "", "label": "spinner", "id": "name_label_icon3", "icon": "/static/images/spinner.gif", "can_reuse": ""},
-{"can_reuse": "", "label": "Star", "id": "name4", "icon": "/static/images/volume.png", "can_reuse": ""},
-{"can_reuse": "", "label": "Label3", "id": "7", "icon": "", "can_reuse": ""}],
+{"can_reuse": "", "label": "Label 1", "id": "1", "icon": "", "target_fields": []},
+{"can_reuse": "", "label": "cc", "id": "name_with_icon", "icon": "/static/images/cc.jpg", "target_fields": []},
+{"can_reuse": "", "label": "arrow-left", "id": "with_icon", "icon": "/static/images/arrow-left.png", "can_reuse": "", "target_fields": []},
+{"can_reuse": "", "label": "Label2", "id": "5", "icon": "", "can_reuse": "", "target_fields": []},
+{"can_reuse": "", "label": "Mute", "id": "2", "icon": "/static/images/mute.png", "can_reuse": "", "target_fields": []},
+{"can_reuse": "", "label": "spinner", "id": "name_label_icon3", "icon": "/static/images/spinner.gif", "can_reuse": "", "target_fields": []},
+{"can_reuse": "", "label": "Star", "id": "name4", "icon": "/static/images/volume.png", "can_reuse": "", "target_fields": []},
+{"can_reuse": "", "label": "Label3", "id": "7", "icon": "", "can_reuse": "", "target_fields": []}],
                         "one_per_target": "True",
                         "targets": [
                 {"y": "90", "x": "210", "id": "t1", "w": "90", "h": "90"},
@@ -570,3 +769,65 @@ class DragAndDropTest(unittest.TestCase):
         context.pop('drag_and_drop_json')
         expected.pop('drag_and_drop_json')
         self.assertEqual(context, expected)
+
+
+class AnnotationInputTest(unittest.TestCase):
+    '''
+    Make sure option inputs work
+    '''
+    def test_rendering(self):
+        xml_str = '''
+<annotationinput>
+    <title>foo</title>
+    <text>bar</text>
+    <comment>my comment</comment>
+    <comment_prompt>type a commentary</comment_prompt>
+    <tag_prompt>select a tag</tag_prompt>
+    <options>
+        <option choice="correct">x</option>
+        <option choice="incorrect">y</option>
+        <option choice="partially-correct">z</option>
+    </options>
+</annotationinput>
+'''
+        element = etree.fromstring(xml_str)
+
+        value = {"comment": "blah blah", "options": [1]}
+        json_value = json.dumps(value)
+        state = {
+            'value': json_value,
+            'id': 'annotation_input',
+            'status': 'answered'
+        }
+
+        tag = 'annotationinput'
+
+        the_input = lookup_tag(tag)(test_system, element, state)
+
+        context = the_input._get_render_context()
+
+        expected = {
+            'id': 'annotation_input',
+            'value': value,
+            'status': 'answered',
+            'msg': '',
+            'title': 'foo',
+            'text': 'bar',
+            'comment': 'my comment',
+            'comment_prompt': 'type a commentary',
+            'tag_prompt': 'select a tag',
+            'options': [
+                {'id': 0, 'description': 'x', 'choice': 'correct'},
+                {'id': 1, 'description': 'y', 'choice': 'incorrect'},
+                {'id': 2, 'description': 'z', 'choice': 'partially-correct'}
+            ],
+            'value': json_value,
+            'options_value': value['options'],
+            'has_options_value': len(value['options']) > 0,
+            'comment_value': value['comment'],
+            'debug': False,
+            'return_to_annotation': True
+        }
+
+        self.maxDiff = None
+        self.assertDictEqual(context, expected)

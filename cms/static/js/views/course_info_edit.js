@@ -44,6 +44,8 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
         		self.render();           
             }
         );
+        // when the client refetches the updates as a whole, re-render them
+        this.listenTo(this.collection, 'reset', this.render);
     },
         
     render: function () {
@@ -53,8 +55,12 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
           $(updateEle).empty();
           var self = this;
           this.collection.each(function (update) {
-        	  var newEle = self.template({ updateModel : update });
-              $(updateEle).append(newEle);
+              try {
+                  var newEle = self.template({ updateModel : update });
+                  $(updateEle).append(newEle);
+            } catch (e) {
+                // ignore
+            }
           });
           this.$el.find(".new-update-form").hide();
           this.$el.find('.date').datepicker({ 'dateFormat': 'MM d, yy' });
@@ -101,6 +107,11 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
         // push change to display, hide the editor, submit the change        
         targetModel.save({}, {error : CMS.ServerError});
         this.closeEditor(this);
+
+        analytics.track('Saved Course Update', {
+            'course': course_location_analytics,
+            'date': this.dateEntry(event).val() 
+        });
     },
     
     onCancel: function(event) {
@@ -136,8 +147,16 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
 
     onDelete: function(event) {
         event.preventDefault();
-        // TODO ask for confirmation
-        // remove the dom element and delete the model
+
+        if (!confirm('Are you sure you want to delete this update? This action cannot be undone.')) {
+            return;
+        }
+
+        analytics.track('Deleted Course Update', {
+            'course': course_location_analytics,
+            'date': this.dateEntry(event).val() 
+        });
+
         var targetModel = this.eventModel(event);
         this.modelDom(event).remove();
         var cacheThis = this;
@@ -150,7 +169,7 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
     },
 
     closeEditor: function(self, removePost) {
-        var targetModel = self.collection.getByCid(self.$currentPost.attr('name'));
+        var targetModel = self.collection.get(self.$currentPost.attr('name'));
 
         if(removePost) {
             self.$currentPost.remove();
@@ -160,8 +179,13 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
         self.$currentPost.removeClass('editing');
         self.$currentPost.find('.date-display').html(targetModel.get('date'));
         self.$currentPost.find('.date').val(targetModel.get('date'));
-        self.$currentPost.find('.update-contents').html(targetModel.get('content'));
-        self.$currentPost.find('.new-update-content').val(targetModel.get('content'));
+        try {
+            // just in case the content causes an error (embedded js errors)
+            self.$currentPost.find('.update-contents').html(targetModel.get('content'));
+            self.$currentPost.find('.new-update-content').val(targetModel.get('content'));
+        } catch (e) {
+            // ignore but handle rest of page
+        }
         self.$currentPost.find('form').hide();
         window.$modalCover.unbind('click');
         window.$modalCover.hide();
@@ -172,7 +196,7 @@ CMS.Views.ClassInfoUpdateView = Backbone.View.extend({
     // Dereferencing from events to screen elements    
     eventModel: function(event) {
         // not sure if it should be currentTarget or delegateTarget
-        return this.collection.getByCid($(event.currentTarget).attr("name"));
+        return this.collection.get($(event.currentTarget).attr("name"));
     },
         
     modelDom: function(event) {
@@ -270,6 +294,11 @@ CMS.Views.ClassInfoHandoutsView = Backbone.View.extend({
         this.model.save({}, {error: CMS.ServerError});
         this.$form.hide();
         this.closeEditor(this);
+
+        analytics.track('Saved Course Handouts', {
+            'course': course_location_analytics
+        });
+
     },
 
     onCancel: function(event) {

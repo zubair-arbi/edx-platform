@@ -9,6 +9,7 @@ import StringIO
 
 from xmodule.modulestore import Location
 from .django import contentstore
+# to install PIL on MacOSX: 'easy_install http://dist.repoze.org/PIL-1.1.6.tar.gz'
 from PIL import Image
 
 
@@ -35,7 +36,8 @@ class StaticContent(object):
     @staticmethod
     def compute_location(org, course, name, revision=None, is_thumbnail=False):
         name = name.replace('/', '_')
-        return Location([XASSET_LOCATION_TAG, org, course, 'asset' if not is_thumbnail else 'thumbnail', Location.clean(name), revision])
+        return Location([XASSET_LOCATION_TAG, org, course, 'asset' if not is_thumbnail else 'thumbnail',
+                         Location.clean_keeping_underscores(name), revision])
 
     def get_id(self):
         return StaticContent.get_id_from_location(self.location)
@@ -58,8 +60,9 @@ class StaticContent(object):
     @staticmethod
     def get_id_from_location(location):
         return {'tag': location.tag, 'org': location.org, 'course': location.course,
-                   'category': location.category, 'name': location.name, 
-                   'revision': location.revision}
+                'category': location.category, 'name': location.name,
+                'revision': location.revision}
+
     @staticmethod
     def get_location_from_path(path):
         # remove leading / character if it is there one
@@ -76,8 +79,6 @@ class StaticContent(object):
     def convert_legacy_static_url(path, course_namespace):
         loc = StaticContent.compute_location(course_namespace.org, course_namespace.course, path)
         return StaticContent.get_url_path_from_location(loc)
-
-
 
 
 class ContentStore(object):
@@ -118,7 +119,7 @@ class ContentStore(object):
         thumbnail_name = StaticContent.generate_thumbnail_name(content.location.name)
 
         thumbnail_file_location = StaticContent.compute_location(content.location.org, content.location.course,
-            thumbnail_name, is_thumbnail=True)
+                                                                 thumbnail_name, is_thumbnail=True)
 
         # if we're uploading an image, then let's generate a thumbnail so that we can
         # serve it up when needed without having to rescale on the fly

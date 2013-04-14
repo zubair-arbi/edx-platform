@@ -34,6 +34,9 @@ MITX_FEATURES = {
     'ENABLE_DISCUSSION_SERVICE': False,
     'AUTH_USE_MIT_CERTIFICATES': False,
     'STUB_VIDEO_FOR_TESTING': False,   # do not display video when running automated acceptance tests
+    'STAFF_EMAIL': '',			# email address for staff (eg to request course creation)
+    'STUDIO_NPS_SURVEY': True, 
+    'SEGMENT_IO': True,
 }
 ENABLE_JASMINE = False
 
@@ -113,6 +116,7 @@ TEMPLATE_LOADERS = (
 
 MIDDLEWARE_CLASSES = (
     'contentserver.middleware.StaticContentServer',
+    'request_cache.middleware.RequestCache',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -163,7 +167,7 @@ STATICFILES_DIRS = [
     PROJECT_ROOT / "static",
 
 # This is how you would use the textbook images locally
-#    ("book", ENV_ROOT / "book_images")
+# ("book", ENV_ROOT / "book_images")
 ]
 
 # Locale/Internationalization
@@ -171,6 +175,9 @@ TIME_ZONE = 'America/New_York'  # http://en.wikipedia.org/wiki/List_of_tz_zones_
 LANGUAGE_CODE = 'en'            # http://www.i18nguy.com/unicode/language-identifiers.html
 USE_I18N = True
 USE_L10N = True
+
+# Tracking
+TRACK_MAX_EVENT = 10000
 
 # Messages
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
@@ -275,6 +282,10 @@ INSTALLED_APPS = (
     'auth',
     'student',  # misleading name due to sharing with lms
     'course_groups',  # not used in cms (yet), but tests run
+
+    # tracking
+    'track',
+
     # For asset pipelining
     'pipeline',
     'staticfiles',

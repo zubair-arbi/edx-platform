@@ -1,10 +1,10 @@
-if (!CMS.Views['Settings']) CMS.Views.Settings = {}; // ensure the pseudo pkg exists
+if (!CMS.Views['Settings']) CMS.Views.Settings = {};
 
 CMS.Views.Settings.Details = CMS.Views.ValidatingView.extend({
     // Model class is CMS.Models.Settings.CourseDetails
     events : {
-        "blur input" : "updateModel",
-        "blur textarea" : "updateModel",
+        "change input" : "updateModel",
+        "change textarea" : "updateModel",
         'click .remove-course-syllabus' : "removeSyllabus",
         'click .new-course-syllabus' : 'assetSyllabus',
         'click .remove-course-introduction-video' : "removeVideo",
@@ -26,7 +26,8 @@ CMS.Views.Settings.Details = CMS.Views.ValidatingView.extend({
         var dateIntrospect = new Date();
         this.$el.find('#timezone').html("(" + dateIntrospect.getTimezone() + ")");
 
-        this.model.on('error', this.handleValidationError, this);
+        this.listenTo(this.model, 'error', CMS.ServerError);
+        this.listenTo(this.model, 'invalid', this.handleValidationError);
         this.selectorToField = _.invert(this.fieldToSelectorMap);
     },
 
@@ -97,13 +98,19 @@ CMS.Views.Settings.Details = CMS.Views.ValidatingView.extend({
                 }
                 var newVal = new Date(date.getTime() + time * 1000);
                 if (!cacheModel.has(fieldName) || cacheModel.get(fieldName).getTime() !== newVal.getTime()) {
-                    cacheModel.save(fieldName, newVal, { error: CMS.ServerError});
+                    cacheModel.save(fieldName, newVal);
                 }
+            }
+            else {
+                // Clear date (note that this clears the time as well, as date and time are linked).
+                // Note also that the validation logic prevents us from clearing the start date
+                // (start date is required by the back end).
+                cacheModel.save(fieldName, null);
             }
         };
 
         // instrument as date and time pickers
-        timefield.timepicker();
+        timefield.timepicker({'timeFormat' : 'H:i'});
         datefield.datepicker();
 
         // Using the change event causes savefield to be triggered twice, but it is necessary

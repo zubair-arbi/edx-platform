@@ -6,8 +6,10 @@ import sys
 from collections import namedtuple
 from lxml import etree
 
+from xblock.core import Object, Scope
 from xmodule.x_module import (XModuleDescriptor, policy_key)
 from xmodule.modulestore import Location
+from xmodule.modulestore.inheritance import own_metadata
 
 log = logging.getLogger(__name__)
 
@@ -82,6 +84,8 @@ class XmlDescriptor(XModuleDescriptor):
     Mixin class for standardized parsing of from xml
     """
 
+    xml_attributes = Object(help="Map of unhandled xml attributes, used only for storage between import and export", default={}, scope=Scope.settings)
+
     # Extension to append to filename paths
     filename_extension = 'xml'
 
@@ -98,6 +102,7 @@ class XmlDescriptor(XModuleDescriptor):
         'start', 'due', 'graded', 'display_name', 'url_name', 'hide_from_toc',
         'ispublic', 	# if True, then course is listed for all users; see
         'xqa_key',  	# for xqaa server access
+        'giturl',	# url of git server for origin of file
         # information about testcenter exams is a dict (of dicts), not a string,
         # so it cannot be easily exportable as a course element's attribute.
         'testcenter_info',
@@ -105,11 +110,12 @@ class XmlDescriptor(XModuleDescriptor):
         'name', 'slug')
 
     metadata_to_strip = ('data_dir',
-            # cdodge: @TODO: We need to figure out a way to export out 'tabs' and 'grading_policy' which is on the course
-            'tabs', 'grading_policy', 'is_draft', 'published_by', 'published_date',
+            'tabs', 'grading_policy', 'published_by', 'published_date',
             'discussion_blackouts', 'testcenter_info',
            # VS[compat] -- remove the below attrs once everything is in the CMS
-           'course', 'org', 'url_name', 'filename')
+           'course', 'org', 'url_name', 'filename',
+           # Used for storing xml attributes between import and export, for roundtrips
+           'xml_attributes')
 
     metadata_to_export_to_policy = ('discussion_topics')
 
@@ -128,22 +134,8 @@ class XmlDescriptor(XModuleDescriptor):
         'graded': bool_map,
         'hide_progress_tab': bool_map,
         'allow_anonymous': bool_map,
-        'allow_anonymous_to_peers': bool_map
+        'allow_anonymous_to_peers': bool_map,
     }
-
-
-    # VS[compat].  Backwards compatibility code that can go away after
-    # importing 2012 courses.
-    # A set of metadata key conversions that we want to make
-    metadata_translations = {
-        'slug': 'url_name',
-        'name': 'display_name',
-        }
-
-    @classmethod
-    def _translate(cls, key):
-        'VS[compat]'
-        return cls.metadata_translations.get(key, key)
 
 
     @classmethod
@@ -227,15 +219,12 @@ class XmlDescriptor(XModuleDescriptor):
 
         definition_metadata = get_metadata_from_xml(definition_xml)
         cls.clean_metadata_from_xml(definition_xml)
-        definition = cls.definition_from_xml(definition_xml, system)
+        definition, children = cls.definition_from_xml(definition_xml, system)
         if definition_metadata:
             definition['definition_metadata'] = definition_metadata
+        definition['filename'] = [ filepath, filename ]     
 
-        # TODO (ichuang): remove this after migration
-        # for Fall 2012 LMS migration: keep filename (and unmangled filename)
-        definition['filename'] = [filepath, filename]
-
-        return definition
+        return definition, children
 
     @classmethod
     def load_metadata(cls, xml_object):
@@ -268,7 +257,7 @@ class XmlDescriptor(XModuleDescriptor):
         """
         for attr in policy:
             attr_map = cls.xml_attribute_map.get(attr, AttrMap())
-            metadata[attr] = attr_map.from_xml(policy[attr])
+            metadata[cls._translate(attr)] = attr_map.from_xml(policy[attr])
 
     @classmethod
     def from_xml(cls, xml_data, system, org=None, course=None):
@@ -294,9 +283,10 @@ class XmlDescriptor(XModuleDescriptor):
             filepath = cls._format_filepath(xml_object.tag, name_to_pathname(url_name))
             definition_xml = cls.load_file(filepath, system.resources_fs, location)
         else:
-            definition_xml = xml_object  	# this is just a pointer, not the real definition content
+            definition_xml = xml_object  # this is just a pointer, not the real definition content
 
-        definition = cls.load_definition(definition_xml, system, location)  	# note this removes metadata
+        definition, children = cls.load_definition(definition_xml, system, location)  # note this removes metadata
+
         # VS[compat] -- make Ike's github preview links work in both old and
         # new file layouts
         if is_pointer_tag(xml_object):
@@ -320,11 +310,21 @@ class XmlDescriptor(XModuleDescriptor):
         if k in system.policy:
             cls.apply_policy(metadata, system.policy[k])
 
+        model_data = {}
+        model_data.update(metadata)
+        model_data.update(definition)
+        model_data['children'] = children
+
+        model_data['xml_attributes'] = {}
+        model_data['xml_attributes']['filename'] = definition.get('filename', ['', None]) # for git link
+        for key, value in metadata.items():
+            if key not in set(f.name for f in cls.fields + cls.lms.fields):
+                model_data['xml_attributes'][key] = value
+
         return cls(
             system,
-            definition,
-            location=location,
-            metadata=metadata,
+            location,
+            model_data,
         )
 
     @classmethod
@@ -345,7 +345,7 @@ class XmlDescriptor(XModuleDescriptor):
 
     def export_to_xml(self, resource_fs):
         """
-        Returns an xml string representing this module, and all modules
+        Returns an xml string representign this module, and all modules
         underneath it.  May also write required resources out to resource_fs
 
         Assumes that modules have single parentage (that no module appears twice
@@ -371,15 +371,23 @@ class XmlDescriptor(XModuleDescriptor):
             (Possible format conversion through an AttrMap).
              """
             attr_map = self.xml_attribute_map.get(attr, AttrMap())
-            return attr_map.to_xml(self.own_metadata[attr])
+            return attr_map.to_xml(self._model_data[attr])
 
         # Add the non-inherited metadata
-        for attr in sorted(self.own_metadata):
+        for attr in sorted(own_metadata(self)):
             # don't want e.g. data_dir
             if attr not in self.metadata_to_strip and attr not in self.metadata_to_export_to_policy:
                 val = val_for_xml(attr)
                 #logging.debug('location.category = {0}, attr = {1}'.format(self.location.category, attr))
-                xml_object.set(attr, val)
+                try:
+                    xml_object.set(attr, val)
+                except Exception, e:
+                    logging.exception('Failed to serialize metadata attribute {0} with value {1}. This could mean data loss!!!  Exception: {2}'.format(attr, val, e))
+                    pass
+
+        for key, value in self.xml_attributes.items():
+            if key not in self.metadata_to_strip:
+                xml_object.set(key, value)
 
         if self.export_to_file():
             # Write the definition to a file

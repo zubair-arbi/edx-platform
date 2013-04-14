@@ -46,6 +46,9 @@ SESSION_COOKIE_DOMAIN = ENV_TOKENS.get('SESSION_COOKIE_DOMAIN')
 for feature, value in ENV_TOKENS.get('MITX_FEATURES', {}).items():
     MITX_FEATURES[feature] = value
 
+# load segment.io key, provide a dummy if it does not exist
+SEGMENT_IO_KEY = ENV_TOKENS.get('SEGMENT_IO_KEY', '***REMOVED***')
+
 LOGGING = get_logger_config(LOG_DIR,
                             logging_env=ENV_TOKENS['LOGGING_ENV'],
                             syslog_addr=(ENV_TOKENS['SYSLOG_SERVER'], 514),
@@ -62,3 +65,6 @@ AWS_SECRET_ACCESS_KEY = AUTH_TOKENS["AWS_SECRET_ACCESS_KEY"]
 DATABASES = AUTH_TOKENS['DATABASES']
 MODULESTORE = AUTH_TOKENS['MODULESTORE']
 CONTENTSTORE = AUTH_TOKENS['CONTENTSTORE']
+
+# Datadog for events!
+DATADOG_API = AUTH_TOKENS.get("DATADOG_API")

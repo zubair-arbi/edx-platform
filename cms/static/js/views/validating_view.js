@@ -3,41 +3,29 @@ CMS.Views.ValidatingView = Backbone.View.extend({
     // decorates the fields. Needs wiring per class, but this initialization shows how 
     // either have your init call this one or copy the contents
     initialize : function() {
-        this.model.on('error', this.handleValidationError, this);
+        this.listenTo(this.model, 'error', CMS.ServerError);
+        this.listenTo(this.model, 'invalid', this.handleValidationError);
         this.selectorToField = _.invert(this.fieldToSelectorMap);
     },
 
     errorTemplate : _.template('<span class="message-error"><%= message %></span>'),
 
     events : {
-        "blur input" : "clearValidationErrors",
-        "blur textarea" : "clearValidationErrors"
+        "change input" : "clearValidationErrors",
+        "change textarea" : "clearValidationErrors"
     },
     fieldToSelectorMap : {
         // Your subclass must populate this w/ all of the model keys and dom selectors 
         // which may be the subjects of validation errors
     },
     _cacheValidationErrors : [],
+
     handleValidationError : function(model, error) {
-        // error triggered either by validation or server error
         // error is object w/ fields and error strings
         for (var field in error) {
             var ele = this.$el.find('#' + this.fieldToSelectorMap[field]);
-            if (ele.length === 0) {
-                // check if it might a server error: note a typo in the field name 
-                // or failure to put in a map may cause this to muffle validation errors
-                if (_.has(error, 'error') && _.has(error, 'responseText')) {
-                    CMS.ServerError(model, error);
-                    return;
-                }
-                else continue;
-            }
             this._cacheValidationErrors.push(ele);
-            if ($(ele).is('div')) {
-                // put error on the contained inputs
-                $(ele).find('input, textarea').addClass('error');
-            }
-            else $(ele).addClass('error');
+            this.getInputElements(ele).addClass('error');
             $(ele).parent().append(this.errorTemplate({message : error[field]}));
         }
     },
@@ -45,12 +33,8 @@ CMS.Views.ValidatingView = Backbone.View.extend({
     clearValidationErrors : function() {
         // error is object w/ fields and error strings
         while (this._cacheValidationErrors.length > 0) {
-            var ele = this._cacheValidationErrors.pop(); 
-            if ($(ele).is('div')) {
-                // put error on the contained inputs
-                $(ele).find('input, textarea').removeClass('error');
-            }
-            else $(ele).removeClass('error');
+            var ele = this._cacheValidationErrors.pop();
+            this.getInputElements(ele).removeClass('error');
             $(ele).nextAll('.message-error').remove();
         }
     },
@@ -73,5 +57,16 @@ CMS.Views.ValidatingView = Backbone.View.extend({
     },
     inputUnfocus : function(event) {
         $("label[for='" + event.currentTarget.id + "']").removeClass("is-focused");
+    },
+
+    getInputElements: function(ele) {
+        var inputElements = 'input, textarea';
+        if ($(ele).is(inputElements)) {
+            return $(ele);
+        }
+        else {
+            // put error on the contained inputs
+            return $(ele).find(inputElements);
+        }
     }
 });

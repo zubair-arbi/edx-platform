@@ -6,7 +6,6 @@ Passes settings.MODULESTORE as kwargs to MongoModuleStore
 
 from __future__ import absolute_import
 from importlib import import_module
-from os import environ
 
 from django.conf import settings
 
@@ -33,6 +32,7 @@ def modulestore(name='default'):
         class_ = load_function(settings.MODULESTORE[name]['ENGINE'])
 
         options = {}
+
         options.update(settings.MODULESTORE[name]['OPTIONS'])
         for key in FUNCTION_KEYS:
             if key in options:

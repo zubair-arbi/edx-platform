@@ -1,7 +1,6 @@
 from xmodule.modulestore import Location
 from contentstore.utils import get_modulestore
-import re
-from util import converters
+from datetime import timedelta
 
 
 class CourseGradingModel(object):
@@ -46,14 +45,13 @@ class CourseGradingModel(object):
 
         # return empty model
         else:
-            return {
-                    "id": index,
+            return {"id": index,
                     "type": "",
                     "min_count": 0,
                     "drop_count": 0,
                     "short_label": None,
                     "weight": 0
-                }
+                    }
 
     @staticmethod
     def fetch_cutoffs(course_location):
@@ -91,11 +89,10 @@ class CourseGradingModel(object):
         descriptor.raw_grader = graders_parsed
         descriptor.grade_cutoffs = jsondict['grade_cutoffs']
 
-        get_modulestore(course_location).update_item(course_location, descriptor.definition['data'])
+        get_modulestore(course_location).update_item(course_location, descriptor._model_data._kvs._data)
         CourseGradingModel.update_grace_period_from_json(course_location, jsondict['grace_period'])
 
         return CourseGradingModel.fetch(course_location)
-
 
     @staticmethod
     def update_grader_from_json(course_location, grader):
@@ -119,7 +116,7 @@ class CourseGradingModel(object):
         else:
             descriptor.raw_grader.append(grader)
 
-        get_modulestore(course_location).update_item(course_location, descriptor.definition['data'])
+        get_modulestore(course_location).update_item(course_location, descriptor._model_data._kvs._data)
 
         return CourseGradingModel.jsonize_grader(index, descriptor.raw_grader[index])
 
@@ -134,10 +131,9 @@ class CourseGradingModel(object):
 
         descriptor = get_modulestore(course_location).get_item(course_location)
         descriptor.grade_cutoffs = cutoffs
-        get_modulestore(course_location).update_item(course_location, descriptor.definition['data'])
+        get_modulestore(course_location).update_item(course_location, descriptor._model_data._kvs._data)
 
         return cutoffs
-
 
     @staticmethod
     def update_grace_period_from_json(course_location, graceperiodjson):
@@ -156,11 +152,11 @@ class CourseGradingModel(object):
                 graceperiodjson = graceperiodjson['grace_period']
 
             # lms requires these to be in a fixed order
-            grace_rep = "{0[hours]:d} hours {0[minutes]:d} minutes {0[seconds]:d} seconds".format(graceperiodjson) 
+            grace_timedelta = timedelta(**graceperiodjson)
 
             descriptor = get_modulestore(course_location).get_item(course_location)
-            descriptor.metadata['graceperiod'] = grace_rep
-            get_modulestore(course_location).update_metadata(course_location, descriptor.metadata)
+            descriptor.lms.graceperiod = grace_timedelta
+            get_modulestore(course_location).update_metadata(course_location, descriptor._model_data._kvs._metadata)
 
     @staticmethod
     def delete_grader(course_location, index):
@@ -176,7 +172,7 @@ class CourseGradingModel(object):
             del descriptor.raw_grader[index]
             # force propagation to definition
             descriptor.raw_grader = descriptor.raw_grader
-            get_modulestore(course_location).update_item(course_location, descriptor.definition['data'])
+            get_modulestore(course_location).update_item(course_location, descriptor._model_data._kvs._data)
 
     # NOTE cannot delete cutoffs. May be useful to reset
     @staticmethod
@@ -189,7 +185,7 @@ class CourseGradingModel(object):
 
         descriptor = get_modulestore(course_location).get_item(course_location)
         descriptor.grade_cutoffs = descriptor.defaut_grading_policy['GRADE_CUTOFFS']
-        get_modulestore(course_location).update_item(course_location, descriptor.definition['data'])
+        get_modulestore(course_location).update_item(course_location, descriptor._model_data._kvs._data)
 
         return descriptor.grade_cutoffs
 
@@ -202,8 +198,8 @@ class CourseGradingModel(object):
             course_location = Location(course_location)
 
         descriptor = get_modulestore(course_location).get_item(course_location)
-        if 'graceperiod' in descriptor.metadata: del descriptor.metadata['graceperiod']   
-        get_modulestore(course_location).update_metadata(course_location, descriptor.metadata)
+        del descriptor.lms.graceperiod
+        get_modulestore(course_location).update_metadata(course_location, descriptor._model_data._kvs._metadata)
 
     @staticmethod
     def get_section_grader_type(location):
@@ -211,8 +207,7 @@ class CourseGradingModel(object):
             location = Location(location)
 
         descriptor = get_modulestore(location).get_item(location)
-        return {
-                "graderType": descriptor.metadata.get('format', u"Not Graded"),
+        return {"graderType": descriptor.lms.format if descriptor.lms.format is not None else 'Not Graded',
                 "location": location,
                 "id": 99   # just an arbitrary value to
                 }
@@ -224,34 +219,50 @@ class CourseGradingModel(object):
 
         descriptor = get_modulestore(location).get_item(location)
         if 'graderType' in jsondict and jsondict['graderType'] != u"Not Graded":
-            descriptor.metadata['format'] = jsondict.get('graderType')
-            descriptor.metadata['graded'] = True
+            descriptor.lms.format = jsondict.get('graderType')
+            descriptor.lms.graded = True
         else:
-            if 'format' in descriptor.metadata: del descriptor.metadata['format'] 
-            if 'graded' in descriptor.metadata: del descriptor.metadata['graded'] 
+            del descriptor.lms.format
+            del descriptor.lms.graded
 
-        get_modulestore(location).update_metadata(location, descriptor.metadata)
-
+        get_modulestore(location).update_metadata(location, descriptor._model_data._kvs._metadata)
 
     @staticmethod
     def convert_set_grace_period(descriptor):
-        # 5 hours 59 minutes 59 seconds => { hours: 5, minutes : 59, seconds : 59}
-        rawgrace = descriptor.metadata.get('graceperiod', None)
+        # 5 hours 59 minutes 59 seconds => converted to iso format
+        rawgrace = descriptor.lms.graceperiod
         if rawgrace:
-            parsedgrace = {str(key): int(val) for (val, key) in re.findall('\s*(\d+)\s*(\w+)', rawgrace)}
-            return parsedgrace
-        else: return None
+            hours_from_days = rawgrace.days*24
+            seconds = rawgrace.seconds
+            hours_from_seconds = int(seconds / 3600)
+            hours = hours_from_days + hours_from_seconds
+            seconds -= hours_from_seconds * 3600
+            minutes = int(seconds / 60)
+            seconds -= minutes * 60
+
+            graceperiod = {'hours': 0, 'minutes': 0, 'seconds': 0}
+            if hours > 0:
+                graceperiod['hours'] = hours
+
+            if minutes > 0:
+                graceperiod['minutes'] = minutes
+
+            if seconds > 0:
+                graceperiod['seconds'] = seconds
+
+            return graceperiod
+        else:
+            return None
 
     @staticmethod
     def parse_grader(json_grader):
         # manual to clear out kruft
-        result = {
-                    "type": json_grader["type"],
-                    "min_count": int(json_grader.get('min_count', 0)),
-                    "drop_count": int(json_grader.get('drop_count', 0)),
-                    "short_label": json_grader.get('short_label', None),
-                    "weight": float(json_grader.get('weight', 0)) / 100.0
-                }
+        result = {"type": json_grader["type"],
+                  "min_count": int(json_grader.get('min_count', 0)),
+                  "drop_count": int(json_grader.get('drop_count', 0)),
+                  "short_label": json_grader.get('short_label', None),
+                  "weight": float(json_grader.get('weight', 0)) / 100.0
+                  }
 
         return result
 
