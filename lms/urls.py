@@ -347,6 +347,20 @@ if settings.MITX_FEATURES.get('AUTH_USE_OPENID_PROVIDER'):
         url(r'^openid/provider/xrds/$', 'external_auth.views.provider_xrds', name='openid-provider-xrds')
     )
 
+if settings.MITX_FEATURES.get('AUTH_USE_OAUTH2'):
+    urlpatterns += (
+                    (r'^oauth2/missing_redirect_uri/?$', 'external_auth.oauth2.views.missing_redirect_uri'),
+                    (r'^oauth2/authorize/?$', 'external_auth.oauth2.views.authorize'),
+                    (r'^oauth2/token/?$', 'oauth2app.token.handler'),
+                    (r'^api/course_info/?$', 'external_auth.oauth2.api.course_info'),
+                    (r'^api/date_joined/?$', 'external_auth.oauth2.api.date_joined'),
+                    (r'^api/last_login/?$', 'external_auth.oauth2.api.last_login'),
+                    (r'^api/email/?$', 'external_auth.oauth2.api.email'),
+                    (r'^oauth2/client/(?P<client_id>\w+)/?$', 'external_auth.oauth2.client.client'),
+                    (r'^oauth2/clients/?$', 'external_auth.oauth2.client.clients'),
+                    (r'^oauth2/status/?$', 'external_auth.oauth2.client.status'),
+                    )
+
 if settings.MITX_FEATURES.get('ENABLE_LMS_MIGRATION'):
     urlpatterns += (
         url(r'^migrate/modules$', 'lms_migration.migrate.manage_modulestores'),
