@@ -760,6 +760,7 @@ class ModuleSystem(object):
                  filestore=None,
                  debug=False,
                  xqueue=None,
+                 grader=None,
                  publish=None,
                  node_path="",
                  anonymous_student_id='',
@@ -789,7 +790,7 @@ class ModuleSystem(object):
         user - The user to base the random number generator seed off of for this
                          request
 
-        filestore - A filestore ojbect.  Defaults to an instance of OSFS based
+        filestore - A filestore object.  Defaults to an instance of OSFS based
                          at settings.DATA_DIR.
 
         xqueue - Dict containing XqueueInterface object, as well as parameters
@@ -797,6 +798,7 @@ class ModuleSystem(object):
                     xqueue = {'interface': XQueueInterface object,
                               'callback_url': Callback into the LMS,
                               'queue_name': Target queuename in Xqueue}
+        grader - An ModuleGrader instance
 
         replace_urls - TEMPORARY - A function like static_replace.replace_urls
                          that capa_module can use to fix up the static urls in
@@ -821,6 +823,7 @@ class ModuleSystem(object):
         '''
         self.ajax_url = ajax_url
         self.xqueue = xqueue
+        self.grader = grader
         self.track_function = track_function
         self.filestore = filestore
         self.get_module = get_module

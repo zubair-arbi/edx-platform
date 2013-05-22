@@ -1531,6 +1531,107 @@ class CodeResponse(LoncapaResponse):
 
 #-----------------------------------------------------------------------------
 
+class ExternalGrader(LoncapaResponse):
+
+    response_tag = 'externalgrader'
+    allowed_inputfields = ['textbox']
+    max_inputfields = 1
+
+    def __init__(self, *args, **kwargs):
+        super(ExternalGrader, self).__init__(*args, **kwargs)
+        self.payload = None
+        self.initial_display = None
+        self.answer = None
+        self.grader_name = None
+
+    def setup_response(self):
+        self.grader_name = self.xml.get('grader_name', None)
+
+        codeparam = self.xml.find('codeparam')
+        self._parse_codeparam_xml(codeparam)
+
+    def _parse_codeparam_xml(self, codeparam):
+        self.payload = find_with_default(
+            codeparam,
+            'grader_payload',
+            None
+        )
+        self.initial_display = find_with_default(
+            codeparam,
+            'initial_display',
+            ''
+        )
+        self.answer = find_with_default(
+            codeparam,
+            'answer_display',
+            'No answer provided.'
+        )
+
+    def get_score(self, student_answers):
+        cmap = CorrectMap()
+
+        # create the payload
+        submission = {
+            'info': {},
+            'response': self._get_submission(student_answers),
+            'data': self.payload
+        }
+
+        grader = self.system.grader
+
+        if grader is None:
+            msg = 'No module grader available'
+            cmap.set(self.answer_id, queuestate=None, msg=msg)
+            return cmap
+
+        result = grader.submit(queue_name=self.grader_name, submission=submission)
+
+        # NB [rocha]: possible race condition
+        if result.ready:
+            if result.error:
+                msg = 'Error with submission: %s' % result.error
+                cmap.set(self.answer_id, queuestate=None, msg=msg)
+            else:
+                cmap = result.correct_map
+        else:
+            queuestate = {
+                'key': 'key',
+                'time': 'time',
+            },
+
+            cmap.set(self.answer_id,
+                     queuestate=queuestate,
+                     correctness='incomplete',
+                     msg='submitted')
+
+        return cmap
+
+    def _get_submission(self, student_answers):
+        try:
+            submission = student_answers[self.answer_id]
+        except Exception as err:
+            log.error('Error %s: cannot get student answer for %s; student_answers=%s' %
+                      (err, self.answer_id, student_answers))
+            raise Exception(err)
+
+        return submission
+
+    def update_score(self, result, oldcmap, queuekey=None):
+
+        return oldcmap
+
+    def get_answers(self):
+        template = '<span class="code-answer"><pre><code>%s</code></pre></span>'
+        anshtml = template % self.answer
+        return {self.answer_id: anshtml}
+
+    def get_initial_display(self):
+        return {self.answer_id: self.initial_display}
+
+
+
+#-----------------------------------------------------------------------------
+
 
 class ExternalResponse(LoncapaResponse):
     '''
@@ -2103,6 +2204,7 @@ class AnnotationResponse(LoncapaResponse):
 # FIXME: To be replaced by auto-registration
 
 __all__ = [CodeResponse,
+           ExternalGrader,
            NumericalResponse,
            FormulaResponse,
            CustomResponse,

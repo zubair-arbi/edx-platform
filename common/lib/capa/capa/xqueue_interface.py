@@ -60,7 +60,7 @@ class XQueueInterface(object):
     '''
 
     def __init__(self, url, django_auth, requests_auth=None):
-        self.url  = url
+        self.url = url
         self.auth = django_auth
         self.session = requests.session(auth=requests_auth)
 

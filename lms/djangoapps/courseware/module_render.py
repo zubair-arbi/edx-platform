@@ -34,6 +34,8 @@ from xblock.runtime import DbModel
 from xmodule_modifiers import replace_course_urls, replace_static_urls, add_histogram, wrap_xmodule
 from .model_data import LmsKeyValueStore, LmsUsage, ModelDataCache
 
+from external_graders import ExternalGrader
+
 from xmodule.modulestore.exceptions import ItemNotFoundError
 from statsd import statsd
 
@@ -262,6 +264,10 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
             'storage_bucket_name': getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'openended')
         }
 
+    grader = ModuleGrader(module_id=descriptor.location.url(),
+                          course_id=course_id,
+                          user_id=str(user.id))
+
     def inner_get_module(descriptor):
         """
         Delegate to get_module_for_descriptor_internal() with all values except `descriptor` set.
@@ -326,6 +332,7 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
                           render_template=render_to_string,
                           ajax_url=ajax_url,
                           xqueue=xqueue,
+                          grader=grader,
                           # TODO (cpennington): Figure out how to share info between systems
                           filestore=descriptor.system.resources_fs,
                           get_module=inner_get_module,
