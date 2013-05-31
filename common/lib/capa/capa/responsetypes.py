@@ -35,6 +35,7 @@ from . import correctmap
 from datetime import datetime
 from .util import *
 from lxml import etree
+from lxml.html.clean import clean_html
 from lxml.html.soupparser import fromstring as fromstring_bs     # uses Beautiful Soup!!! FIXME?
 import capa.xqueue_interface as xqueue_interface
 
@@ -1448,9 +1449,9 @@ class CodeResponse(LoncapaResponse):
 
     def update_score(self, score_msg, oldcmap, queuekey):
 
-        (valid_score_msg, correct, points,
-         msg) = self._parse_score_msg(score_msg)
-        if not valid_score_msg:
+        (is_valid, correct, points, msg) = self._parse_score_msg(score_msg)
+
+        if not is_valid:
             oldcmap.set(self.answer_id,
                         msg='Invalid grader reply. Please contact the course staff.')
             return oldcmap
@@ -1492,7 +1493,7 @@ class CodeResponse(LoncapaResponse):
              'msg': grader_msg }
 
         Returns (valid_score_msg, correct, score, msg):
-            valid_score_msg: Flag indicating valid score_msg format (Boolean)
+            is_valid:        Flag indicating valid score_msg format (Boolean)
             correct:         Correctness of submission (Boolean)
             score:           Points to be assigned (numeric, can be float)
             msg:             Message from grader to display to student (string)
@@ -1514,14 +1515,15 @@ class CodeResponse(LoncapaResponse):
                           " tags: 'correct', 'score', 'msg'")
                 return fail
 
-        # Next, we need to check that the contents of the external grader message
-        #   is safe for the LMS.
-        # 1) Make sure that the message is valid XML (proper opening/closing tags)
-        # 2) TODO: Is the message actually HTML?
-        msg = score_result['msg']
+        # Get the external grader response, sanitize it and verify
+        # that it can be parsed as XML.
+        msg = score_result.get('msg', '').strip()
+
         try:
+            if msg:
+                msg = clean_html(msg)  # Removes malicious tags and properties
             etree.fromstring(msg)
-        except etree.XMLSyntaxError as err:
+        except (etree.XMLSyntaxError, etree.ParserError) as err:
             log.error("Unable to parse external grader message as valid"
                       " XML: score_msg['msg']=%s" % msg)
             return fail
