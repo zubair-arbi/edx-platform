@@ -5,6 +5,8 @@ from pavements.config import config
 from pavements.helpers import *
 import distutils.sysconfig as dusc
 
+PREREQS_MD5_DIR = os.environ.get('PREREQ_CACHE_DIR') or os.path.join(REPO_ROOT, '.prereqs_cache')
+
 
 @task
 @needs('pavements.prereqs.install_node_prereqs',
@@ -32,6 +34,7 @@ def install_ruby_prereqs():
     if when_changed(unchanged, ['Gemfile']) and not os.environ.get('NO_PREREQ_INSTALL'):
         os.system('bundle install')
 
+
 @task
 @needs('pavements.ws.migrate')
 def install_python_prereqs():
@@ -39,14 +42,12 @@ def install_python_prereqs():
     site_packages_dir = dusc.get_python_lib()
     unchanged = 'Python requirements unchanged, nothing to install'
     if (when_changed(unchanged, ['requirements/**/*'], [site_packages_dir]) and
-        not os.environ.get('NO_PREREQ_INSTALL'):
-        ENV['PIP_DOWNLOAD_CACHE'] ||= '.pip_download_cache'
-        sh('pip install --exists-action w -r requirements/edx/pre.txt')
-        sh('pip install --exists-action w -r requirements/edx/base.txt')
-        sh('pip install --exists-action w -r requirements/edx/post.txt')
+            not os.environ.get('NO_PREREQ_INSTALL')):
+        os.environ['PIP_DOWNLOAD_CACHE'] = os.environ.get('PIP_DOWNLOAD_CACHE') or '.pip_download_cache'
+        os.system('pip install --exists-action w -r requirements/edx/pre.txt')
+        os.system('pip install --exists-action w -r requirements/edx/base.txt')
+        os.system('pip install --exists-action w -r requirements/edx/post.txt')
         # requirements/private.txt is used to install our libs as
         # working dirs, or for personal-use tools.
-        if File.file?("requirements/private.txt")
-            sh('pip install -r requirements/private.txt')
-        end
-    end unless ENV['NO_PREREQ_INSTALL']
+        if os.path.isfile("requirements/private.txt"):
+            os.system('pip install -r requirements/private.txt')
