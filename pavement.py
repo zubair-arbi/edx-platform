@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.append(os.path.abspath('.'))
 
 from paver.easy import task, needs, consume_args, no_help
