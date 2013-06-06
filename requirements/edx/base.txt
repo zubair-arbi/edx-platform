@@ -84,3 +84,5 @@ django_debug_toolbar
 django-debug-toolbar-mongo
 
 git+https://github.com/mfogel/django-settings-context-processor.git
+
+paver==1.2.1
