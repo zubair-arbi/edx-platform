@@ -7,7 +7,7 @@ from subprocess import call
 from pprint import pprint
 
 from pavements.config import config
-from pavements.helpers import *
+from pavements.helpers import hash_files_dirs
 import pavements.docs
 from pavements.prereqs import *
 
@@ -31,6 +31,14 @@ def auto():
 def print_config():
     """ Print paver config """
     pprint(config)
+
+
+@task
+def test_fingerprint():
+    files = []
+    dirs = []
+    files.append("/Users/msteele/Desktop/hashplay/foo")
+    print hash_files_dirs(files, dirs)
 
 
 @task
