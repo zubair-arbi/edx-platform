@@ -1,6 +1,12 @@
 import os
 
 
+def is_empty(dictionary):
+    if dictionary:
+        return False
+    return True
+
+
 class cd:
     """
     Wrap change directory
