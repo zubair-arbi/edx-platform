@@ -9,6 +9,7 @@ from pprint import pprint
 from pavements.config import config
 from pavements.helpers import *
 import pavements.docs
+from pavements.prereqs import *
 
 
 @task
