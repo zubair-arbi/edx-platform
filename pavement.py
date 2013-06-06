@@ -2,9 +2,9 @@ from paver.easy import task, needs, consume_args, no_help
 from subprocess import call
 from pprint import pprint
 
-from pavement.config import config
-from pavement.helpers import *
-import pavement.docs
+from pavements.config import config
+from pavements.helpers import *
+import pavements.docs
 
 
 @task

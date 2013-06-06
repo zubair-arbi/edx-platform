@@ -3,8 +3,8 @@ import os
 from paver.easy import task, needs, consume_args, no_help
 from subprocess import call
 
-from pavement.config import config
-from pavement.helpers import *
+from pavements.config import config
+from pavements.helpers import *
 
 
 @task
