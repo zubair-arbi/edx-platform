@@ -6,6 +6,8 @@ from subprocess import call
 from pavements.config import config
 from pavements.helpers import *
 
+import webbrowser
+
 
 @task
 @consume_args
@@ -23,15 +25,16 @@ def builddocs(args):
 @task
 @consume_args
 def showdocs(args):
-    """ Show docs in browser (mac and ubuntu). """
-    if 'pub' in args:
+    """
+    Show docs in browser.
+    """
+    if "pub" in args:
         path = "doc/public"
     else:
         path = "docs"
-
-    with cd(os.path.join(config['REPO_ROOT'], path, 'build/html')):
-        # Launchy.open('index.html')
-        print "WARN: Task showdocs not implemented."
+    
+    url = "file://" + os.path.join(config["REPO_ROOT"], path, "build/html/index.html")
+    webbrowser.open(url)
 
 
 @task
