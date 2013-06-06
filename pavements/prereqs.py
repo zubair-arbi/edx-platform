@@ -5,8 +5,6 @@ from pavements.config import config
 from pavements.helpers import *
 import distutils.sysconfig as dusc
 
-PREREQS_MD5_DIR = os.environ.get('PREREQ_CACHE_DIR') or os.path.join(REPO_ROOT, '.prereqs_cache')
-
 
 @task
 @needs('pavements.prereqs.install_node_prereqs',
