@@ -1,3 +1,6 @@
+import sys
+sys.path.append(os.path.abspath('.'))
+
 from paver.easy import task, needs, consume_args, no_help
 from subprocess import call
 from pprint import pprint
