@@ -149,7 +149,13 @@ LOGGING = get_logger_config(LOG_DIR,
                             syslog_addr=(ENV_TOKENS['SYSLOG_SERVER'], 514),
                             local_loglevel=local_loglevel,
                             debug=False,
-                            service_variant=SERVICE_VARIANT)
+                            service_variant=SERVICE_VARIANT, 
+                            analytics_provider = ANALYTICS_LOGGING_PROVIDER, 
+                            analytics_enabled = MITX_FEATURES['ANALYTICS_LOGGING_ENABLED'], 
+                            sns_timeout = ANALYTICS_SNS_TIMEOUT,
+                            sns_topic = ANALYTICS_SNS_TOPIC, 
+                            analytics_host = ANALYTICS_HTTP_HOST
+                            )
 
 COURSE_LISTINGS = ENV_TOKENS.get('COURSE_LISTINGS', {})
 SUBDOMAIN_BRANDING = ENV_TOKENS.get('SUBDOMAIN_BRANDING', {})

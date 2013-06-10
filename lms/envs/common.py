@@ -92,7 +92,10 @@ MITX_FEATURES = {
     'AUTH_USE_MIT_CERTIFICATES': False,
     'AUTH_USE_OPENID_PROVIDER': False,
 
-    # analytics experiments
+    'ANALYTICS_LOGGING_ENABLED' : os.environ.get("ANALYTICS_LOGGING_ENABLED", "False").upper() == "TRUE", 
+    # If enabled, we have the new dev developer dashboard. 
+    # For now, this does nothing. 
+    'ANALYTICS_EMBEDDING_ENABLED' : os.environ.get("ANALYTICS_EMBED_ENABLED", "False").upper() == "TRUE", 
     'ENABLE_INSTRUCTOR_ANALYTICS': False,
 
     # Flip to True when the YouTube iframe API breaks (again)
@@ -124,6 +127,16 @@ MITX_FEATURES = {
     # Do autoplay videos for students
     'AUTOPLAY_VIDEOS': True
 }
+
+# None => No analytics event streaming
+# "HTTP" => HttpLogger event streaming
+# "SNS" => Amazon SNS event streaming
+ANALYTICS_LOGGING_PROVIDER = os.environ.get("ANALYTICS_LOGGING_PROVIDER", None)
+ANALYTICS_HTTP_HOST = os.environ.get("ANALYTICS_HTTP_HOST", '127.0.0.1:9000')
+ANALYTICS_SNS_TOPIC = os.environ.get("ANALYTICS_SNS_TOPIC", 'pmitros_dev')
+# Reasonable numbers are 0.5 for dev machines talking to SNS, and 0.1 for machines on AWS. 
+ANALYTICS_SNS_TIMEOUT  = float(os.environ.get("ANALYTICS_SNS_TIMEOUT", '0.5'))
+
 
 # Used for A/B testing
 DEFAULT_GROUPS = []
