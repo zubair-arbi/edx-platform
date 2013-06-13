@@ -8,6 +8,7 @@
 :2e_*
 :2e#
 .AppleDouble
+.ropeproject
 database.sqlite
 requirements/private.txt
 lms/envs/private.py
