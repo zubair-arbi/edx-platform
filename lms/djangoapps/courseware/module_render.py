@@ -30,13 +30,13 @@ from xmodule.x_module import ModuleSystem
 from xmodule_modifiers import replace_course_urls, replace_static_urls, add_histogram, wrap_xmodule
 
 import static_replace
-from courseware.access import has_access
-from courseware.masquerade import setup_masquerade
 from psychometrics.psychoanalyze import make_psychometrics_data_update_handler
 from student.models import unique_id_for_user
 
-from .models import StudentModule
-from .model_data import LmsKeyValueStore, LmsUsage, ModelDataCache
+from courseware.access import has_access
+from courseware.masquerade import setup_masquerade
+from courseware.model_data import LmsKeyValueStore, LmsUsage, ModelDataCache
+from courseware.models import StudentModule
 
 
 log = logging.getLogger(__name__)
@@ -399,40 +399,47 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
 
 
 @csrf_exempt
-def xqueue_callback(request, course_id, userid, id, dispatch):
+def xqueue_callback(request, course_id, userid, mod_id, dispatch):
     '''
     Entry point for graded results from the queueing system.
     '''
+    data = request.POST.copy()
+
     # Test xqueue package, which we expect to be:
     #   xpackage = {'xqueue_header': json.dumps({'lms_key':'secretkey',...}),
     #               'xqueue_body'  : 'Message from grader'}
-    get = request.POST.copy()
     for key in ['xqueue_header', 'xqueue_body']:
-        if not get.has_key(key):
+        if key not in data:
             raise Http404
-    header = json.loads(get['xqueue_header'])
-    if not isinstance(header, dict) or not header.has_key('lms_key'):
+
+    header = json.loads(data['xqueue_header'])
+    if not isinstance(header, dict) or 'lms_key 'not in header.has_key:
         raise Http404
 
     # Retrieve target StudentModule
     user = User.objects.get(id=userid)
-
-    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(course_id,
-        user, modulestore().get_instance(course_id, id), depth=0, select_for_update=True)
-    instance = get_module(user, request, id, model_data_cache, course_id, grade_bucket_type='xqueue')
+    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
+        course_id,
+        user,
+        modulestore().get_instance(course_id, mod_id),
+        depth=0,
+        select_for_update=True
+    )
+    instance = get_module(user, request, mod_id, model_data_cache, course_id, grade_bucket_type='xqueue')
     if instance is None:
-        log.debug("No module {0} for user {1}--access denied?".format(id, user))
+        msg = "No module {0} for user {1}--access denied?".format(mod_id, user)
+        log.debug(msg)
         raise Http404
 
-    # Transfer 'queuekey' from xqueue response header to 'get'. This is required to
-    #   use the interface defined by 'handle_ajax'
-    get.update({'queuekey': header['lms_key']})
+    # Transfer 'queuekey' from xqueue response header to the data.
+    # This is required to use the interface defined by 'handle_ajax'
+    data.update({'queuekey': header['lms_key']})
 
     # We go through the "AJAX" path
-    #   So far, the only dispatch from xqueue will be 'score_update'
+    # So far, the only dispatch from xqueue will be 'score_update'
     try:
         # Can ignore the return value--not used for xqueue_callback
-        instance.handle_ajax(dispatch, get)
+        instance.handle_ajax(dispatch, data)
     except:
         log.exception("error processing ajax call")
         raise
@@ -466,23 +473,29 @@ def modx_dispatch(request, dispatch, location, course_id):
     if not request.user.is_authenticated():
         raise PermissionDenied
 
-    # Check for submitted files and basic file size checks
-    p = request.POST.copy()
+    # Get the submitted data
+    data = request.POST.copy()
+
+    # Check for submitted files
     if request.FILES:
         for fileinput_id in request.FILES.keys():
             inputfiles = request.FILES.getlist(fileinput_id)
 
+            # Check number of files submitted
             if len(inputfiles) > settings.MAX_FILEUPLOADS_PER_INPUT:
                 too_many_files_msg = 'Submission aborted! Maximum %d files may be submitted at once' % \
                     settings.MAX_FILEUPLOADS_PER_INPUT
                 return HttpResponse(json.dumps({'success': too_many_files_msg}))
 
+            # Check file sizes
             for inputfile in inputfiles:
                 if inputfile.size > settings.STUDENT_FILEUPLOAD_MAX_SIZE:  # Bytes
                     file_too_big_msg = 'Submission aborted! Your file "%s" is too large (max size: %d MB)' % \
                                         (inputfile.name, settings.STUDENT_FILEUPLOAD_MAX_SIZE / (1000 ** 2))
                     return HttpResponse(json.dumps({'success': file_too_big_msg}))
-            p[fileinput_id] = inputfiles
+
+            # Add files to the submitted info
+            data[fileinput_id] = inputfiles
 
     try:
         descriptor = modulestore().get_instance(course_id, location)
@@ -495,8 +508,11 @@ def modx_dispatch(request, dispatch, location, course_id):
         )
         raise Http404
 
-    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(course_id,
-        request.user, descriptor)
+    model_data_cache = ModelDataCache.cache_for_descriptor_descendents(
+        course_id,
+        request.user,
+        descriptor
+    )
 
     instance = get_module(request.user, request, location, model_data_cache, course_id, grade_bucket_type='ajax')
     if instance is None:
@@ -507,7 +523,7 @@ def modx_dispatch(request, dispatch, location, course_id):
 
     # Let the module handle the AJAX
     try:
-        ajax_return = instance.handle_ajax(dispatch, p)
+        ajax_return = instance.handle_ajax(dispatch, data)
 
     # If we can't find the module, respond with a 404
     except NotFoundError:
@@ -527,7 +543,6 @@ def modx_dispatch(request, dispatch, location, course_id):
 
     # Return whatever the module wanted to return to the client/caller
     return HttpResponse(ajax_return)
-
 
 
 def get_score_bucket(grade, max_grade):
