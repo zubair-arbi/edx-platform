@@ -239,31 +239,6 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
               'waittime': settings.XQUEUE_WAITTIME_BETWEEN_REQUESTS
              }
 
-    # This is a hacky way to pass settings to the combined open ended xmodule
-    # It needs an S3 interface to upload images to S3
-    # It needs the open ended grading interface in order to get peer grading to be done
-    # this first checks to see if the descriptor is the correct one, and only sends settings if it is
-
-    # Get descriptor metadata fields indicating needs for various settings
-    needs_open_ended_interface = getattr(descriptor, "needs_open_ended_interface", False)
-    needs_s3_interface = getattr(descriptor, "needs_s3_interface", False)
-
-    # Initialize interfaces to None
-    open_ended_grading_interface = None
-    s3_interface = None
-
-    # Create interfaces if needed
-    if needs_open_ended_interface:
-        open_ended_grading_interface = settings.OPEN_ENDED_GRADING_INTERFACE
-        open_ended_grading_interface['mock_peer_grading'] = settings.MOCK_PEER_GRADING
-        open_ended_grading_interface['mock_staff_grading'] = settings.MOCK_STAFF_GRADING
-    if needs_s3_interface:
-        s3_interface = {
-            'access_key': getattr(settings, 'AWS_ACCESS_KEY_ID', ''),
-            'secret_access_key': getattr(settings, 'AWS_SECRET_ACCESS_KEY', ''),
-            'storage_bucket_name': getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'openended')
-        }
-
     def inner_get_module(descriptor):
         """
         Delegate to get_module_for_descriptor_internal() with all values except `descriptor` set.
@@ -321,6 +296,17 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
                 return True
         return False
 
+    # TODO (cpennington): This should be removed when all html from
+    # a module is coming through get_html and is therefore covered
+    # by the replace_static_urls code below
+    replace_urls = partial(
+        static_replace.replace_static_urls,
+        data_directory=getattr(descriptor, 'data_dir', None),
+        course_namespace=descriptor.location._replace(category=None, name=None),
+    )
+
+    storage = get_storage(descriptor, course_id,)
+
     # TODO (cpennington): When modules are shared between courses, the static
     # prefix is going to have to be specific to the module, not the directory
     # that the xml was loaded from
@@ -328,28 +314,20 @@ def get_module_for_descriptor_internal(user, descriptor, model_data_cache, cours
                           render_template=render_to_string,
                           ajax_url=ajax_url,
                           xqueue=xqueue,
-                          # TODO (cpennington): Figure out how to share info between systems
                           filestore=descriptor.system.resources_fs,
+                          storage=storage,
                           get_module=inner_get_module,
                           user=user,
-                          # TODO (cpennington): This should be removed when all html from
-                          # a module is coming through get_html and is therefore covered
-                          # by the replace_static_urls code below
-                          replace_urls=partial(
-                              static_replace.replace_static_urls,
-                              data_directory=getattr(descriptor, 'data_dir', None),
-                              course_namespace=descriptor.location._replace(category=None, name=None),
-                          ),
+                          replace_urls=replace_urls,
                           node_path=settings.NODE_PATH,
                           xblock_model_data=xblock_model_data,
                           publish=publish,
                           anonymous_student_id=unique_id_for_user(user),
                           course_id=course_id,
-                          open_ended_grading_interface=open_ended_grading_interface,
-                          s3_interface=s3_interface,
                           cache=cache,
                           can_execute_unsafe_code=can_execute_unsafe_code,
                           )
+
     # pass position specified in URL to module through ModuleSystem
     system.set('position', position)
     system.set('DEBUG', settings.DEBUG)
@@ -476,26 +454,14 @@ def modx_dispatch(request, dispatch, location, course_id):
     # Get the submitted data
     data = request.POST.copy()
 
-    # Check for submitted files
-    if request.FILES:
-        for fileinput_id in request.FILES.keys():
-            inputfiles = request.FILES.getlist(fileinput_id)
+    # Check submitted files
+    files = request.FILES
+    error_msg = _check_files_limits(files)
+    if error_msg:
+        return HttpResponse(json.dumps({'success': error_msg}))
 
-            # Check number of files submitted
-            if len(inputfiles) > settings.MAX_FILEUPLOADS_PER_INPUT:
-                too_many_files_msg = 'Submission aborted! Maximum %d files may be submitted at once' % \
-                    settings.MAX_FILEUPLOADS_PER_INPUT
-                return HttpResponse(json.dumps({'success': too_many_files_msg}))
-
-            # Check file sizes
-            for inputfile in inputfiles:
-                if inputfile.size > settings.STUDENT_FILEUPLOAD_MAX_SIZE:  # Bytes
-                    file_too_big_msg = 'Submission aborted! Your file "%s" is too large (max size: %d MB)' % \
-                                        (inputfile.name, settings.STUDENT_FILEUPLOAD_MAX_SIZE / (1000 ** 2))
-                    return HttpResponse(json.dumps({'success': file_too_big_msg}))
-
-            # Add files to the submitted info
-            data[fileinput_id] = inputfiles
+    # Merge files into data dictionary
+    data.update(files)
 
     try:
         descriptor = modulestore().get_instance(course_id, location)
@@ -557,3 +523,41 @@ def get_score_bucket(grade, max_grade):
         score_bucket = "correct"
 
     return score_bucket
+
+
+def _check_files_limits(files):
+    """
+    Check if the files in a request are under the limits defined by
+    `settings.MAX_FILEUPLOADS_PER_INPUT` and
+    `settings.STUDENT_FILEUPLOAD_MAX_SIZE`.
+
+    Returns None if files are correct or an error messages otherwise.
+    """
+    for fileinput_id in files:
+        inputfiles = files.getlist(fileinput_id)
+
+        # Check number of files submitted
+        if len(inputfiles) > settings.MAX_FILEUPLOADS_PER_INPUT:
+            msg = 'Submission aborted! Maximum %d files may be submitted at once' %\
+                  settings.MAX_FILEUPLOADS_PER_INPUT
+            return msg
+
+        # Check file sizes
+        for inputfile in inputfiles:
+            if inputfile.size > settings.STUDENT_FILEUPLOAD_MAX_SIZE:   # Bytes
+                msg = 'Submission aborted! Your file "%s" is too large (max size: %d MB)' %\
+                      (inputfile.name, settings.STUDENT_FILEUPLOAD_MAX_SIZE / (1000 ** 2))
+                return msg
+
+    return None
+
+
+def get_storage(_descriptor, _course_id):
+    """
+    Return a the django.core.files.storage. Storage compatible object
+    that will be used by modules to save shared files.
+    """
+    from django.core.files.storage import default_storage
+
+    # Use the default storage specified by the DEFAULT_FILE_STORAGE setting
+    return default_storage

@@ -758,14 +758,13 @@ class ModuleSystem(object):
                  xblock_model_data,
                  user=None,
                  filestore=None,
+                 storage=None,
                  debug=False,
                  xqueue=None,
                  publish=None,
                  node_path="",
                  anonymous_student_id='',
                  course_id=None,
-                 open_ended_grading_interface=None,
-                 s3_interface=None,
                  cache=None,
                  can_execute_unsafe_code=None,
     ):
@@ -791,6 +790,9 @@ class ModuleSystem(object):
 
         filestore - A filestore ojbect.  Defaults to an instance of OSFS based
                          at settings.DATA_DIR.
+
+        storage - A django.core.files.storage.Storage like object to
+                  save files to a shared storage
 
         xqueue - Dict containing XqueueInterface object, as well as parameters
                     for the specific StudentModule:
@@ -823,6 +825,7 @@ class ModuleSystem(object):
         self.xqueue = xqueue
         self.track_function = track_function
         self.filestore = filestore
+        self.storage = storage
         self.get_module = get_module
         self.render_template = render_template
         self.DEBUG = self.debug = debug
@@ -833,15 +836,7 @@ class ModuleSystem(object):
         self.course_id = course_id
         self.user_is_staff = user is not None and user.is_staff
         self.xblock_model_data = xblock_model_data
-
-        if publish is None:
-            publish = lambda e: None
-
-        self.publish = publish
-
-        self.open_ended_grading_interface = open_ended_grading_interface
-        self.s3_interface = s3_interface
-
+        self.publish = publish or (lambda e: None)
         self.cache = cache or DoNothingCache()
         self.can_execute_unsafe_code = can_execute_unsafe_code or (lambda: False)
 
