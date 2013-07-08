@@ -56,6 +56,7 @@ setup(
             "hidden = xmodule.hidden_module:HiddenDescriptor",
             "raw = xmodule.raw_module:RawDescriptor",
             "crowdsource_hinter = xmodule.crowdsource_hinter:CrowdsourceHinterDescriptor",
+            "pythontutor = xmodule.pythontutor_module:PythonTutorDescriptor",
         ],
         'console_scripts': [
             'xmodule_assets = xmodule.static_content:main',
