@@ -15,7 +15,7 @@ def is_empty(dictionary):
 
 def django_admin(system, env, command, *args):
     """ wrapper around django-admin """
-    django_admin_cmd = os.environ.get('DJANGO_ADMIN_PATH') or select_executable(['django-admin.py', 'django-admin'])
+    django_admin_cmd = os.environ.get('DJANGO_ADMIN_PATH') or select_executable(['django-admin.py'])
     return "{django_admin} {command} --traceback --settings={system}.envs.{env} --pythonpath=. {args}".format(
         django_admin=django_admin_cmd, command=command, system=system, env=env, args=" ".join(args))
 
