@@ -22,6 +22,11 @@ body.dashboard {
   }
 }
 
+// yes we have no boldness today - need to fix the resets
+body strong,
+body b {
+  font-weight: 700;
+}
 
 // ====================
 
