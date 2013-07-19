@@ -44,30 +44,30 @@
         <h3 class="title">Create a New Course</h3>
 
         <ol class="list-input">
-          <li class="field text required" id="field-course-name">
+          <li class="field field-inline text required" id="field-course-name">
             <label for="course-name">Course Name</label>
             <input class="new-course-name" id="course-name" type="text" name="course-name" placeholder="e.g. Introduction to Computer Science" />
             <span class="tip tip-stacked">The public display name for your course - <strong>Note: This cannot be changed</strong></span>
+            <span class="tip tip-error">That course name is already taken</span>
           </li>
-          <li class="field text required" id="field-organization">
+          <li class="field field-inline text required" id="field-organization">
             <label for="organization">Organization</label>
-            <input class="new-course-org" id="organization" type="text" name="organization" placeholder="e.g. MITX or IMF" />
+            <input class="new-course-org" id="organization" type="text" name="organization" placeholder="e.g. MITX" />
             <span class="tip tip-stacked">The name of the organization sponsoring the course  - <strong>Note: No spaces or special characters are allowed</strong></span>
+            <span class="tip tip-error">Please avoid spaces and special characters</span>
           </li>
 
-          <li class="field-group">
-            <div class="field text required" id="field-course-number">
+            <li class="field field-inline text required" id="field-course-number">
               <label for="course-number">Course Number</label>
-              <input class="short new-course-number" id="course-number" type="text" name="course-number" placeholder="e.g. CS101" />
+              <input class="new-course-number" id="course-number" type="text" name="course-number" placeholder="e.g. CS101" />
               <span class="tip tip-stacked">The unique number that identifies your course within your organization</span>
-            </div>
+            </li>
 
-            <div class="field text required" id="field-course-run">
+            <li class="field field-inline text required" id="field-course-run">
               <label for="course-run">Course Run</label>
-              <input class="short new-course-run" id="course-run" type="text" name="course-run" placeholder="e.g. Spring 2013" />
-              <span class="tip tip-stacked">The term in which your course will run</span>
-            </div>
-          </li>
+              <input class="new-course-run" id="course-run" type="text" name="course-run" placeholder="e.g. 2013_Spring" />
+              <span class="tip tip-stacked">The term in which your course will run  - <strong>Note: No spaces or special characters are allowed</strong></span>
+            </li>
         </ol>
 
       </fieldset>

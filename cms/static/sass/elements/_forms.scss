@@ -104,21 +104,6 @@ form[class^="create-"] {
     padding: $baseline ($baseline*1.5);
   }
 
-  .form-actions {
-    margin-top: $baseline;
-
-    .action-primary {
-      @include blue-button;
-      @extend .t-action2;
-      @include transition(all $tmg-f3 linear 0s);
-      display: block;
-      width: 100%;
-      padding: ($baseline*0.75) ($baseline/2);
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-  }
-
   .list-input {
     margin: 0;
     padding: 0;
@@ -143,7 +128,7 @@ form[class^="create-"] {
         }
       }
 
-      label, input, textarea {
+      label, input, textarea, select {
         display: block;
       }
 
@@ -158,7 +143,7 @@ form[class^="create-"] {
       }
 
 
-      input, textarea {
+      input, textarea, select {
         @extend .t-copy-base;
         height: 100%;
         width: 100%;
@@ -207,8 +192,18 @@ form[class^="create-"] {
         color: $gray-l3;
       }
 
+      .tip-error {
+        display: none;
+        float: none;
+      }
+
       &.error {
         label {
+          color: $red;
+        }
+
+        .tip-error {
+          display: block;
           color: $red;
         }
 
@@ -216,6 +211,27 @@ form[class^="create-"] {
           border-color: $red;
         }
       }
+    }
+
+    .field-inline {
+
+      input, textarea, select {
+        width: 62%;
+        display: inline-block;
+      }
+
+      .tip-stacked {
+        display: inline-block;
+        float: right;
+        width: 35%;
+        margin-top: 0;
+      }
+
+      &.error {
+        .tip-error {
+        }
+      }
+
     }
 
 
@@ -251,7 +267,8 @@ form[class^="create-"] {
   .actions {
     box-shadow: inset 0 1px 2px $shadow;
     border-top: 1px solid $gray-l1;
-    padding: ($baseline*0.75) $baseline;
+    margin-top: ($baseline*.75);
+    padding: ($baseline*0.75) ($baseline*1.5);
     background: $gray-l6;
 
     .action-primary {
