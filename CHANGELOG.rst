@@ -5,6 +5,20 @@ These are notable changes in edx-platform.  This is a rolling list of changes,
 in roughly chronological order, most recent first.  Add your entries at or near
 the top.  Include a label indicating the component affected.
 
+Studio: Send e-mails to new Studio users (on edge only) when their course creator
+status has changed. This will not be in use until the course creator table
+is enabled.
+
+LMS: Added user preferences (arbitrary user/key/value tuples, for which
+which user/key is unique) and a REST API for reading users and
+preferences. Access to the REST API is restricted by use of the
+X-Edx-Api-Key HTTP header (which must match settings.EDX_API_KEY; if
+the setting is not present, the API is disabled).
+
+LMS: Added endpoints for AJAX requests to enable/disable notifications
+(which are not yet implemented) and a one-click unsubscribe page.
+
+Common: Add a manage.py that knows about edx-platform specific settings and projects
 
 Common: Added *experimental* support for jsinput type.
 

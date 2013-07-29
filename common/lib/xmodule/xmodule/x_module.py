@@ -11,6 +11,7 @@ from xmodule.modulestore import inheritance, Location
 from xmodule.modulestore.exceptions import ItemNotFoundError, InsufficientSpecificationError, InvalidLocationError
 
 from xblock.core import XBlock, Scope, String, Integer, Float, ModelType
+from xblock.fragment import Fragment
 from xmodule.modulestore.locator import BlockUsageLocator
 
 log = logging.getLogger(__name__)
@@ -202,6 +203,13 @@ class XModule(XModuleFields, HTMLSnippet, XBlock):
         '''
         if self._loaded_children is None:
             child_descriptors = self.get_child_descriptors()
+
+            # This deliberately uses system.get_module, rather than runtime.get_block,
+            # because we're looking at XModule children, rather than XModuleDescriptor children.
+            # That means it can use the deprecated XModule apis, rather than future XBlock apis
+
+            # TODO: Once we're in a system where this returns a mix of XModuleDescriptors
+            # and XBlocks, we're likely to have to change this more
             children = [self.system.get_module(descriptor) for descriptor in child_descriptors]
             # get_module returns None if the current user doesn't have access
             # to the location.
@@ -305,6 +313,19 @@ class XModule(XModuleFields, HTMLSnippet, XBlock):
         ''' dispatch is last part of the URL.
             data is a dictionary-like object with the content of the request'''
         return ""
+
+
+    # ~~~~~~~~~~~~~~~ XBlock API Wrappers ~~~~~~~~~~~~~~~~
+    def student_view(self, context):
+        """
+        Return a fragment with the html from this XModule
+
+        Doesn't yet add any of the javascript to the fragment, nor the css.
+        Also doesn't expect any javascript binding, yet.
+
+        Makes no use of the context parameter
+        """
+        return Fragment(self.get_html())
 
 
 def policy_key(location):
@@ -493,7 +514,7 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
                     child = child_loc
                 else:
                     try:
-                        child = self.system.load_item(child_loc)
+                        child = self.runtime.get_block(child_loc)
                     except ItemNotFoundError:
                         log.exception('Unable to load item {loc}, skipping'.format(loc=child_loc))
                         continue
@@ -516,11 +537,14 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
 
         system: Module system
         """
-        return self.module_class(
+        # save any field changes
+        module = self.module_class(
             system,
             self,
             system.xblock_model_data(self),
         )
+        module.save()
+        return module
 
     def has_dynamic_children(self):
         """
@@ -592,7 +616,13 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
 
         new_block = system.xblock_from_json(cls, usage_id, json_data)
         if parent_xblock is not None:
-            parent_xblock.children.append(new_block)
+            children = parent_xblock.children
+            children.append(new_block)
+            # trigger setter method by using top level field access
+            parent_xblock.children = children
+            # decache pending children field settings (Note, truly persisting at this point would break b/c
+            # persistence assumes children is a list of ids not actual xblocks)
+            parent_xblock.save()
         return new_block
 
     @classmethod
@@ -807,6 +837,10 @@ class DescriptorSystem(object):
         self.resources_fs = resources_fs
         self.error_tracker = error_tracker
 
+    def get_block(self, block_id):
+        """See documentation for `xblock.runtime:Runtime.get_block`"""
+        return self.load_item(block_id)
+
 
 class XMLParsingSystem(DescriptorSystem):
     def __init__(self, load_item, resources_fs, error_tracker, process_xml, policy, **kwargs):
@@ -895,8 +929,8 @@ class ModuleSystem(object):
 
         publish(event) - A function that allows XModules to publish events (such as grade changes)
 
-        xblock_model_data - A dict-like object containing the all data available to this
-            xblock
+        xblock_model_data - A function that constructs a model_data for an xblock from its
+            corresponding descriptor
 
         cache - A cache object with two methods:
             .get(key) returns an object from the cache or None.

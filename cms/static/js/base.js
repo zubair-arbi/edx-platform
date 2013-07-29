@@ -60,12 +60,10 @@ $(document).ready(function() {
         $('.nav-dd .nav-item .title').removeClass('is-selected');
     });
 
-    $('.nav-dd .nav-item .title').click(function(e) {
+    $('.nav-dd .nav-item').click(function(e) {
 
-        $subnav = $(this).parent().find('.wrapper-nav-sub');
-        $title = $(this).parent().find('.title');
-        e.preventDefault();
-        e.stopPropagation();
+        $subnav = $(this).find('.wrapper-nav-sub');
+        $title = $(this).find('.title');
 
         if ($subnav.hasClass('is-shown')) {
             $subnav.removeClass('is-shown');
@@ -75,6 +73,9 @@ $(document).ready(function() {
             $('.nav-dd .nav-item .wrapper-nav-sub').removeClass('is-shown');
             $title.addClass('is-selected');
             $subnav.addClass('is-shown');
+            // if propogation is not stopped, the event will bubble up to the
+            // body element, which will close the dropdown.
+            e.stopPropagation();
         }
     });
 
@@ -356,39 +357,61 @@ function createNewUnit(e) {
 
 function deleteUnit(e) {
     e.preventDefault();
-    _deleteItem($(this).parents('li.leaf'));
+    _deleteItem($(this).parents('li.leaf'), 'Unit');
 }
 
 function deleteSubsection(e) {
     e.preventDefault();
-    _deleteItem($(this).parents('li.branch'));
+    _deleteItem($(this).parents('li.branch'), 'Subsection');
 }
 
 function deleteSection(e) {
     e.preventDefault();
-    _deleteItem($(this).parents('section.branch'));
+    _deleteItem($(this).parents('section.branch'), 'Section');
 }
 
-function _deleteItem($el) {
-    if (!confirm(gettext('Are you sure you wish to delete this item. It cannot be reversed!'))) return;
+function _deleteItem($el, type) {
+    var confirm = new CMS.Views.Prompt.Warning({
+        title: gettext('Delete this ' + type + '?'),
+        message: gettext('Deleting this ' + type + ' is permanent and cannot be undone.'),
+        actions: {
+            primary: {
+                text: gettext('Yes, delete this ' + type),
+                click: function(view) {
+                    view.hide();
 
-    var id = $el.data('id');
+                    var id = $el.data('id');
 
-    analytics.track('Deleted an Item', {
-        'course': course_location_analytics,
-        'id': id
+                    analytics.track('Deleted an Item', {
+                        'course': course_location_analytics,
+                        'id': id
+                    });
+
+                    var deleting = new CMS.Views.Notification.Mini({
+                        title: gettext('Deleting') + '&hellip;'
+                    });
+                    deleting.show();
+
+                    $.post('/delete_item',
+                           {'id': id,
+                            'delete_children': true,
+                            'delete_all_versions': true},
+                           function(data) {
+                               $el.remove();
+                               deleting.hide();
+                           }
+                          );
+                }
+            },
+            secondary: {
+                text: gettext('Cancel'),
+                click: function(view) {
+                    view.hide();
+                }
+            }
+        }
     });
-
-
-    $.post('/delete_item', {
-        'id': id,
-        'delete_children': true,
-        'delete_all_versions': true
-    },
-
-    function(data) {
-        $el.remove();
-    });
+    confirm.show();
 }
 
 function markAsLoaded() {
@@ -574,11 +597,11 @@ function cancelNewSection(e) {
 
 function addNewCourse(e) {
     e.preventDefault();
-
-    $(e.target).hide();
+    $('.new-course-button').addClass('disabled');
+    $(e.target).addClass('disabled');
     var $newCourse = $($('#new-course-template').html());
     var $cancelButton = $newCourse.find('.new-course-cancel');
-    $('.inner-wrapper').prepend($newCourse);
+    $('.courses').prepend($newCourse);
     $newCourse.find('.new-course-name').focus().select();
     $newCourse.find('form').bind('submit', saveNewCourse);
     $cancelButton.bind('click', cancelNewCourse);
@@ -623,7 +646,7 @@ function saveNewCourse(e) {
 
 function cancelNewCourse(e) {
     e.preventDefault();
-    $('.new-course-button').show();
+    $('.new-course-button').removeClass('disabled');
     $(this).parents('section.new-course').remove();
 }
 
@@ -728,7 +751,7 @@ function saveSetSectionScheduleDate(e) {
         var $thisSection = $('.courseware-section[data-id="' + id + '"]');
         var html = _.template(
             '<span class="published-status">' +
-                '<strong>' + gettext("Will Release: ") + '</strong>' +
+                '<strong>' + gettext("Will Release:") + '&nbsp;</strong>' +
                 gettext("<%= date %> at <%= time %> UTC") +
             '</span>' +
             '<a href="#" class="edit-button" data-date="<%= date %>" data-time="<%= time %>" data-id="<%= id %>">' +
