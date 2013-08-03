@@ -94,6 +94,38 @@ textarea {
     top: 30px;
 }
 
+.metrics-container {
+    position: relative;
+    width: 100%;
+    float: left;
+    clear: both;
+}
+.metrics-left {
+    position: relative;
+    width: 30%;
+    height: 640px;
+    float: left;
+    margin-right: 2.5%;
+}
+.metrics-right {
+    position: relative;
+    width: 65%;
+    height: 295px;
+    float: left;
+    margin-left: 2.5%;
+    margin-bottom: 25px;
+}
+
+.metrics-tooltip {
+    width: 250px;
+    background-color: lightgray;
+    padding: 3px;
+}
+
+.stacked-bar-graph-legend {
+    fill: white;
+}
+
 </style>
 
 <script language="JavaScript" type="text/javascript">
@@ -124,6 +156,9 @@ function goto( mode)
           %endif
           %if settings.MITX_FEATURES.get('ENABLE_INSTRUCTOR_ANALYTICS'):
              | <a href="#" onclick="goto('Analytics');" class="${modeflag.get('Analytics')}">Analytics</a> 
+          %endif
+          %if settings.MITX_FEATURES.get('CLASS_DASHBOARD'):
+             | <a href="#" onclick="goto('Metrics');" class="${modeflag.get('Metrics')}">${_("Metrics")}</a>
           %endif
 	  ]
     </h2>
@@ -561,6 +596,46 @@ function goto( mode)
       %endfor
       </table>
     </div>
+  %endif
+%endif
+
+%if modeflag.get('Metrics'):
+  %if not any (metrics_results.values()):
+    <p>${_("There is no data available to display at this time.")}</p>
+  %else:
+    <%namespace name="d3_stacked_bar_graph" file="/class_dashboard/d3_stacked_bar_graph.js"/>
+    <%namespace name="section_metrics" file="/class_dashboard/section_metrics.js"/>
+
+    <script>
+      ${d3_stacked_bar_graph.body()}
+    </script>
+
+    <div id="metrics"></div>
+
+    %for i in range(0,len(metrics_results['d3_prob_attempt_distrib'])):
+      <div class="metrics-container" id="metrics_section_${i}">
+        <h2>Section: ${metrics_results['d3_prob_attempt_distrib'][i]['display_name']}</h2>
+        <div class="metrics-tooltip" id="metric_tooltip_${i}"></div>
+        <div class="metrics-left" id="metric_opened_${i}">
+          <h3>Count of Students Opened a Subsection</h3>
+        </div>
+        <div class="metrics-right" id="metric_grade_${i}">
+          <h3>Grade Distribution per Problem</h3>
+          %if len(metrics_results['d3_section_grade_distrib'][i]['data']) == 0:
+            <p>${_("There is no data available to display at this time.")}</p>
+          %endif
+        </div>
+        <div class="metrics-right" id="metric_attempts_${i}">
+          <h3>Attempt Distribution per Problem (Last update: ${metrics_results['attempts_timestamp']})</h3>
+          %if len(metrics_results['d3_prob_attempt_distrib'][i]['data']) == 0:
+            <p>${_("There is no data available to display at this time.")}</p>
+          %endif
+        </div>
+      </div>
+      <script>
+        ${section_metrics.body("metric_opened_"+str(i),"metric_grade_"+str(i),"metric_attempts_"+str(i),"metric_tooltip_"+str(i),metrics_results['d3_sequential_open_distrib'][i]['data'],metrics_results['d3_section_grade_distrib'][i]['data'],metrics_results['d3_prob_attempt_distrib'][i]['data'],i)}
+      </script>
+    %endfor
   %endif
 %endif
 
