@@ -55,7 +55,10 @@ MITX_FEATURES = {
 
     # If set to True, new Studio users won't be able to author courses unless
     # edX has explicitly added them to the course creator group.
-    'ENABLE_CREATOR_GROUP': False
+    'ENABLE_CREATOR_GROUP': False,
+
+    # Enable push to LMS (export of studio course to github)
+    'ENABLE_PUSH_TO_LMS': False,
 }
 ENABLE_JASMINE = False
 
