@@ -1173,3 +1173,11 @@ class CapaDescriptor(CapaFields, RawDescriptor):
         non_editable_fields.extend([CapaDescriptor.due, CapaDescriptor.graceperiod,
                                     CapaDescriptor.force_save_button, CapaDescriptor.markdown])
         return non_editable_fields
+
+
+def uncovered_test():
+    print "This"
+    print "Should"
+    print "Not"
+    print "Be"
+    print "Covered"
