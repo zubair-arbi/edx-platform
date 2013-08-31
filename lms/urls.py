@@ -387,6 +387,10 @@ if settings.MITX_FEATURES.get('RESTRICT_ENROLL_BY_REG_METHOD'):
 
     )
 
+if settings.MITX_FEATURES.get('ENABLE_SUPERUSER_LOGIN_AS'):
+    urlpatterns += (
+        url(r'^su_login_as/(?P<username>[\w.@+-]+)/?$', 'student.views.superuser_login_as', name='impersonate'),
+    )
 
 if settings.MITX_FEATURES.get('AUTH_USE_OPENID_PROVIDER'):
     urlpatterns += (

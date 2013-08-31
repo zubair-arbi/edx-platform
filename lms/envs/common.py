@@ -159,6 +159,9 @@ MITX_FEATURES = {
     # Toggle to enable chat availability (configured on a per-course
     # basis in Studio)
     'ENABLE_CHAT': False,
+
+    # OP Superusers can log in as anyone
+    'ENABLE_SUPERUSER_LOGIN_AS': False,
 }
 
 # Used for A/B testing
