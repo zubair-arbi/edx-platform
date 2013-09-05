@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 
 from lettuce import world, step
-from nose.tools import assert_equals, assert_in
 from django.contrib.auth.models import User
 from student.models import CourseEnrollment
 from xmodule.modulestore import Location
@@ -64,6 +63,13 @@ def add_tab_to_course(_step, course, extra_tab_name):
         parent_location=course_location(course),
         category="static_tab",
         display_name=str(extra_tab_name))
+
+
+@step(u'I am in a course$')
+def go_into_course(step):
+    step.given('I am registered for the course "6.002x"')
+    step.given('And I am logged in')
+    step.given('And I click on View Courseware')
 
 
 def course_id(course_num):

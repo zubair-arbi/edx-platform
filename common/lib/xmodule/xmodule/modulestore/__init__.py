@@ -14,6 +14,8 @@ from bson.son import SON
 
 log = logging.getLogger('mitx.' + 'modulestore')
 
+MONGO_MODULESTORE_TYPE = 'mongo'
+XML_MODULESTORE_TYPE = 'xml'
 
 URL_RE = re.compile("""
     (?P<tag>[^:]+)://?
@@ -258,7 +260,7 @@ class ModuleStore(object):
     An abstract interface for a database backend that stores XModuleDescriptor
     instances
     """
-    def has_item(self, location):
+    def has_item(self, course_id, location):
         """
         Returns True if location exists in this ModuleStore.
         """
@@ -384,18 +386,26 @@ class ModuleStore(object):
         """
         raise NotImplementedError
 
+    def get_modulestore_type(self, course_id):
+        """
+        Returns a type which identifies which modulestore is servicing the given
+        course_id. The return can be either "xml" (for XML based courses) or "mongo" for MongoDB backed courses
+        """
+        raise NotImplementedError
+
 
 class ModuleStoreBase(ModuleStore):
     '''
     Implement interface functionality that can be shared.
     '''
-    def __init__(self):
+    def __init__(self, metadata_inheritance_cache_subsystem=None, request_cache=None, modulestore_update_signal=None):
         '''
         Set up the error-tracking logic.
         '''
         self._location_errors = {}  # location -> ErrorLog
-        self.metadata_inheritance_cache = None
-        self.modulestore_update_signal = None  # can be set by runtime to route notifications of datastore changes
+        self.metadata_inheritance_cache_subsystem = metadata_inheritance_cache_subsystem
+        self.modulestore_update_signal = modulestore_update_signal
+        self.request_cache = request_cache
 
     def _get_errorlog(self, location):
         """

@@ -1,11 +1,9 @@
 (function () {
-    xdescribe('Video', function () {
+    describe('Video', function () {
         var oldOTBD;
 
         beforeEach(function () {
             jasmine.stubRequests();
-            oldOTBD = window.onTouchBasedDevice;
-            window.onTouchBasedDevice = jasmine.createSpy('onTouchBasedDevice').andReturn(false);
             this.videosDefinition = '0.75:7tqY6eQzVhE,1.0:cogebirgzzM';
             this['7tqY6eQzVhE'] = '7tqY6eQzVhE';
             this['cogebirgzzM'] = 'cogebirgzzM';
@@ -16,7 +14,6 @@
             window.onYouTubePlayerAPIReady = undefined;
             window.onHTML5PlayerAPIReady = undefined;
             $('source').remove();
-            window.onTouchBasedDevice = oldOTBD;
         });
 
         describe('constructor', function () {
@@ -117,10 +114,22 @@
 
                     it('parse Html5 sources', function () {
                         var html5Sources = {
-                            mp4: 'test_files/test.mp4',
-                            webm: 'test_files/test.webm',
-                            ogg: 'test_files/test.ogv'
-                        };
+                                mp4: null,
+                                webm: null,
+                                ogg: null
+                            }, v = document.createElement('video');
+
+                        if (!!(v.canPlayType && v.canPlayType('video/webm; codecs="vp8, vorbis"').replace(/no/, ''))) {
+                            html5Sources['webm'] = 'xmodule/include/fixtures/test.webm';
+                        }
+
+                        if (!!(v.canPlayType && v.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"').replace(/no/, ''))) {
+                            html5Sources['mp4'] = 'xmodule/include/fixtures/test.mp4';
+                        }
+
+                        if (!!(v.canPlayType && v.canPlayType('video/ogg; codecs="theora"').replace(/no/, ''))) {
+                            html5Sources['ogg'] = 'xmodule/include/fixtures/test.ogv';
+                        }
 
                         expect(state.html5Sources).toEqual(html5Sources);
                     });

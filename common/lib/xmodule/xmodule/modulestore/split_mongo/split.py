@@ -10,9 +10,8 @@ from xmodule.errortracker import null_error_tracker
 from xmodule.x_module import XModuleDescriptor
 from xmodule.modulestore.locator import BlockUsageLocator, DescriptionLocator, CourseLocator, VersionTree
 from xmodule.modulestore.exceptions import InsufficientSpecificationError, VersionConflictError
-from xmodule.modulestore import inheritance
+from xmodule.modulestore import inheritance, ModuleStoreBase
 
-from .. import ModuleStoreBase
 from ..exceptions import ItemNotFoundError
 from .definition_lazy_loader import DefinitionLazyLoader
 from .caching_descriptor_system import CachingDescriptorSystem
@@ -51,25 +50,25 @@ class SplitMongoModuleStore(ModuleStoreBase):
                  port=27017, default_class=None,
                  error_tracker=null_error_tracker,
                  user=None, password=None,
+                 mongo_options=None,
                  **kwargs):
 
         ModuleStoreBase.__init__(self)
+        if mongo_options is None:
+            mongo_options = {}
 
         self.db = pymongo.database.Database(pymongo.MongoClient(
             host=host,
             port=port,
             tz_aware=True,
-            **kwargs
+            **mongo_options
         ), db)
 
-        # TODO add caching of structures to thread_cache to prevent repeated fetches (but not index b/c
-        # it changes w/o having a change in id)
         self.course_index = self.db[collection + '.active_versions']
         self.structures = self.db[collection + '.structures']
         self.definitions = self.db[collection + '.definitions']
 
-        # ??? Code review question: those familiar w/ python threading. Should I instead
-        # use django cache? How should I expire entries?
+        # Code review question: How should I expire entries?
         # _add_cache could use a lru mechanism to control the cache size?
         self.thread_cache = threading.local()
 
@@ -279,7 +278,14 @@ class SplitMongoModuleStore(ModuleStoreBase):
         result = self._load_items(course_entry, [root], 0, lazy=True)
         return result[0]
 
-    def has_item(self, block_location):
+    def get_course_for_item(self, location):
+        '''
+        Provided for backward compatibility. Is equivalent to calling get_course
+        :param location:
+        '''
+        return self.get_course(location)
+
+    def has_item(self, course_id, block_location):
         """
         Returns True if location exists in its course. Returns false if
         the course or the block w/in the course do not exist for the given version.
@@ -1170,6 +1176,7 @@ class SplitMongoModuleStore(ModuleStoreBase):
             return None
         else:
             return DescriptionLocator(definition['_id'])
+
 
     def _block_matches(self, value, qualifiers):
         '''

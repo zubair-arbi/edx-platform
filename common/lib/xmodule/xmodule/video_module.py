@@ -24,9 +24,6 @@ from xmodule.editing_module import TabsEditingDescriptor
 from xmodule.raw_module import EmptyDataRawDescriptor
 from xmodule.xml_module import is_pointer_tag, name_to_pathname
 from xmodule.modulestore import Location
-from xmodule.modulestore.mongo import MongoModuleStore
-from xmodule.modulestore.django import modulestore
-from xmodule.contentstore.content import StaticContent
 from xblock.core import Scope, String, Boolean, Float, List, Integer
 
 import datetime
@@ -104,14 +101,14 @@ class VideoFields(object):
         default=[]
     )
     track = String(
-        help="The external URL to download the subtitle track. This appears as a link beneath the video.",
+        help="The external URL to download the timed transcript track. This appears as a link beneath the video.",
         display_name="Download Track",
         scope=Scope.settings,
         default=""
     )
     sub = String(
-        help="The name of the subtitle track (for non-Youtube videos).",
-        display_name="HTML5 Subtitles",
+        help="The name of the timed transcript track (for non-Youtube videos).",
+        display_name="HTML5 Timed Transcript",
         scope=Scope.settings,
         default=""
     )
@@ -161,16 +158,17 @@ class VideoModule(VideoFields, XModule):
         return json.dumps({'position': self.position})
 
     def get_html(self):
-        if isinstance(modulestore(), MongoModuleStore):
-            caption_asset_path = StaticContent.get_base_url_path_for_course_assets(self.location) + '/subs_'
-        else:
-            # VS[compat]
-            # cdodge: filesystem static content support.
-            caption_asset_path = "/static/subs/"
+        caption_asset_path = "/static/subs/"
 
         get_ext = lambda filename: filename.rpartition('.')[-1]
         sources = {get_ext(src): src for src in self.html5_sources}
         sources['main'] = self.source
+
+        # for testing Youtube timeout in acceptance tests
+        if getattr(settings, 'VIDEO_PORT', None):
+            yt_test_url = "http://127.0.0.1:" + str(settings.VIDEO_PORT) + '/test_youtube/'
+        else:
+            yt_test_url = 'https://gdata.youtube.com/feeds/api/videos/'
 
         return self.system.render_template('video.html', {
             'youtube_streams': _create_youtube_string(self),
@@ -186,7 +184,11 @@ class VideoModule(VideoFields, XModule):
             'show_captions': json.dumps(self.show_captions),
             'start': self.start_time,
             'end': self.end_time,
-            'autoplay': settings.MITX_FEATURES.get('AUTOPLAY_VIDEOS', True)
+            'autoplay': settings.MITX_FEATURES.get('AUTOPLAY_VIDEOS', True),
+            # TODO: Later on the value 1500 should be taken from some global
+            # configuration setting field.
+            'yt_test_timeout': 1500,
+            'yt_test_url': yt_test_url
         })
 
 

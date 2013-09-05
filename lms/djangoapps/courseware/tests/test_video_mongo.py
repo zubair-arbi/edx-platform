@@ -54,7 +54,7 @@ class TestVideo(BaseTestXmodule):
 
         expected_context = {
             'data_dir': getattr(self, 'data_dir', None),
-            'caption_asset_path': '/c4x/MITx/999/asset/subs_',
+            'caption_asset_path': '/static/subs/',
             'show_captions': 'true',
             'display_name': 'A Name',
             'end': 3610.0,
@@ -64,7 +64,9 @@ class TestVideo(BaseTestXmodule):
             'sub': u'a_sub_file.srt.sjson',
             'track': '',
             'youtube_streams': _create_youtube_string(self.item_module),
-            'autoplay': settings.MITX_FEATURES.get('AUTOPLAY_VIDEOS', True)
+            'autoplay': settings.MITX_FEATURES.get('AUTOPLAY_VIDEOS', True),
+            'yt_test_timeout': 1500,
+            'yt_test_url': 'https://gdata.youtube.com/feeds/api/videos/'
         }
 
         self.maxDiff = None
@@ -104,7 +106,7 @@ class TestVideoNonYouTube(TestVideo):
 
         expected_context = {
             'data_dir': getattr(self, 'data_dir', None),
-            'caption_asset_path': '/c4x/MITx/999/asset/subs_',
+            'caption_asset_path': '/static/subs/',
             'show_captions': 'true',
             'display_name': 'A Name',
             'end': 3610.0,
@@ -114,7 +116,9 @@ class TestVideoNonYouTube(TestVideo):
             'sub': 'a_sub_file.srt.sjson',
             'track': '',
             'youtube_streams': '1.00:OEoXaMPEzfM',
-            'autoplay': settings.MITX_FEATURES.get('AUTOPLAY_VIDEOS', True)
+            'autoplay': settings.MITX_FEATURES.get('AUTOPLAY_VIDEOS', True),
+            'yt_test_timeout': 1500,
+            'yt_test_url': 'https://gdata.youtube.com/feeds/api/videos/'
         }
 
         self.assertEqual(context, expected_context)
