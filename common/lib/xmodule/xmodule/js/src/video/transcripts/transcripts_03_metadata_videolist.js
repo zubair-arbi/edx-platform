@@ -102,10 +102,11 @@
             var parseLink = Transcripts.Utils.parseLink,
                 placeholders = _.clone(this.placeholders),
                 result = [],
-                label, type;
+                linkInfo, label, type;
 
             for (var i = 0; i < 3; i += 1) {
-                type = parseLink(value[i]).type;
+                linkInfo = parseLink(value[i]);
+                type = (linkInfo) ? linkInfo.type : null;
 
                 if (placeholders[type]) {
                     label = placeholders[type];

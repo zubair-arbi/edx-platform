@@ -237,7 +237,7 @@
         * @param {object} toCollection Collection which will synchronized.
         *
         */
-        var _syncCollections = function (fromCollection, fromCollection) {
+        var _syncCollections = function (fromCollection, toCollection) {
             fromCollection.each(function (m) {
                 var model = toCollection.findWhere({
                         field_name: m.getFieldName()
@@ -301,6 +301,7 @@
                 xhr = $.ajax({
                     url: '/transcripts/' + action,
                     data: { data: JSON.stringify(data) },
+                    notifyOnError: false,
                     type: 'get'
                 });
 
