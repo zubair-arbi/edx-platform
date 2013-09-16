@@ -4,7 +4,7 @@
         events : {
             'click .setting-clear' : 'clear',
             'keypress .setting-input' : 'showClearButton',
-            'click .collapse-setting' : 'toggleAdditional'
+            'click .collapse-setting' : 'toggleExtraVideosBar'
         },
 
         templateName: 'metadata-videolist-entry',
@@ -35,11 +35,13 @@
         render: function () {
             CMS.Views.Metadata.AbstractEditor.prototype.render
                 .apply(this, arguments);
-                
+
             var self = this,
                 utils = Transcripts.Utils,
                 component_id =  this.$el.closest('.component').data('id'),
                 videoList = this.getVideoObjectsList();
+
+            this.$extraVideosBar = this.$el.find('.videolist-extra-videos');
 
             utils.command('check', component_id, videoList)
                 .done(function (resp) {
@@ -47,9 +49,9 @@
                         mode = (videoList.length) ? videoList[0].mode : false;
 
                     if (videoList.length > 1 || mode === 'html5') {
-                        self.openAdditional();
+                        self.openExtraVideosBar();
                     } else {
-                        self.closeAdditional();
+                        self.closeExtraVideosBar();
                     }
 
                     self.messenger.render(resp.command, params);
@@ -119,31 +121,31 @@
             return result;
         },
 
-        openAdditional: function (event) {
+        openExtraVideosBar: function (event) {
             if (event && event.preventDefault) {
                 event.preventDefault();
             }
 
-            this.$el.find('.videolist-additional').addClass('is-visible');
+            this.$extraVideosBar.addClass('is-visible');
         },
 
-        closeAdditional: function (event) {
+        closeExtraVideosBar: function (event) {
             if (event && event.preventDefault) {
                 event.preventDefault();
             }
 
-            this.$el.find('.videolist-additional').removeClass('is-visible');
+            this.$extraVideosBar.removeClass('is-visible');
         },
 
-        toggleAdditional: function (event) {
+        toggleExtraVideosBar: function (event) {
             if (event && event.preventDefault) {
                 event.preventDefault();
             }
 
-            if (this.$el.find('.videolist-additional').hasClass('is-visible')) {
-                this.closeAdditional.apply(this, arguments);
+            if (this.$extraVideosBar.hasClass('is-visible')) {
+                this.closeExtraVideosBar.apply(this, arguments);
             } else {
-                this.openAdditional.apply(this, arguments);
+                this.openExtraVideosBar.apply(this, arguments);
             }
         },
 
@@ -165,9 +167,9 @@
                     modelValue = modelValue.filter(_.identity);
                 }
 
-                // When some correct value (change model) is adjusted, 
-                // than change to incorrect (no changes to model), than 
-                // back previous one correct value (that value is already 
+                // When some correct value (change model) is adjusted,
+                // than change to incorrect (no changes to model), than
+                // back previous one correct value (that value is already
                 // in model). In this case Backbone doesn't trigger 'change'
                 // event on model. That's why render method will not be invoked
                 // and we should hide error here.
@@ -177,7 +179,7 @@
                     this.updateModel();
                 }
             } else if ($el.hasClass('videolist-url')) {
-                this.closeAdditional();
+                this.closeExtraVideosBar();
             }
         },
 
@@ -188,8 +190,8 @@
             return arr.length === uniqArr.length;
         },
 
-        checkIsUniqVideoTypes: function (videoList) {
-            var videoList = videoList || this.getVideoObjectsList();
+        checkIsUniqVideoTypes: function (list) {
+            var videoList = list || this.getVideoObjectsList();
 
             if (!this.isUniqVideoTypes(videoList)) {
                 this.messenger
@@ -205,7 +207,7 @@
                 videoList = this.getVideoObjectsList();
 
             this.checkIsUniqVideoTypes(videoList);
-                
+
             if (data.mode === 'incorrect' && showErrorModeMessage) {
                 this.messenger
                     .showError('Incorrect url format.', true);

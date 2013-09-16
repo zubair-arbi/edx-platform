@@ -60,7 +60,7 @@
         return ''
 
     video_url.update({
-        'help': 'To be sure all students can view the video, we recommend providing alternate versions of the same video: mp4, webm and youtube (if available).',
+        'help': _('A YouTube URL or a link to a file hosted anywhere on the web.'),
         'display_name': 'Video URL',
         'field_name': 'video_url',
         'type': 'VideoList',
@@ -69,7 +69,7 @@
         ]
     })
 
-    video_url['value'].insert(\
+    video_url['value'].insert(
       0,
       get_youtube_link(youtube_id_1_0['value'])
     )
