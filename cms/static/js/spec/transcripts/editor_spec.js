@@ -1,19 +1,71 @@
 (function (window, undefined) {
-    describe('Transcripts: editor', function () {
-        it('check that MetadataCollection is available', function () {
-            var models = [],
-                mc = {};
+    describe('Transcripts.Editor', function () {
+        var VideoListEntry = {
+                default_value: ["a thing", "another thing"],
+                display_name: "Video URL",
+                explicitly_set: false,
+                field_name: "video_url",
+                help: "A list of things.",
+                options: [],
+                type: CMS.Models.Metadata.VIDEO_LIST_TYPE,
+                value: ["the first display value", "the second"]
+            },
+            models = [VideoListEntry],
+            metadataDict = {
+                object: {
+                    "video_url":{
+                        "default_value":["a thing","another thing"],
+                        "display_name":"Video URL",
+                        "explicitly_set":false,
+                        "field_name":"video_url",
+                        "help":"A list of things.",
+                        "options":[],
+                        "type":"VideoList",
+                        "value":["the first display value","the second"]
+                    }
+                },
+                string: '{"video_url":{"default_value":["a thing","another thing"],\
+                "display_name":"Video URL","explicitly_set":false,"field_name":\
+                "video_url","help":"A list of things.","options":[],"type":\
+                "VideoList","value":["the first display value","the second"]}}'
+            },
+            container;
 
-            mc = new CMS.Models.MetadataCollection(models);
+        beforeEach(function () {
+            var tpl = sandbox({
+                    'class': 'wrapper-comp-settings basic_metadata_edit',
+                    'data-metadata': JSON.stringify(metadataDict['object'])
+                });
 
-            expect(mc.models).toBeDefined();
-            expect($.isArray(mc.models)).toBeTruthy();
-            expect(mc.models.length).toBe(0);
+            setFixtures(tpl);
         });
 
-        it('check that Transcripts.Editor is available', function () {
-            expect(Transcripts).toBeDefined();
-            expect(Transcripts.Editor).toBeDefined();
+        $.each(metadataDict, function(index, val) {
+            it('toModels with argument as ' + index, function () {
+                spyOn(CMS.Models, 'MetadataCollection');
+                spyOn(CMS.Views.Metadata, 'Editor');
+                var container = $('.basic_metadata_edit'),
+                    transcripts = new Transcripts.Editor({
+                            el: container
+                    });
+
+                expect(transcripts.toModels(val)).toEqual(models);
+            });
+        });
+
+        it('CMS.Views.Metadata.Editor is initialized', function () {
+            spyOn(CMS.Models, 'MetadataCollection');
+            spyOn(CMS.Views.Metadata, 'Editor');
+            var container = $('.basic_metadata_edit'),
+                transcripts = new Transcripts.Editor({
+                    el: container
+                });
+
+            expect(CMS.Models.MetadataCollection).toHaveBeenCalledWith(models);
+            expect(CMS.Views.Metadata.Editor).toHaveBeenCalledWith({
+                el: container,
+                collection: transcripts.collection
+            });
         });
     });
 }(window));

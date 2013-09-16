@@ -86,7 +86,6 @@
                 }
             );
 
-            // TODO: CHECK result['html5']
             if (html5Sources) {
                 html5Sources.setValue(result.html5 || []);
             }
