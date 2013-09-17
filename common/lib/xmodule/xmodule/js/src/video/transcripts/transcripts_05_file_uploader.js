@@ -20,7 +20,7 @@
             var tpl = $(this.uploadTpl).text(),
                 tplContainer = this.$el.find('.transcripts-file-uploader');
 
-            if (tplContainer) {
+            if (tplContainer.length) {
                 if (!tpl) {
                     console.error('Couldn\'t load Transcripts File Upload template');
                 }
@@ -31,7 +31,6 @@
                     component_id: this.options.component_id
                 }));
 
-                this.$statusBar = this.$el.find('.transcripts-message-status');
                 this.$form = this.$el.find('.file-chooser');
                 this.$input = this.$form.find('.file-input');
                 this.$progress = this.$el.find('.progress-fill');
@@ -56,12 +55,6 @@
             this.$input
                 .val(null)
                 .trigger('click');
-        },
-
-        uploadHadler: function (event) {
-            event.preventDefault();
-
-            this.upload();
         },
 
         changeHadler: function (event) {
