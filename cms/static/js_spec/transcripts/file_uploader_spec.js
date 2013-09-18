@@ -48,19 +48,25 @@
         });
 
         describe('Render', function () {
+
+            beforeEach(function () {
+                spyOn(_, 'template').andCallThrough();
+            });
+
             it('Template doesn\'t exist', function () {
                 spyOn(console, 'error');
                 view.uploadTpl = '';
                 view.render();
 
                 expect(console.error).toHaveBeenCalled();
+                expect(view.render).not.toThrow();
+                expect(_.template).not.toHaveBeenCalled();
             });
 
             it('Container where template will be inserted doesn\'t exist',
                 function () {
                     $('.transcripts-file-uploader').remove();
 
-                    spyOn(_, 'template');
                     view.render();
 
                     expect(view.render).not.toThrow();
@@ -75,7 +81,6 @@
                                 return '.' + item;
                             }).join(', ');
 
-                spyOn(_, 'template').andCallThrough();
                 view.validFileExtensions = validFileExtensions;
                 view.render();
 

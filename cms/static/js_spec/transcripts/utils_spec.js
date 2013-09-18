@@ -68,13 +68,13 @@
                     list: [collection, undefined]
                 },
                 {
-                    argName: 'field name',
+                    argName: 'both',
                     list: [undefined, undefined]
                 }
             ]
 
             $.each(wrongArgumentLists, function (index, element) {
-                it(element.argName + 'argument is absent', function () {
+                it(element.argName + ' argument(s) is/are absent', function () {
                     var result = utils.getField.apply(this, element.list);
 
                     expect(result).toBeUndefined();

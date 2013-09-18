@@ -23,6 +23,8 @@
             if (tplContainer.length) {
                 if (!tpl) {
                     console.error('Couldn\'t load Transcripts File Upload template');
+
+                    return;
                 }
                 this.template = _.template(tpl);
 
