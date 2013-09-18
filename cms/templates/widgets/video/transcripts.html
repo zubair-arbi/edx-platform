@@ -3,18 +3,22 @@
 <%page args="tabName"/>
 
 <%
-  import hashlib
-  import copy
-  import json
-  hlskey = hashlib.md5(module.location.url()).hexdigest()
+import hashlib
+import copy
+import json
+hlskey = hashlib.md5(module.location.url()).hexdigest()
+from os import listdir
+from os.path import isfile, join
+try:
+  path = 'cms/static/js/views/transcripts/'
+  files = [ f for f in listdir(path) if isfile(join(path,f)) and f.endswith('.js') ]
+except:
+  files = []
 %>
 
-<script type="text/javascript" src="${static.url('js/views/transcripts/transcripts_00.js')}"></script>
-<script type="text/javascript" src="${static.url('js/views/transcripts/transcripts_01_utils.js')}"></script>
-<script type="text/javascript" src="${static.url('js/views/transcripts/transcripts_02_editor.js')}"></script>
-<script type="text/javascript" src="${static.url('js/views/transcripts/transcripts_03_metadata_videolist.js')}"></script>
-<script type="text/javascript" src="${static.url('js/views/transcripts/transcripts_04_message_manager.js')}"></script>
-<script type="text/javascript" src="${static.url('js/views/transcripts/transcripts_05_file_uploader.js')}"></script>
+%for file in files:
+<script type="text/javascript" src="${static.url('js/views/transcripts/{0}'.format(file))}"></script>
+%endfor
 
 ## js templates
 
