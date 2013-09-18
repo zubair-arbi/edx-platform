@@ -15,21 +15,20 @@
         },
 
         initialize: function () {
+            this.messenger = new Transcripts.MessageManager({
+                el: this.$el.find('.transcripts-status'),
+                parent: this
+            });
+
             CMS.Views.Metadata.AbstractEditor.prototype.initialize
                 .apply(this, arguments);
-
-            this.component_id = this.$el.closest('.component').data('id');
 
             this.$el.on(
                 'input', 'input',
                 _.debounce(_.bind(this.inputHandler, this), 300)
             );
 
-            this.messenger = new Transcripts.MessageManager({
-                el: this.$el.find('.transcripts-status'),
-                component_id: this.component_id,
-                parent: this
-            });
+            this.component_id = this.$el.closest('.component').data('id');
         },
 
         render: function () {
@@ -192,14 +191,17 @@
         },
 
         checkIsUniqVideoTypes: function (list) {
-            var videoList = list || this.getVideoObjectsList();
+            var videoList = list || this.getVideoObjectsList(),
+                isUnique = true;
 
             if (!this.isUniqVideoTypes(videoList)) {
                 this.messenger
                     .showError('Link types should be unique.', true);
 
-                return false;
+                isUnique = false;
             }
+
+            return isUnique;
         },
 
         checkValidity: function (data, showErrorModeMessage) {

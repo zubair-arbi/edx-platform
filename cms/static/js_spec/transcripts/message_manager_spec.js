@@ -54,7 +54,7 @@
             expect(fileUploader.initialize).toHaveBeenCalledWith({
                 el: view.$el,
                 messenger: view,
-                component_id: view.options.component_id
+                component_id: view.component_id
             });
         });
 
@@ -167,7 +167,7 @@
 
                 expect(utils.command).toHaveBeenCalledWith(
                     action,
-                    view.options.component_id,
+                    view.component_id,
                     videoList,
                     void(0)
                 );
@@ -181,7 +181,7 @@
 
                 expect(utils.command).toHaveBeenCalledWith(
                     action,
-                    view.options.component_id,
+                    view.component_id,
                     videoList,
                     {
                         html5_id: extraParamas
@@ -197,7 +197,7 @@
 
                 expect(utils.command).toHaveBeenCalledWith(
                     'errorStatus',
-                    view.options.component_id,
+                    view.component_id,
                     videoList,
                     void(0)
                 );
@@ -211,7 +211,7 @@
 
                 expect(utils.command).toHaveBeenCalledWith(
                     'error',
-                    view.options.component_id,
+                    view.component_id,
                     videoList,
                     void(0)
                 );

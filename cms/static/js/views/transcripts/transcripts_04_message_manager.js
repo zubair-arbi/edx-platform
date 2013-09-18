@@ -24,10 +24,11 @@
         initialize: function () {
             _.bindAll(this);
 
+            this.component_id = this.$el.closest('.component').data('id');
             this.fileUploader = new Transcripts.FileUploader({
                 el: this.$el,
                 messenger: this,
-                component_id: this.options.component_id
+                component_id: this.component_id
             });
         },
 
@@ -54,7 +55,7 @@
             this.$el
                 .removeClass('is-invisible')
                 .find(this.elClass).html(template({
-                    component_id: encodeURIComponent(this.options.component_id),
+                    component_id: encodeURIComponent(this.component_id),
                     html5_list: html5List,
                     grouped_list: groupedList,
                     isYoutubeMode: isYoutubeMode
@@ -114,7 +115,7 @@
         processCommand: function (action, errorMessage, videoId) {
             var self = this,
                 utils = Transcripts.Utils,
-                component_id = this.options.component_id,
+                component_id = this.component_id,
                 videoList = this.options.parent.getVideoObjectsList(),
                 extraParam;
 
