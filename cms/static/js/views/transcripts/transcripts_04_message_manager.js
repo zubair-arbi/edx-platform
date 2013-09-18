@@ -46,6 +46,8 @@
 
             if (!tplHtml) {
                 console.error('Couldn\'t load Transcripts status template');
+
+                return;
             }
 
             template = _.template(tplHtml);
@@ -122,10 +124,14 @@
 
             utils.command(action, component_id, videoList, extraParam)
                 .done(function (resp) {
-                    var sub = resp.status.subs;
+                    if (resp.status && resp.status.status === 'Success') {
+                        var sub = resp.status.subs;
 
-                    self.render('found');
-                    utils.addToStorage('sub', sub);
+                        self.render('found');
+                        utils.addToStorage('sub', sub);
+                    } else {
+                        self.render('not_found');
+                    }
                 })
                 .fail(function (resp) {
                     self.showError(errorMessage);
