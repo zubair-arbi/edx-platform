@@ -68,7 +68,7 @@ except:
       if video_id:
         return 'http://youtu.be/{0}'.format(video_id)
       else:
-        return ''
+        return False
 
     video_url.update({
         'help': _('A YouTube URL or a link to a file hosted anywhere on the web.'),
@@ -80,10 +80,13 @@ except:
         ]
     })
 
-    video_url['value'].insert(
-      0,
-      get_youtube_link(youtube_id_1_0['value'])
-    )
+    youtube_id_1_0_value = get_youtube_link(youtube_id_1_0['value'])
+
+    if youtube_id_1_0_value:
+        video_url['value'].insert(
+          0,
+          youtube_id_1_0_value
+        )
 
     metadata = {
         'display_name': display_name,
