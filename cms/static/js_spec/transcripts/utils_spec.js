@@ -1,6 +1,4 @@
 (function () {
-    // TODO: write tests for syncCollections
-
     describe('Transcripts.Utils', function () {
         var utils = Transcripts.Utils,
             videoId = 'OEoXaMPEzfM',
@@ -50,7 +48,7 @@
                                 );
             });
 
-            it('All arguments are present', function () {
+            it('All works okay if all arguments are passed', function () {
                 utils.getField(collection, testFieldName);
 
                 expect(collection.findWhere).toHaveBeenCalledWith({
@@ -83,7 +81,7 @@
         });
 
         describe('Method: parseYoutubeLink', function () {
-            describe('Correct urls', function () {
+            describe('Supported urls', function () {
                 $.each(ytLinksList, function (index, link) {
                     it(link, function () {
                         var result = utils.parseYoutubeLink(link);
@@ -137,7 +135,7 @@
         });
 
         describe('Method: parseHTML5Link', function () {
-            describe('Correct urls', function () {
+            describe('Supported urls', function () {
                 $.each(html5LinksList, function (format, linksList) {
                     $.each(linksList, function (index, link) {
                         it(link, function () {

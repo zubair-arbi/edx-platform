@@ -74,7 +74,7 @@
                 }
             );
 
-            it('Correct data', function () {
+            it('All works okay if all data is okay', function () {
                 var elList = ['$form', '$input', '$progress'],
                     validFileExtensions = ['srt', 'sjson'],
                     result = $.map(validFileExtensions, function(item, index) {
@@ -126,7 +126,7 @@
                 spyOn(view, 'upload');
             });
 
-            it('Valid File Type', function () {
+            it('Valid File Type - error should be hided', function () {
                 spyOn(view, 'checkExtValidity').andReturn(true);
 
                 view.$input.change();
@@ -136,7 +136,7 @@
                 expect(view.options.messenger.hideError).toHaveBeenCalled();
             });
 
-            it('Invalid File Type', function () {
+            it('Invalid File Type - error should be shown', function () {
                 spyOn(view, 'checkExtValidity').andReturn(false);
 
                 view.$input.change();

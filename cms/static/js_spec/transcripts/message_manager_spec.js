@@ -74,7 +74,7 @@
                 expect(fileUploader.render).not.toHaveBeenCalled();
             });
 
-            it('Correct Data', function () {
+            it('All works okay if correct data is passed', function () {
                 view.render('found');
 
                 expect(console.error).not.toHaveBeenCalled();
