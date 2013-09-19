@@ -179,14 +179,14 @@
 
         describe('isUniqVideoTypes', function () {
 
-            it('Unique data', function () {
+            it('Unique data - return true', function () {
                 var data = videoList,
                     result = view.isUniqVideoTypes(data);
 
                 expect(result).toBe(true);
             });
 
-            it('Not Unique data', function () {
+            it('Not Unique data - return false', function () {
                 var data = [
                         {
                             mode: "html5",
@@ -236,7 +236,7 @@
                 expect(result).toBe(false);
             });
 
-            it('Arguments is not provided', function () {
+            it('All works okay if arguments is not passed', function () {
                 spyOn(view, 'getVideoObjectsList').andReturn(videoList);
                 var result = view.checkIsUniqVideoTypes();
 
@@ -260,7 +260,7 @@
                 expect(result).toBe(false);
             });
 
-            it('Error message are shown when flag is not provided', function () {
+            it('Error message are shown when flag is not passed', function () {
                 var data = { mode: 'incorrect' },
                     result = view.checkValidity(data);
 
@@ -269,7 +269,7 @@
                 expect(result).toBe(true);
             });
 
-            it('Correct data', function () {
+            it('All works okay if correct data is passed', function () {
                 var data = videoList,
                     result = view.checkValidity(data);
 
@@ -342,6 +342,134 @@
                 'video'
             ]);
             assertVideoList(view, value);
+        });
+
+        describe('getPlaceholders', function () {
+            var defaultPlaceholders;
+
+            beforeEach(function () {
+                defaultPlaceholders = view.placeholders;
+            });
+
+            it('All works okay if empty values are passed', function () {
+                var result = view.getPlaceholders([]),
+                expectedResult = _.values(defaultPlaceholders).reverse();
+
+                expect(result).toEqual(expectedResult);
+            });
+
+
+            it('On filling less than 3 fields, remaining fields should have \
+                placeholders for video types that were not filled yet',
+                function () {
+                    var dataDict = {
+                        youtube: {
+                            value: [modelStub.value[0]],
+                            expectedResult: [
+                                defaultPlaceholders.youtube,
+                                defaultPlaceholders.mp4,
+                                defaultPlaceholders.webm
+                            ]
+                        },
+                        mp4: {
+                            value: [modelStub.value[1]],
+                            expectedResult: [
+                                defaultPlaceholders.mp4,
+                                defaultPlaceholders.youtube,
+                                defaultPlaceholders.webm
+                            ]
+                        },
+                        webm: {
+                            value: [modelStub.value[2]],
+                            expectedResult: [
+                                defaultPlaceholders.webm,
+                                defaultPlaceholders.youtube,
+                                defaultPlaceholders.mp4
+                            ]
+                        }
+                    };
+
+                    $.each(dataDict, function(index, val) {
+                        var result = view.getPlaceholders(val.value);
+
+                        expect(result).toEqual(val.expectedResult);
+                    });
+
+
+
+                }
+            );
+        });
+
+        describe('inputHandler', function () {
+            var eventObject;
+
+            var resetSpies = function () {
+                messenger.hideError.reset();
+                view.updateModel.reset();
+                view.closeExtraVideosBar.reset();
+            };
+
+            beforeEach(function () {
+                eventObject = jQuery.Event('input');
+
+                spyOn(view, 'updateModel');
+                spyOn(view, 'closeExtraVideosBar');
+                spyOn(view, 'checkValidity');
+                spyOn($.fn, 'hasClass')
+                spyOn(_, 'isEqual')
+
+                resetSpies();
+            });
+
+            it('Field has invalid value - nothing updates should happens',
+                function () {
+                    $.fn.hasClass.andReturn(false)
+                    view.checkValidity.andReturn(false);
+                    view.inputHandler(eventObject);
+
+                    expect(messenger.hideError).not.toHaveBeenCalled();
+                    expect(view.updateModel).not.toHaveBeenCalled();
+                    expect(view.closeExtraVideosBar).not.toHaveBeenCalled();
+                }
+            );
+
+            it('Main field has invalid value - extra Videos Bar should be closed',
+                function () {
+                    $.fn.hasClass.andReturn(true)
+                    view.checkValidity.andReturn(false);
+                    view.inputHandler(eventObject);
+
+                    expect(messenger.hideError).not.toHaveBeenCalled();
+                    expect(view.updateModel).not.toHaveBeenCalled();
+                    expect(view.closeExtraVideosBar).toHaveBeenCalled();
+                }
+            );
+
+            it('Model is updated if value is valid',
+                function () {
+                    view.checkValidity.andReturn(true);
+                    _.isEqual.andReturn(false);
+                    view.inputHandler(eventObject);
+
+                    expect(messenger.hideError).not.toHaveBeenCalled();
+                    expect(view.updateModel).toHaveBeenCalled();
+                    expect(view.closeExtraVideosBar).not.toHaveBeenCalled();
+                }
+            );
+
+            it('Corner case: Error is hided',
+                function () {
+                    view.checkValidity.andReturn(true);
+                    _.isEqual.andReturn(true);
+                    view.inputHandler(eventObject);
+
+                    expect(messenger.hideError).toHaveBeenCalled();
+                    expect(view.updateModel).not.toHaveBeenCalled();
+                    expect(view.closeExtraVideosBar).not.toHaveBeenCalled();
+                }
+            );
+
         });
 
     });

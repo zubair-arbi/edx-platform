@@ -154,10 +154,10 @@
                 event.preventDefault();
             }
 
-            var entry = $(event.currentTarget).val(),
+            var $el = $(event.currentTarget),
+                entry = $el.val(),
                 data = Transcripts.Utils.parseLink(entry),
-                isNotEmpty = Boolean(entry),
-                $el = $(event.currentTarget);
+                isNotEmpty = Boolean(entry);
 
             if (this.checkValidity(data, isNotEmpty)) {
                 var fieldsValue = this.getValueFromEditor(),
