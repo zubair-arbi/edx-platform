@@ -107,4 +107,3 @@ def xml_only_video(step):
 def the_youtube_video_is_shown(_step):
     ele = world.css_find('.video').first
     assert ele['data-streams'].split(':')[1] == world.scenario_dict['YOUTUBE_ID']
-

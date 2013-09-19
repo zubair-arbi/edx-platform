@@ -53,4 +53,3 @@ def video_name_persisted(step):
     reload_the_page(step)
     world.edit_component()
     world.verify_setting_entry(world.get_setting_entry('Display Name'), 'Display Name', '3.4', True)
-
