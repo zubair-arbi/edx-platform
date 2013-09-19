@@ -25,7 +25,7 @@
     <span class="sr">"<%= gettext("Clear Value") %>"</span>
   </button>
 </div>
-<div class="wrapper-comp-setting transcripts-status is-invisible">
+<div class="transcripts-status is-invisible">
     <label class="label setting-label transcripts-label"><%= gettext("Timed Transcripts") %></label>
     <div class="wrapper-transcripts-message"></div>
 </div>

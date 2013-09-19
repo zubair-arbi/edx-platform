@@ -30,7 +30,6 @@ def correct_video_settings(_step):
         # basic
         ['Display Name', 'Video', False],
         ['Video URL', 'http://youtu.be/OEoXaMPEzfM, , ', False],
-        ['Timed Transcripts', u'No Timed Transcripts', False],
 
         # advanced
         ['Display Name', 'Video', False],
