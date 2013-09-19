@@ -158,8 +158,8 @@
                 }
             }
             .action{
-                @extend .btn-primary-blue;
-                @extend .t-action3;
+                @extend %btn-primary-blue;
+                @extend %t-action3;
                 margin-bottom: ($baseline/2);
             }
         }

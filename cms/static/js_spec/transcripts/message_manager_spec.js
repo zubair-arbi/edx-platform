@@ -37,7 +37,7 @@
                 'CMS.Views.Metadata.VideoList',
                 ['getVideoObjectsList']
             );
-            $container = $('.transcripts-status');
+            $container = $('#metadata-videolist-entry');
 
             spyOn(fileUploader, 'initialize');
             spyOn(console, 'error');
@@ -97,7 +97,7 @@
                 $buttons = view.$el.find('.wrapper-transcripts-buttons');
             });
 
-            it('Error message is not provided', function () {
+            it('Error message is not passed', function () {
                 view.showError(null);
 
                 expect(view.hideError).not.toHaveBeenCalled();

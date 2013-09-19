@@ -45,6 +45,7 @@
                 isYoutubeMode = params && params.is_youtube_mode,
                 template;
 
+            this.setElement(this.$el.find('.transcripts-status'));
             if (!tplHtml) {
                 console.error('Couldn\'t load Transcripts status template');
 
@@ -52,6 +53,7 @@
             }
 
             template = _.template(tplHtml);
+
             this.$el
                 .removeClass('is-invisible')
                 .find(this.elClass).html(template({

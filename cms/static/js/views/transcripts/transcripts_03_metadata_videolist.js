@@ -16,7 +16,7 @@
 
         initialize: function () {
             this.messenger = new Transcripts.MessageManager({
-                el: this.$el.find('.transcripts-status'),
+                el: this.$el,
                 parent: this
             });
 
