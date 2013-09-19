@@ -26,18 +26,26 @@ def shows_captions(_step, show_captions):
 
 @step('I see the correct video settings and default values$')
 def correct_video_settings(_step):
-    world.verify_all_setting_entries([['Display Name', 'Video', False],
-                                      ['Download Track', '', False],
-                                      ['Download Video', '', False],
-                                      ['End Time', '0', False],
-                                      ['HTML5 Timed Transcript', '', False],
-                                      ['Show Captions', 'True', False],
-                                      ['Start Time', '0', False],
-                                      ['Video Sources', '', False],
-                                      ['Youtube ID', 'OEoXaMPEzfM', False],
-                                      ['Youtube ID for .75x speed', '', False],
-                                      ['Youtube ID for 1.25x speed', '', False],
-                                      ['Youtube ID for 1.5x speed', '', False]])
+    world.verify_all_setting_entries([
+        # basic
+        ['Display Name', 'Video', False],
+        ['Video URL', 'http://youtu.be/OEoXaMPEzfM, , ', False],
+        ['Timed Transcripts', u'No Timed Transcripts', False],
+
+        # advanced
+        ['Display Name', 'Video', False],
+        ['Download Track', '', False],
+        ['Download Video', '', False],
+        ['End Time', '0', False],
+        ['HTML5 Timed Transcript', '', False],
+        ['Show Captions', 'True', False],
+        ['Start Time', '0', False],
+        ['Video Sources', '', False],
+        ['Youtube ID', 'OEoXaMPEzfM', False],
+        ['Youtube ID for .75x speed', '', False],
+        ['Youtube ID for 1.25x speed', '', False],
+        ['Youtube ID for 1.5x speed', '', False]
+    ])
 
 
 @step('my video display name change is persisted on save$')
