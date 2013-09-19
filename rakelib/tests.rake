@@ -61,7 +61,9 @@ def setup_acceptance_db(system, fasttest=false)
 end
 
 def run_acceptance_tests(system, report_dir, harvest_args)
-    test_sh(django_admin(system, 'acceptance', 'harvest', '--debug-mode', '--verbosity 2', '--tag -skip', harvest_args))
+    report_file = File.join(report_dir, "#{system}.xml")
+    report_args = "--with-xunit --xunit-file #{report_file}"
+    test_sh(django_admin(system, 'acceptance', 'harvest', '--debug-mode', '--verbosity 2', '--tag -skip', report_args, harvest_args))
 end
 
 # Run documentation tests
@@ -126,6 +128,12 @@ TEST_TASK_DIRS = []
     ] do |t, args|
         args.with_defaults(:harvest_args => '')
         setup_acceptance_db(system, fasttest=true)
+
+        # Create the acceptance report directory
+        # because if it doesn't exist then lettuce will give an IOError.
+        report_dir = report_dir_path('acceptance')
+        Dir.mkdir(report_dir) unless Dir.exists?(report_dir)
+
         run_acceptance_tests(system, report_dir, args.harvest_args)
     end
 
