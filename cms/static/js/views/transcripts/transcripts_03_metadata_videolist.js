@@ -209,7 +209,9 @@
                 utils = Transcripts.Utils,
                 videoList = this.getVideoObjectsList();
 
-            this.checkIsUniqVideoTypes(videoList);
+             if (!this.checkIsUniqVideoTypes(videoList)) {
+                return false;
+             }
 
             if (data.mode === 'incorrect' && showErrorModeMessage) {
                 this.messenger

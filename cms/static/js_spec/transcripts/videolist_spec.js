@@ -248,7 +248,7 @@
 
         describe('checkValidity', function () {
             beforeEach(function () {
-                spyOn(view, 'checkIsUniqVideoTypes');
+                spyOn(view, 'checkIsUniqVideoTypes').andReturn(true);
             });
 
             it('Error message are shown', function () {

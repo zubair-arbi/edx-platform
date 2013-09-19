@@ -70,7 +70,7 @@
 
                 expect(console.error).toHaveBeenCalled();
                 expect(_.template).not.toHaveBeenCalled();
-                expect(view.$el).toHaveClass('is-invisible');
+                expect(view.$el.find('.transcripts-status')).toHaveClass('is-invisible');
                 expect(fileUploader.render).not.toHaveBeenCalled();
             });
 
