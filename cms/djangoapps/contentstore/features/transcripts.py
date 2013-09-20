@@ -29,14 +29,13 @@ def clear_field(_step, index):
     world.css_fill(selectors['url_inputs'], '', index)
 
 
-@step('I (\w*)\s?see (\w*)\s?error message$')
+@step('I (.*)see (.*)error message$')
 def i_see_error_message(_step, not_error, error):
     world.wait(delay)
-
     if not_error:
         assert not world.css_visible(selectors['error_bar'])
     else:
-        assert world.css_has_text(selectors['error_bar'], error_messages[error])
+        assert world.css_has_text(selectors['error_bar'], error_messages[error.strip()])
 
 
 @step('I enter a (.+) source to field number (\d+)$')

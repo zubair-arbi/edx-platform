@@ -23,5 +23,7 @@ Feature: Video Component Editor
     When I clear fields
     And I enter a htt://link.c source to field number 1
     Then I see url_format error message
+    # We are not clearing fields here,
+    # Because we changing same field.
     And I enter a http://youtu.be/OEoXaMPEzfM source to field number 1
-    Then I do_not see error message
+    Then I do not see error message
