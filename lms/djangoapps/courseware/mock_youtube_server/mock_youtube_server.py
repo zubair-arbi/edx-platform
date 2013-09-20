@@ -26,14 +26,23 @@ class MockYoutubeRequestHandler(BaseHTTPRequestHandler):
         logger.debug("Youtube provider received GET request to path {}".format(
             self.path)
         )  # Log the request
+        if 'test_transcripts_youtube' in self.path:
+            # testing transcripts
+            status_message = 'Welcome transcripts.'
+            self._send_transcripts_response(status_message)
+        elif 'test_youtube' in self.path:
+            #testing videoplayers
+            status_message = "I'm youtube."
+            response_timeout = float(self.server.time_to_response)
 
-        status_message = "I'm youtube."
-        response_timeout = float(self.server.time_to_response)
-
-        # threading timer produces TypeError: 'NoneType' object is not callable here
-        # so we use time.sleep, as we already in separate thread.
-        time.sleep(response_timeout)
-        self._send_response(status_message)
+            # threading timer produces TypeError: 'NoneType' object is not callable here
+            # so we use time.sleep, as we already in separate thread.
+            time.sleep(response_timeout)
+            self._send_video_response(status_message)
+        else:
+            # unused url
+            self._send_transcripts_response('Unused url')
+            logger.debug("Request to unused url.")
 
     def _send_head(self):
         '''
@@ -43,9 +52,20 @@ class MockYoutubeRequestHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
-    def _send_response(self, message):
+    def _send_transcripts_response(self, message):
         '''
-        Send message back to the client
+        Send message back to the client for transcripts ajax requests.
+        '''
+        response = json.dumps({'message': message})
+        # Log the response
+        logger.debug("Youtube: sent response {}".format(message))
+
+        self.wfile.write(response)
+
+    def _send_video_response(self, message):
+        '''
+        Send message back to the client for video player requests.
+        Requires sending back callback id.
         '''
         callback = urlparse.parse_qs(self.path)['callback'][0]
         response = callback + '({})'.format(json.dumps({'message': message}))

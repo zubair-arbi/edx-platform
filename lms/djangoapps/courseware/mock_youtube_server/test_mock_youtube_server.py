@@ -22,7 +22,7 @@ class MockYoutubeServerTest(unittest.TestCase):
         # This is a test of the test setup,
         # so it does not need to run as part of the unit test suite
         # You can re-enable it by commenting out the line below
-        raise SkipTest
+        # raise SkipTest
 
         # Create the server
         server_port = 8034
@@ -46,8 +46,24 @@ class MockYoutubeServerTest(unittest.TestCase):
         path,  and responses with incorrect signature.
         """
         # GET request
+
+        # unused url
         response_handle = urllib.urlopen(
-            'http://127.0.0.1:8034/feeds/api/videos/OEoXaMPEzfM?v=2&alt=jsonc&callback=callback_func',
+            'http://127.0.0.1:8034/some url',
+        )
+        response = response_handle.read()
+        self.assertEqual("""{"message": "Unused url"}""", response)
+
+        # video player test url, callback shoud be presented in url params
+        response_handle = urllib.urlopen(
+            'http://127.0.0.1:8034/test_youtube/OEoXaMPEzfM?v=2&alt=jsonc&callback=callback_func',
         )
         response = response_handle.read()
         self.assertEqual("""callback_func({"message": "I\'m youtube."})""", response)
+
+        # transcripts test url
+        response_handle = urllib.urlopen(
+            'http://127.0.0.1:8034/test_transcripts_youtube',
+        )
+        response = response_handle.read()
+        self.assertEqual("""{"message": "Welcome transcripts."}""", response)
