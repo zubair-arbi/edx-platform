@@ -38,7 +38,7 @@
                 }
 
                 .collapse-setting {
-                    @extend .t-action3;
+                    @extend %t-action3;
                     display: block;
                     width: 100%;
                     padding: ($baseline/2);
@@ -71,14 +71,20 @@
                     display: inline-block;
                     min-width: ($baseline*5);
 
+
+                    // inputs
+                    .input {
+                        width: 100%;
+                        vertical-align: middle;
+
+                        &.is-disabled,
+                        &[disabled="disabled"]{
+                            opacity: .5;
+                        }
+                    }
+
                     .wrapper-videolist-url{
                         margin-bottom: ($baseline/2);
-
-                        // inputs
-                        .input {
-                            width: 100%;
-                            vertical-align: middle;
-                        }
                     }
 
                     .wrapper-videolist-urls{
@@ -95,12 +101,6 @@
 
                             .videolist-settings-item {
                                 margin-bottom: ($baseline/2);
-                            }
-
-                            // inputs
-                            .input {
-                                width: 100%;
-                                vertical-align: middle;
                             }
                         }
                     }

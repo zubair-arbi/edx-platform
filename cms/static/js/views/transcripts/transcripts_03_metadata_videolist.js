@@ -45,9 +45,10 @@
             utils.command('check', component_id, videoList)
                 .done(function (resp) {
                     var params = resp.status,
-                        mode = (videoList.length) ? videoList[0].mode : false;
+                        len = videoList.length,
+                        mode = (len === 1) ? videoList[0].mode : false;
 
-                    if (videoList.length > 1 || mode === 'html5') {
+                    if (len > 1 || mode === 'html5') {
                         self.openExtraVideosBar();
                     } else {
                         self.closeExtraVideosBar();
@@ -155,6 +156,7 @@
             }
 
             var $el = $(event.currentTarget),
+                $inputs = this.$el.find('.input'),
                 entry = $el.val(),
                 data = Transcripts.Utils.parseLink(entry),
                 isNotEmpty = Boolean(entry);
@@ -178,8 +180,20 @@
                 } else {
                     this.updateModel();
                 }
-            } else if ($el.hasClass('videolist-url')) {
-                this.closeExtraVideosBar();
+
+                $inputs
+                    .prop('disabled', false)
+                    .removeClass('is-disabled');
+
+            } else {
+                $inputs
+                    .not($el)
+                    .prop('disabled', true)
+                    .addClass('is-disabled');
+
+                if ($el.hasClass('videolist-url')) {
+                    this.closeExtraVideosBar();
+                }
             }
         },
 
