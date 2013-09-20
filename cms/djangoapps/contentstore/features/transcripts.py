@@ -3,25 +3,31 @@
 
 from lettuce import world, step
 
-@step('I enter an incorrect URL$')
-def i_edit_url(_step):
-    world.css_fill('#metadata-videolist-entry_19', 'ht:/f.c')
+delay = 1
 
-@step('I see error message$')
-def i_see_error_message(_step):
-    assert world.css_text('.transcripts-error-message') == u'Incorrect url format.'
+error_messages = {
+    'url_format': u'Incorrect url format.',
+    'file_type': u'Link types should be unique.',
+}
+
+selectors = {
+    'error_bar': '.transcripts-error-message',
+    'url_inputs': '.videolist-settings-item input.input',
+    'collapse_bar': '.collapse-action.collapse-setting'
+}
+
+@step('I see (.+) error message$')
+def i_see_error_message(_step, error):
+    world.wait(delay)
+
+    assert world.css_has_text(selectors['error_bar'], error_messages[error])
+
 
 @step('I enter a (.+) source to field number (.+)$')
-def i_enter_two_source_same_format(_step, link, index):
-    import ipdb; ipdb.set_trace()
+def i_enter_a_source(_step, link, index):
+    index = int(index) - 1
+    if index is not 0:
+        world.css_click(selectors['collapse_bar'])
 
-    if int(index) == 0:
-        world.css_click('.collapse-action.collapse-setting')
+    world.css_fill(selectors['url_inputs'], link, index)
 
-    world.css_fill('.videolist-settings-item .input', link, int(index))
-
-@step('I see same format error message$')
-def i_see_same_format_error_message(_step):
-    import ipdb; ipdb.set_trace()
-
-    assert world.css_text('.transcripts-error-message') == u''

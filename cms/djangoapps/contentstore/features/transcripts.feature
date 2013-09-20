@@ -11,12 +11,12 @@ Feature: Video Component Editor
   Scenario: User inputs YouTube source first
     Given I have created a Video component
     And I edit the component
-    And I enter an incorrect URL
-    Then I see error message
+    And I enter a htt://link.c source to field number 1
+    Then I see url_format error message
 
   Scenario: User inputs two HTML5 sources with identical formats
     Given I have created a Video component
     And I edit the component
-    And I enter a 123.webm source to field number 0
-    And I enter a 456.webm source to field number 1
-    Then I see same format error message
+    And I enter a 123.webm source to field number 1
+    And I enter a 456.webm source to field number 2
+    Then I see file_type error message
