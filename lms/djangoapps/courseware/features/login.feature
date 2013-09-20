@@ -3,6 +3,7 @@ Feature: Login in as a registered user
   In order to access my content
   I want to be able to login in to edX
 
+    @tiny_test
     Scenario: Login to an unactivated account
     Given I am an edX user
     And I am an unactivated user
