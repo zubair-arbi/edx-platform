@@ -31,16 +31,16 @@ def clear_field(_step, index):
 
 @step('I expect (.+) inputs are disabled$')
 def inputs_are_disabled(_step, indexes):
-    index_list = [i.strip() for i in indexes.split(',')]
+    index_list = [int(i.strip()) - 1 for i in indexes.split(',')]
     for index in index_list:
-        el = world.css_find(selectors['url_inputs'], int(index))
+        el = world.css_find(selectors['url_inputs'])[index]
         assert el['disabled']
 
 
 @step('I expect inputs are enabled$')
-def inputs_are_enabled(_step, indexes):
-    for index in index_list:
-        el = world.css_find(selectors['url_inputs'], index)
+def inputs_are_enabled(_step):
+    for index in range(3):
+        el = world.css_find(selectors['url_inputs'])[index]
         assert not el['disabled']
 
 
