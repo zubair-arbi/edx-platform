@@ -1,8 +1,9 @@
-Feature: Sign in
+Feature: CMS.Sign In
   In order to use the edX content
   As a new user
   I want to signup for a student account
 
+  @tiny_test
   Scenario: Sign up from the homepage
     Given I visit the Studio homepage
     When I click the link with the text "Sign Up"
@@ -10,6 +11,7 @@ Feature: Sign in
     And I press the Create My Account button on the registration form
     Then I should see an email verification prompt
 
+  @tiny_test
   Scenario: Login with a valid redirect
     Given I have opened a new course in Studio
     And I am not logged in

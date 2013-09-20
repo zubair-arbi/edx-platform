@@ -44,6 +44,6 @@ if [ "$LETTUCE_SELENIUM_CLIENT" == saucelabs ]; then
 fi
 
 # Run the lms and cms acceptance tests
-rake test:acceptance["$SKIP_TESTS"] || TESTS_FAILED=1
+rake test:acceptance["--tag tiny_test"] || TESTS_FAILED=1
 
 [ $TESTS_FAILED == '0' ]
