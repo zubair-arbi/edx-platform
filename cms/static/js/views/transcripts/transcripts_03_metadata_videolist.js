@@ -59,6 +59,15 @@
                 });
         },
 
+        clear: function () {
+            CMS.Views.Metadata.AbstractEditor.prototype.clear
+                .apply(this, arguments);
+
+            this.$el.find('.input')
+                .prop('disabled', false)
+                .removeClass('is-disabled');
+        },
+
         getValueFromEditor: function () {
             return _.map(
                 this.$el.find('.input'),
