@@ -12,6 +12,7 @@ def set_show_captions(step, setting):
 
     world.css_click('a.edit-button')
     world.wait_for(lambda _driver: world.css_visible('a.save-button'))
+    world.click_link_by_text('Advanced')
     world.browser.select('Show Captions', setting)
     world.css_click('a.save-button')
 
