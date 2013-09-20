@@ -20,10 +20,14 @@ Feature: Video Component Editor
     And I enter a 123.webm source to field number 1
     And I enter a 456.webm source to field number 2
     Then I see file_type error message
+    And I expect 1, 3 inputs are disabled
     When I clear fields
+    And I expect inputs are enabled
     And I enter a htt://link.c source to field number 1
     Then I see url_format error message
+    And I expect 1 inputs are disabled
     # We are not clearing fields here,
     # Because we changing same field.
     And I enter a http://youtu.be/OEoXaMPEzfM source to field number 1
     Then I do not see error message
+    And I expect inputs are enabled

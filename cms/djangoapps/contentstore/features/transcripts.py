@@ -29,6 +29,21 @@ def clear_field(_step, index):
     world.css_fill(selectors['url_inputs'], '', index)
 
 
+@step('I expect (.+) inputs are disabled$')
+def inputs_are_disabled(_step, indexes):
+    index_list = [i.strip() for i in indexes.split(',')]
+    for index in index_list:
+        el = world.css_find(selectors['url_inputs'], int(index))
+        assert el['disabled']
+
+
+@step('I expect inputs are enabled$')
+def inputs_are_enabled(_step, indexes):
+    for index in index_list:
+        el = world.css_find(selectors['url_inputs'], index)
+        assert not el['disabled']
+
+
 @step('I (.*)see (.*)error message$')
 def i_see_error_message(_step, not_error, error):
     world.wait(delay)
@@ -41,6 +56,7 @@ def i_see_error_message(_step, not_error, error):
 @step('I enter a (.+) source to field number (\d+)$')
 def i_enter_a_source(_step, link, index):
     index = int(index) - 1
+    world.wait(delay)
 
     if index is not 0 and not world.css_visible(selectors['collapse_bar']):
         world.css_click(selectors['collapse_link'])
