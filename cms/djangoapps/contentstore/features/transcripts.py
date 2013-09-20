@@ -13,21 +13,38 @@ error_messages = {
 selectors = {
     'error_bar': '.transcripts-error-message',
     'url_inputs': '.videolist-settings-item input.input',
-    'collapse_bar': '.collapse-action.collapse-setting'
+    'collapse_link': '.collapse-action.collapse-setting',
+    'collapse_bar': '.videolist-extra-videos',
 }
 
-@step('I see (.+) error message$')
-def i_see_error_message(_step, error):
+
+@step('I clear fields$')
+def clear_fields(_step):
+    world.css_click('.metadata-videolist-enum .setting-clear')
+
+
+@step('I clear field number (.+)$')
+def clear_field(_step, index):
+    index = int(index) - 1
+    world.css_fill(selectors['url_inputs'], '', index)
+
+
+@step('I (\w*)\s?see (\w*)\s?error message$')
+def i_see_error_message(_step, not_error, error):
     world.wait(delay)
 
-    assert world.css_has_text(selectors['error_bar'], error_messages[error])
+    if not_error:
+        assert not world.css_visible(selectors['error_bar'])
+    else:
+        assert world.css_has_text(selectors['error_bar'], error_messages[error])
 
 
-@step('I enter a (.+) source to field number (.+)$')
+@step('I enter a (.+) source to field number (\d+)$')
 def i_enter_a_source(_step, link, index):
     index = int(index) - 1
-    if index is not 0:
-        world.css_click(selectors['collapse_bar'])
+
+    if index is not 0 and not world.css_visible(selectors['collapse_bar']):
+        world.css_click(selectors['collapse_link'])
+        assert world.css_visible(selectors['collapse_bar'])
 
     world.css_fill(selectors['url_inputs'], link, index)
-
