@@ -69,6 +69,7 @@
             spyOn(utils, 'command').andCallThrough();
             spyOn(abstractEditor, 'initialize').andCallThrough();
             spyOn(abstractEditor, 'render').andCallThrough();
+            spyOn(abstractEditor, 'clear').andCallThrough();
 
             Transcripts.MessageManager = function () {
                 messenger.initialize();
@@ -416,13 +417,16 @@
                 spyOn(view, 'updateModel');
                 spyOn(view, 'closeExtraVideosBar');
                 spyOn(view, 'checkValidity');
-                spyOn($.fn, 'hasClass')
-                spyOn(_, 'isEqual')
+                spyOn($.fn, 'hasClass');
+                spyOn($.fn, 'addClass');
+                spyOn($.fn, 'removeClass');
+                spyOn($.fn, 'prop').andCallThrough();
+                spyOn(_, 'isEqual');
 
                 resetSpies();
             });
 
-            it('Field has invalid value - nothing updates should happens',
+            it('Field has invalid value - nothing should happen',
                 function () {
                     $.fn.hasClass.andReturn(false)
                     view.checkValidity.andReturn(false);
@@ -431,6 +435,8 @@
                     expect(messenger.hideError).not.toHaveBeenCalled();
                     expect(view.updateModel).not.toHaveBeenCalled();
                     expect(view.closeExtraVideosBar).not.toHaveBeenCalled();
+                    expect($.fn.prop).toHaveBeenCalledWith('disabled', true);
+                    expect($.fn.addClass).toHaveBeenCalledWith('is-disabled');
                 }
             );
 
@@ -443,6 +449,8 @@
                     expect(messenger.hideError).not.toHaveBeenCalled();
                     expect(view.updateModel).not.toHaveBeenCalled();
                     expect(view.closeExtraVideosBar).toHaveBeenCalled();
+                    expect($.fn.prop).toHaveBeenCalledWith('disabled', true);
+                    expect($.fn.addClass).toHaveBeenCalledWith('is-disabled');
                 }
             );
 
@@ -455,6 +463,8 @@
                     expect(messenger.hideError).not.toHaveBeenCalled();
                     expect(view.updateModel).toHaveBeenCalled();
                     expect(view.closeExtraVideosBar).not.toHaveBeenCalled();
+                    expect($.fn.prop).toHaveBeenCalledWith('disabled', false);
+                    expect($.fn.removeClass).toHaveBeenCalledWith('is-disabled');
                 }
             );
 
@@ -467,9 +477,23 @@
                     expect(messenger.hideError).toHaveBeenCalled();
                     expect(view.updateModel).not.toHaveBeenCalled();
                     expect(view.closeExtraVideosBar).not.toHaveBeenCalled();
+                    expect($.fn.prop).toHaveBeenCalledWith('disabled', false);
+                    expect($.fn.removeClass).toHaveBeenCalledWith('is-disabled');
                 }
             );
 
+        });
+
+
+        it('Inputs are enabled on clear', function () {
+            spyOn($.fn, 'removeClass');
+            spyOn($.fn, 'prop').andCallThrough();
+
+            view.clear();
+
+            expect(abstractEditor.clear).toHaveBeenCalled();
+            expect($.fn.prop).toHaveBeenCalledWith('disabled', false);
+            expect($.fn.removeClass).toHaveBeenCalledWith('is-disabled');
         });
 
     });
