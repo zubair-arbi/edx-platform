@@ -46,6 +46,6 @@ Feature: Video Component Editor
     And I enter a http://youtu.be/t_not_exist source to field number 1
     Then I see not found status message
     And I do not see import button
-    # why???
+    # why??? possible bug
     And I see download_to_edit button
 
