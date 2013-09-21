@@ -57,8 +57,8 @@ Scenario: Entering youtube id only
     # first part of url will be substituted by mock_youtube_server address
 
     # for t_not_exist id server will respond with 404
-    #And I enter a http://youtu.be/t_not_exist source to field number 1
-    #Then I see not found status message
+    And I enter a http://youtu.be/t_not_exist source to field number 1
+    Then I see not found status message
 
     # for trans_exist id server will respond with transcripts
     And I remove trans_exist transcripts id from store
