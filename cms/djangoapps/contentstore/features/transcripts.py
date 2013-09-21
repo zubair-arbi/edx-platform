@@ -10,11 +10,17 @@ error_messages = {
     'file_type': u'Link types should be unique.',
 }
 
+STATUSES = {
+    'found': u'Timed Transcripts Found.',
+    'not found': u'No Timed Transcripts'
+}
+
 selectors = {
     'error_bar': '.transcripts-error-message',
     'url_inputs': '.videolist-settings-item input.input',
     'collapse_link': '.collapse-action.collapse-setting',
     'collapse_bar': '.videolist-extra-videos',
+    'status_bar': '.transcripts-message-status'
 }
 
 
@@ -51,6 +57,33 @@ def i_see_error_message(_step, not_error, error):
         assert not world.css_visible(selectors['error_bar'])
     else:
         assert world.css_has_text(selectors['error_bar'], error_messages[error.strip()])
+
+
+@step('I (.*)see (.*)status message$')
+def i_see_status_message(_step, not_see, status):
+    world.wait(delay)
+    if not_see:
+        assert not world.css_visible(selectors['status_bar'])
+    else:
+        assert world.css_has_text(selectors['status_bar'], STATUSES[status.strip()])
+
+
+@step('I (.*)see (.*)button$')
+def i_see_import_from_youtube_button(_step, not_see, button_type):
+    world.wait(delay)
+    if button_type.strip() == 'import':
+        if not_see:
+            assert world.is_css_not_present('.setting-import')
+        else:
+            assert world.css_has_text('.setting-import', 'Import from YouTube')
+    elif button_type.strip() == 'download_to_edit':
+        if not_see:
+            assert world.is_css_not_present('.setting-download')
+        else:
+            assert world.css_has_text('.setting-download', 'Download to Edit')
+
+    else:
+        assert False  # not imlemented
 
 
 @step('I enter a (.+) source to field number (\d+)$')

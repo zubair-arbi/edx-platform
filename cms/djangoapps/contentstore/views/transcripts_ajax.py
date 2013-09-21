@@ -23,7 +23,8 @@ from ..transcripts_utils import (
     generate_subs_from_source,
     generate_srt_from_sjson, remove_subs_from_store,
     requests as rqsts,
-    download_youtube_subs, get_transcripts_from_youtube
+    download_youtube_subs, get_transcripts_from_youtube,
+    YOUTUBE_API
 )
 
 from ..utils import get_modulestore
@@ -229,13 +230,13 @@ def check_transcripts(request):
             log.debug("Can't find transcripts in storage for youtube id: {}".format(youtube_id))
 
         # youtube server
+        YOUTUBE_API['params']['v'] = youtube_id
         youtube_response = rqsts.get(
-            "http://video.google.com/timedtext",
-            params={'lang': 'en', 'v': youtube_id}
+            YOUTUBE_API['url'],
+            params=YOUTUBE_API['params']
         )
         if youtube_response.status_code == 200 and youtube_response.text:
             transcripts_presence['youtube_server'] = True
-
         #check youtube local and server transcripts for equality
         if transcripts_presence['youtube_server'] and transcripts_presence['youtube_local']:
             # get transcripts from youtube:
@@ -264,7 +265,6 @@ def check_transcripts(request):
             contentstore().find(content_location)
             transcripts_presence['html5_local'].append(html5_id)
         except NotFoundError:
-            # change to log.message?
             log.debug("Can't find transcripts in storage for non-youtube video_id: {}".format(html5_id))
 
     response = {

@@ -5,18 +5,33 @@ import json
 import HTMLParser
 import StringIO
 import requests
+import logging
 from pysrt import SubRipTime, SubRipItem, SubRipFile
 from functools import wraps
 from lxml import etree
 
 from cache_toolbox.core import del_cached_content
 from django_comment_client.utils import JsonResponse
+from django.conf import settings
 
 from xmodule.exceptions import NotFoundError
 from xmodule.modulestore.inheritance import own_metadata
 from xmodule.contentstore.content import StaticContent
 from xmodule.contentstore.django import contentstore
 from xmodule.modulestore import Location
+
+log = logging.getLogger(__name__)
+
+# Current youtube api for requesting transcripts
+# for example: http://video.google.com/timedtext?lang=en&v=j_jEn79vS3g
+YOUTUBE_API = {
+    'url': "http://video.google.com/timedtext",
+    'params': {'lang': 'en', 'v': 'set_youtube_id_of_11_symbols_here'}
+}
+
+# for testing Youtube in acceptance tests
+if getattr(settings, 'VIDEO_PORT', None):
+    YOUTUBE_API['url'] = "http://127.0.0.1:" + str(settings.VIDEO_PORT) + '/test_transcripts_youtube/'
 
 
 def return_ajax_status(view_function):
@@ -79,10 +94,11 @@ def get_transcripts_from_youtube(youtube_id):
     Returns (status, transcripts): bool, dict.
     """
     html_parser = HTMLParser.HTMLParser()
+    YOUTUBE_API['params']['v'] = youtube_id
     data = requests.get(
-        "http://video.google.com/timedtext",
-        params={'lang': 'en', 'v': youtube_id})
-
+        YOUTUBE_API['url'],
+        params=YOUTUBE_API['params']
+    )
     if data.status_code != 200 or not data.text:
         log.debug("Can't recieved correct transcripts from Youtube.")
         return False,  {}

@@ -31,3 +31,21 @@ Feature: Video Component Editor
     And I enter a http://youtu.be/OEoXaMPEzfM source to field number 1
     Then I do not see error message
     And I expect inputs are enabled
+
+  Scenario: Testing interaction with test youtube server
+    Given I have created a Video component with subtitles
+    And I edit the component
+    # first part of url will be substituted by mock_youtube_server address
+    # for trans_exist id server will respond with transcripts
+    And I enter a http://youtu.be/trans_exist source to field number 1
+    Then I see not found status message
+    # trans_exist subs locally not presented at this moment
+    And I see import button
+
+    # for t_not_exist id server will respond with 404
+    And I enter a http://youtu.be/t_not_exist source to field number 1
+    Then I see not found status message
+    And I do not see import button
+    # why???
+    And I see download_to_edit button
+
