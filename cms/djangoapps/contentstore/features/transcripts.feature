@@ -36,10 +36,10 @@ Feature: Video Component Editor
     Given I have created a Video component with subtitles
     And I edit the component
     # first part of url will be substituted by mock_youtube_server address
-    # for trans_exist id server will respond with transcripts
-    And I enter a http://youtu.be/trans_exist source to field number 1
+    # for t__eq_exist id server will respond with transcripts
+    And I enter a http://youtu.be/t__eq_exist source to field number 1
     Then I see not found status message
-    # trans_exist subs locally not presented at this moment
+    # t__eq_exist subs locally not presented at this moment
     And I see import button
 
     # for t_not_exist id server will respond with 404
@@ -63,9 +63,9 @@ Scenario: Entering youtube id only - 1a and 1c
     Then I see not found status message
 
     # 1c
-    # for trans_exist id server will respond with transcripts
-    And I remove trans_exist transcripts id from store
-    And I enter a http://youtu.be/trans_exist source to field number 1
+    # for t__eq_exist id server will respond with transcripts
+    And I remove t__eq_exist transcripts id from store
+    And I enter a http://youtu.be/t__eq_exist source to field number 1
     Then I see not found status message
     And I see import button
     And I click import button
@@ -73,7 +73,7 @@ Scenario: Entering youtube id only - 1a and 1c
     And I see upload_new_timed_transcripts button
     And I see download_to_edit button
     #btw, when i update sub, I do not create file in upload section
-    And I remove trans_exist transcripts id from store
+    And I remove t__eq_exist transcripts id from store
 
 
 Scenario: Entering youtube id only - 1b
@@ -84,4 +84,22 @@ Scenario: Entering youtube id only - 1b
     And I edit the component
     And I enter a http://youtu.be/t_not_exist source to field number 1
     Then I see found status message
+    And I remove t_not_exist transcripts id from store
 
+
+Scenario: Entering youtube id only - 1d-1
+    Given I have created a Video component with t__eq_exist subtitles
+    And I edit the component
+    And I enter a http://youtu.be/t__eq_exist source to field number 1
+    And I see found status message
+    And I remove t__eq_exist transcripts id from store
+
+Scenario: Entering youtube id only - 1d-2
+    Given I have created a Video component with t_neq_exist subtitles
+    And I edit the component
+    And I enter a http://youtu.be/t_neq_exist source to field number 1
+    And I see replace status message
+    And I see replace button
+    And I click replace button
+    And I see found status message
+    And I remove t_neq_exist transcripts id from store

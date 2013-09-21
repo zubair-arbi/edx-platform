@@ -64,12 +64,21 @@ class MockYoutubeServerTest(unittest.TestCase):
 
         # transcripts test url
         response_handle = urllib.urlopen(
-            'http://127.0.0.1:8034/test_transcripts_youtube/trans_exist',
+            'http://127.0.0.1:8034/test_transcripts_youtube/t__eq_exist',
         )
         response = response_handle.read()
         self.assertEqual(
-            '<?xml version="1.0" encoding="utf-8" ?><transcript>\
-<text start="1.1" dur="5.5">Transcripts sample</text></transcript>',
+            '<?xml version="1.0" encoding="utf-8" ?><transcript><text start="1.0" dur="1.0">Equal transcripts</text></transcript>',
+            response
+        )
+
+        # transcripts test url
+        response_handle = urllib.urlopen(
+            'http://127.0.0.1:8034/test_transcripts_youtube/t_neq_exist',
+        )
+        response = response_handle.read()
+        self.assertEqual(
+            '<?xml version="1.0" encoding="utf-8" ?><transcript><text start="1.1" dur="5.5">Transcripts sample, different that on server</text></transcript>',
             response
         )
 

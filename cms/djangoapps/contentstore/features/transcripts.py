@@ -12,7 +12,8 @@ error_messages = {
 
 STATUSES = {
     'found': u'Timed Transcripts Found',
-    'not found': u'No Timed Transcripts'
+    'not found': u'No Timed Transcripts',
+    'replace': u'Timed Transcripts Conflict'
 }
 
 selectors = {
@@ -27,7 +28,8 @@ selectors = {
 BUTTONS = {
     'import': ('.setting-import',  'Import from YouTube'),
     'download_to_edit': ('.setting-download', 'Download to Edit'),
-    'upload_new_timed_transcripts': ('.setting-upload',  'Upload New Timed Transcripts')
+    'upload_new_timed_transcripts': ('.setting-upload',  'Upload New Timed Transcripts'),
+    'replace': ('.setting-replace', 'Yes, Replace EdX Timed Transcripts with YouTube Timed Transcripts')
 }
 
 

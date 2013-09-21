@@ -30,9 +30,12 @@ class MockYoutubeRequestHandler(BaseHTTPRequestHandler):
         )  # Log the request
 
         if 'test_transcripts_youtube' in self.path:
-            if 'trans_exist' in self.path:
-                # testing transcripts
-                status_message = """<?xml version="1.0" encoding="utf-8" ?><transcript><text start="1.1" dur="5.5">Transcripts sample</text></transcript>"""
+            if 't__eq_exist' in self.path:
+                status_message = """<?xml version="1.0" encoding="utf-8" ?><transcript><text start="1.0" dur="1.0">Equal transcripts</text></transcript>"""
+                self._send_head()
+                self._send_transcripts_response(status_message)
+            elif 't_neq_exist' in self.path:
+                status_message = """<?xml version="1.0" encoding="utf-8" ?><transcript><text start="1.1" dur="5.5">Transcripts sample, different that on server</text></transcript>"""
                 self._send_head()
                 self._send_transcripts_response(status_message)
             else:
