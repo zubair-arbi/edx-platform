@@ -1,9 +1,9 @@
 {
   "start": [
-    1
+    1000
   ],
   "end": [
-    2
+    2000
   ],
   "text": [
     "Equal transcripts"

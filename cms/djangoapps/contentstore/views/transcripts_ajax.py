@@ -224,7 +224,7 @@ def check_transcripts(request):
         content_location = StaticContent.compute_location(
             item.location.org, item.location.course, filename)
         try:
-            contentstore().find(content_location)
+            local_transcripts = contentstore().find(content_location).data.read()
             transcripts_presence['youtube_local'] = True
         except NotFoundError:
             log.debug("Can't find transcripts in storage for youtube id: {}".format(youtube_id))
@@ -240,21 +240,10 @@ def check_transcripts(request):
         #check youtube local and server transcripts for equality
         if transcripts_presence['youtube_server'] and transcripts_presence['youtube_local']:
             # get transcripts from youtube:
-            status, subs = get_transcripts_from_youtube(youtube_id)
-            if status:
-                server_transcripts = json.dumps(subs, indent=2)
-                # get local subs:
-                filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-                content_location = StaticContent.compute_location(
-                    item.location.org, item.location.course, filename)
-                try:
-                    local_transcripts = contentstore().find(content_location).data
-                except NotFoundError:
-                    log.debug("Can't find content in storage for youtube sub.")
-                else:
-                    #check transcrips for equality
-                    if local_transcripts == server_transcripts:
-                        transcripts_presence['youtube_diff'] = False
+            status, youtube_server_subs = get_transcripts_from_youtube(youtube_id)
+            if status:  # check transcrips for equality
+                if json.loads(local_transcripts) == youtube_server_subs:
+                    transcripts_presence['youtube_diff'] = False
 
     # Check for html5 local transcripts presence
     for html5_id in videos['html5']:
