@@ -49,3 +49,27 @@ Feature: Video Component Editor
     # why??? possible bug
     And I see download_to_edit button
 
+
+Scenario: Entering youtube id only
+    Given I have created a Video component with subtitles
+    And I edit the component
+
+    # first part of url will be substituted by mock_youtube_server address
+
+    # for t_not_exist id server will respond with 404
+    #And I enter a http://youtu.be/t_not_exist source to field number 1
+    #Then I see not found status message
+
+    # for trans_exist id server will respond with transcripts
+    And I enter a http://youtu.be/trans_exist source to field number 1
+    Then I see not found status message
+    # trans_exist subs locally not presented at this moment
+    And I see import button
+    And I click import button
+    # I see: upload new timed transcripts, and not clickable download to edit
+
+    #btw, when i update sub, I do not create file in upload section
+    Then I see found status message
+
+
+

@@ -372,7 +372,7 @@ def replace_transcripts(request):
     if not youtube_id:
         return JsonResponse(response)
 
-    download_youtube_subs(youtube_id, item)
+    download_youtube_subs({1.0: youtube_id}, item)
     item.sub = slugify(youtube_id)
     item.save()
     response['status'] = 'Success'

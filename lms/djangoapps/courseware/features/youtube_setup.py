@@ -1,7 +1,7 @@
 #pylint: disable=C0111
 #pylint: disable=W0621
 
-from courseware.mock_youtube_server.mock_youtube_server import MockYoutubeServer
+from xmodule.util.mock_youtube_server.mock_youtube_server import MockYoutubeServer
 from lettuce import before, after, world
 from django.conf import settings
 import threading

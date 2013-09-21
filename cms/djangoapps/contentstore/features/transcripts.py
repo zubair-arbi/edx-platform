@@ -86,6 +86,21 @@ def i_see_import_from_youtube_button(_step, not_see, button_type):
         assert False  # not imlemented
 
 
+@step('I click (.*)button$')
+def click_button(_step, button_type):
+    world.wait(delay)
+    if button_type.strip() == 'import':
+        world.css_click('.setting-import')
+        import ipdb; ipdb.set_trace()
+    # elif button_type.strip() == 'download_to_edit':
+    #     if not_see:
+    #         assert world.is_css_not_present('.setting-download')
+    #     else:
+    #         assert world.css_has_text('.setting-download', 'Download to Edit')
+    else:
+        assert False  # not imlemented
+
+
 @step('I enter a (.+) source to field number (\d+)$')
 def i_enter_a_source(_step, link, index):
     index = int(index) - 1

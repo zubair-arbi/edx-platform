@@ -33,6 +33,9 @@ YOUTUBE_API = {
 if getattr(settings, 'VIDEO_PORT', None):
     YOUTUBE_API['url'] = "http://127.0.0.1:" + str(settings.VIDEO_PORT) + '/test_transcripts_youtube/'
 
+# test
+YOUTUBE_API['url'] = "http://127.0.0.1:" + str(settings.VIDEO_PORT) + '/test_transcripts_youtube/'
+
 
 def return_ajax_status(view_function):
     """Suppose view_function returns True/False, then convert
