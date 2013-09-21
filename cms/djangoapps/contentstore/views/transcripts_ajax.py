@@ -239,7 +239,6 @@ def check_transcripts(request):
             transcripts_presence['youtube_server'] = True
         #check youtube local and server transcripts for equality
         if transcripts_presence['youtube_server'] and transcripts_presence['youtube_local']:
-            # get transcripts from youtube:
             status, youtube_server_subs = get_transcripts_from_youtube(youtube_id)
             if status:  # check transcrips for equality
                 if json.loads(local_transcripts) == youtube_server_subs:
