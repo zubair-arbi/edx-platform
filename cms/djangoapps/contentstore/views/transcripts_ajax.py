@@ -366,7 +366,7 @@ def replace_transcripts(request):
     youtube_id = None
     for video_data in data.get('videos'):
         if video_data['type'] == 'youtube':
-            youtube_id = video_data['type']
+            youtube_id = video_data['video']
             break
 
     if not youtube_id:

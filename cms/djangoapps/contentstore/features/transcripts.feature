@@ -61,15 +61,15 @@ Scenario: Entering youtube id only
     #Then I see not found status message
 
     # for trans_exist id server will respond with transcripts
+    And I remove trans_exist transcripts id from store
     And I enter a http://youtu.be/trans_exist source to field number 1
     Then I see not found status message
-    # trans_exist subs locally not presented at this moment
     And I see import button
     And I click import button
-    # I see: upload new timed transcripts, and not clickable download to edit
-
-    #btw, when i update sub, I do not create file in upload section
     Then I see found status message
-
+    And I see upload_new_timed_transcripts button
+    And I see download_to_edit button
+    #btw, when i update sub, I do not create file in upload section
+    And I remove trans_exist transcripts id from store
 
 

@@ -126,9 +126,8 @@
 
             utils.command(action, component_id, videoList, extraParam)
                 .done(function (resp) {
-                    if (resp.status && resp.status.status === 'Success') {
-                        var sub = resp.status.subs;
-
+                    if (resp.status && resp.status === 'Success') {
+                        var sub = resp.subs;
                         self.render('found');
                         utils.addToStorage('sub', sub);
                     } else {

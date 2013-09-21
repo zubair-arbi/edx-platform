@@ -11,7 +11,7 @@ error_messages = {
 }
 
 STATUSES = {
-    'found': u'Timed Transcripts Found.',
+    'found': u'Timed Transcripts Found',
     'not found': u'No Timed Transcripts'
 }
 
@@ -21,6 +21,13 @@ selectors = {
     'collapse_link': '.collapse-action.collapse-setting',
     'collapse_bar': '.videolist-extra-videos',
     'status_bar': '.transcripts-message-status'
+}
+
+# button type , button css selector, button message
+BUTTONS = {
+    'import': ('.setting-import',  'Import from YouTube'),
+    'download_to_edit': ('.setting-download', 'Download to Edit'),
+    'upload_new_timed_transcripts': ('.setting-upload',  'Upload New Timed Transcripts')
 }
 
 
@@ -69,36 +76,47 @@ def i_see_status_message(_step, not_see, status):
 
 
 @step('I (.*)see (.*)button$')
-def i_see_import_from_youtube_button(_step, not_see, button_type):
+def i_see_button(_step, not_see, button_type):
     world.wait(delay)
-    if button_type.strip() == 'import':
+    button = button_type.strip()
+    if BUTTONS.get(button):
         if not_see:
-            assert world.is_css_not_present('.setting-import')
+            assert world.is_css_not_present(BUTTONS[button][0])
         else:
-            assert world.css_has_text('.setting-import', 'Import from YouTube')
-    elif button_type.strip() == 'download_to_edit':
-        if not_see:
-            assert world.is_css_not_present('.setting-download')
-        else:
-            assert world.css_has_text('.setting-download', 'Download to Edit')
-
+            assert world.css_has_text(BUTTONS[button][0], BUTTONS[button][1])
     else:
-        assert False  # not imlemented
+        assert False  # not implemented
 
 
 @step('I click (.*)button$')
 def click_button(_step, button_type):
     world.wait(delay)
-    if button_type.strip() == 'import':
-        world.css_click('.setting-import')
-        import ipdb; ipdb.set_trace()
-    # elif button_type.strip() == 'download_to_edit':
-    #     if not_see:
-    #         assert world.is_css_not_present('.setting-download')
-    #     else:
-    #         assert world.css_has_text('.setting-download', 'Download to Edit')
+    button = button_type.strip()
+    if BUTTONS.get(button):
+        world.css_click(BUTTONS[button][0])
     else:
-        assert False  # not imlemented
+        assert False  # not implemented
+
+
+@step('I remove (.*)transcripts id from store')
+def remove_transcripts_from_store(_step, subs_id):
+    """Remove from store, if transcripts content exists."""
+    from xmodule.contentstore.content import StaticContent
+    from xmodule.contentstore.django import contentstore
+    from xmodule.exceptions import NotFoundError
+    filename = 'subs_{0}.srt.sjson'.format(subs_id.strip())
+    content_location = StaticContent.compute_location(
+        world.scenario_dict['COURSE'].org,
+        world.scenario_dict['COURSE'].number,
+        filename
+    )
+    try:
+        content = contentstore().find(content_location)
+        contentstore().delete(content.get_id())
+        print('Transcript file was removed from store.')
+    except NotFoundError:
+        print('Transcript file was NOT found and not removed.')
+
 
 
 @step('I enter a (.+) source to field number (\d+)$')

@@ -66,7 +66,7 @@ class MockYoutubeRequestHandler(BaseHTTPRequestHandler):
         '''
         Send message back to the client for transcripts ajax requests.
         '''
-        response = json.dumps({'message': message})
+        response = message
         # Log the response
         logger.debug("Youtube: sent response {}".format(message))
 
