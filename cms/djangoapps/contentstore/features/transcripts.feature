@@ -50,16 +50,19 @@ Feature: Video Component Editor
     And I see download_to_edit button
 
 
-Scenario: Entering youtube id only
+Scenario: Entering youtube id only - 1a and 1c
     Given I have created a Video component with subtitles
     And I edit the component
 
-    # first part of url will be substituted by mock_youtube_server address
+    # first part of transcripts url of requests to youtube will be substituted by mock_youtube_server address
 
+    # 1a
     # for t_not_exist id server will respond with 404
+    And I remove t_not_exist transcripts id from store
     And I enter a http://youtu.be/t_not_exist source to field number 1
     Then I see not found status message
 
+    # 1c
     # for trans_exist id server will respond with transcripts
     And I remove trans_exist transcripts id from store
     And I enter a http://youtu.be/trans_exist source to field number 1
@@ -72,4 +75,13 @@ Scenario: Entering youtube id only
     #btw, when i update sub, I do not create file in upload section
     And I remove trans_exist transcripts id from store
 
+
+Scenario: Entering youtube id only - 1b
+    # Separate from previous, because we need to close editor
+    # to upload subtitles, that's why we uploading them before
+    #opening editor
+    Given I have created a Video component with t_not_exist subtitles
+    And I edit the component
+    And I enter a http://youtu.be/t_not_exist source to field number 1
+    Then I see found status message
 

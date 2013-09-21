@@ -22,7 +22,7 @@ def setup_mock_youtube_server():
     server = MockYoutubeServer(address)
     logger.debug("Youtube server started at {} port".format(str(server_port)))
 
-    server.time_to_response = 1  # seconds
+    server.time_to_response = 0.1  # seconds
 
     server.address = address
 
