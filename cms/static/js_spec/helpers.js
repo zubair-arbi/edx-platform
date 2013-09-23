@@ -3,10 +3,8 @@ jasmine.stubRequests = function () {
     var match = settings.url.match(/\/transcripts\/(.+)$/);
     if (match) {
       var resp = {
-          status: {
-            status: 'Success',
-            subs: 'video_id'
-          }
+          status: 'Success',
+          subs: 'video_id'
         },
         action = match[1],
         dfd = jQuery.Deferred();
