@@ -219,7 +219,9 @@ def check_transcripts(request):
         'current_item_subs': None,
         'status': 'Error',
     }
-    data, item = validate_transcripts_data(request, transcripts_presence)
+    validation_status, data, item = validate_transcripts_data(request, transcripts_presence)
+    if not validation_status:
+        return JsonResponse(transcripts_presence)
 
     transcripts_presence['status'] = 'Success'
     transcripts_presence['current_item_subs'] = item.sub
@@ -320,7 +322,7 @@ def transcripts_logic(transcripts_presence, videos):
         if transcripts_presence['html5_local']:
             if len(transcripts_presence['html5_local']) == 1:
                 command = 'found'
-                subs = transcripts_presence['html5_local']
+                subs = transcripts_presence['html5_local'][0]
             else:  # len is 2
                 assert len(transcripts_presence['html5_local']) == 2
                 command = 'choose'
@@ -345,7 +347,9 @@ def choose_transcripts(request):
     Do nothing with youtube id's.
     """
     response = {'status': 'Error'}
-    data, item = validate_transcripts_data(request, response)
+    validation_status, data, item = validate_transcripts_data(request, transcripts_presence)
+    if not validation_status:
+        return JsonResponse(response)
 
     # preprocess data
     videos = {'html5': {}}
@@ -373,7 +377,9 @@ def replace_transcripts(request):
     Replaces all transcripts with youtube ones.
     """
     response = {'status': 'Error'}
-    data, item = validate_transcripts_data(request, response)
+    validation_status, data, item = validate_transcripts_data(request, transcripts_presence)
+    if not validation_status:
+        return JsonResponse(response)
 
     # preprocess data
     youtube_id = None
@@ -399,18 +405,19 @@ def validate_transcripts_data(request, response):
 
     Returns parsed data from request and video item from store.
     """
+    validation_status = False
 
     data = json.loads(request.GET.get('data', '{}'))
     if not data:
         log.error('Incoming video data is empty.')
-        return JsonResponse(response)
+        return validation_status, None, None
 
     item_location = data.get('id')
     try:
         item = modulestore().get_item(item_location)
     except (ItemNotFoundError, InvalidLocationError):
         log.error("Can't find item by location.")
-        return JsonResponse(response)
+        return validation_status, None, None
 
     # Check permissions for this user within this course.
     if not has_access(request.user, item_location):
@@ -418,6 +425,6 @@ def validate_transcripts_data(request, response):
 
     if item.category != 'video':
         log.error('transcripts are supported only for "video" modules.')
-        return JsonResponse(response)
+        return validation_status, None, None
 
-    return data, item
+    return True, data, item
