@@ -194,7 +194,7 @@ def download_transcripts(request):
 def check_transcripts(request):
     """Check transcripts availability for current modules.
 
-    request.GET has key data, which can contain any of the following::
+    request.GET has key videos, which can contain any of the following::
     [
         {u'type': u'youtube', u'video': u'OEoXaMPEzfM', u'mode': u'youtube'},
         {u'type': u'html5',    u'video': u'video1',             u'mode': u'mp4'}
@@ -275,13 +275,11 @@ def check_transcripts(request):
             log.debug("Can't find transcripts in storage for non-youtube video_id: {}".format(html5_id))
 
     command, subs_to_use = transcripts_logic(transcripts_presence, videos)
-    response = {
-        'status': transcripts_presence,
+    transcripts_presence.update({
         'command': command,
         'subs': subs_to_use,
-
-    }
-    return JsonResponse(response)
+    })
+    return JsonResponse(transcripts_presence)
 
 
 def transcripts_logic(transcripts_presence, videos):
@@ -402,7 +400,7 @@ def validate_transcripts_data(request, response):
     Returns parsed data from request and video item from store.
     """
 
-    data = json.loads(request.GET.get('data', '[]'))
+    data = json.loads(request.GET.get('data', '{}'))
     if not data:
         log.error('Incoming video data is empty.')
         return JsonResponse(response)
