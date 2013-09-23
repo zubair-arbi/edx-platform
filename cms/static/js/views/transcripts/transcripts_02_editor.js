@@ -66,7 +66,7 @@
         syncAdvancedTab: function (metadataCollection) {
             var utils = Transcripts.Utils,
                 getField = utils.getField,
-                subsValue = utils.getFromStorage('sub'),
+                subsValue = utils.Storage.get('sub'),
                 subs = getField(metadataCollection, 'sub'),
                 html5Sources, youtube, videoUrlValue, result;
 
@@ -102,7 +102,7 @@
 
             if (_.isString(subsValue)) {
                 subs.setValue(subsValue);
-                utils.deleteFromStorage('sub');
+                utils.Storage.remove('sub');
             }
 
             utils.syncCollections(this.collection, metadataCollection);

@@ -44,18 +44,31 @@
 
             utils.command('check', component_id, videoList)
                 .done(function (resp) {
-                    var params = resp.status,
-                        len = videoList.length,
-                        mode = (len === 1) ? videoList[0].mode : false;
+                    if (resp.status === 'Success') {
+                        var params = resp,
+                            len = videoList.length,
+                            mode = (len === 1) ? videoList[0].mode : false;
 
-                    if (len > 1 || mode === 'html5') {
-                        self.openExtraVideosBar();
+                        if (len > 1 || mode === 'html5') {
+                            self.openExtraVideosBar();
+                        } else {
+                            self.closeExtraVideosBar();
+                        }
+
+                        self.messenger.render(resp.command, params);
+                        self.checkIsUniqVideoTypes();
                     } else {
-                        self.closeExtraVideosBar();
+                        self.messenger
+                            .render('not_found')
+                            .showError('Error: Connection with server failed.');
                     }
 
-                    self.messenger.render(resp.command, params);
-                    self.checkIsUniqVideoTypes();
+                    utils.Storage.set('sub', resp.subs);
+                })
+                .fail(function() {
+                    self.messenger
+                        .render('not_found')
+                        .showError('Error: Connection with server failed.');
                 });
         },
 

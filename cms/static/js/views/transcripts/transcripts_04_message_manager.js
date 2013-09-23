@@ -45,6 +45,10 @@
                 isYoutubeMode = params && params.is_youtube_mode,
                 template;
 
+            if (params && params.current_item_subs) {
+                this.currentItemSubs = params.current_item_subs
+            }
+
             if (!tplHtml) {
                 console.error('Couldn\'t load Transcripts status template');
 
@@ -128,8 +132,10 @@
                 .done(function (resp) {
                     if (resp.status && resp.status === 'Success') {
                         var sub = resp.subs;
+
                         self.render('found');
-                        utils.addToStorage('sub', sub);
+                        utils.Storage.set('sub', sub);
+                        self.currentItemSubs = sub;
                     } else {
                         self.render('not_found');
                     }
@@ -146,7 +152,7 @@
         },
 
         useExistingTranscript: function () {
-            this.render('found');
+            this.processCommand('rename', 'Error: Choosing failed.');
         }
 
     });

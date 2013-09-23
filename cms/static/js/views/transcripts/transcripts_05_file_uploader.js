@@ -114,7 +114,7 @@
 
             if (xhr.status === 200 && resp.status === "Success") {
                 this.options.messenger.render('uploaded');
-                utils.addToStorage('sub', sub);
+                utils.Storage.set('sub', sub);
             } else {
                 this.options.messenger.showError(err);
             }

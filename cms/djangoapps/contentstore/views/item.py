@@ -19,7 +19,8 @@ from .transcripts_ajax import (
     download_transcripts,
     check_transcripts,
     choose_transcripts,
-    replace_transcripts
+    replace_transcripts,
+    rename_transcripts
 )
 
 from ..transcripts_utils import manage_video_transcripts
@@ -227,6 +228,7 @@ def process_transcripts(request, action):
         'download': download_transcripts,
         'check': check_transcripts,
         'choose': choose_transcripts,
-        'replace': replace_transcripts
+        'replace': replace_transcripts,
+        'rename': rename_transcripts
     }
     return allowed_actions.get(action, lambda x: JsonResponse())(request)

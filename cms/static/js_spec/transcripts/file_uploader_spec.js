@@ -194,18 +194,18 @@
                         subs: 'test'
                     })
                 };
-                spyOn(Transcripts.Utils, 'addToStorage');
+                spyOn(Transcripts.Utils.Storage, 'set');
                 view.xhrCompleteHandler(xhr);
 
                 expect(view.$progress).toHaveClass('is-invisible');
                 expect(view.options.messenger.render)
                                             .toHaveBeenCalledWith('uploaded');
-                expect(Transcripts.Utils.addToStorage)
+                expect(Transcripts.Utils.Storage.set)
                                             .toHaveBeenCalledWith('sub', 'test');
             });
 
             var assertAjaxError = function (xhr) {
-                spyOn(Transcripts.Utils, 'addToStorage');
+                spyOn(Transcripts.Utils.Storage, 'set');
                 view.xhrCompleteHandler(xhr);
 
                 expect(view.options.messenger.showError).toHaveBeenCalled();
@@ -213,7 +213,7 @@
                 expect(view.options.messenger.render)
                                             .not
                                             .toHaveBeenCalledWith('uploaded');
-                expect(Transcripts.Utils.addToStorage)
+                expect(Transcripts.Utils.Storage.set)
                                             .not
                                             .toHaveBeenCalledWith('sub', 'test');
             }

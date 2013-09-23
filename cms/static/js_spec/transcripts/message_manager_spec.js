@@ -41,7 +41,7 @@
 
             spyOn(fileUploader, 'initialize');
             spyOn(console, 'error');
-            spyOn(utils, 'addToStorage');
+            spyOn(utils.Storage, 'set');
 
             view = new Transcripts.MessageManager({
                 el: $container,
@@ -173,7 +173,7 @@
                 );
                 expect(view.showError).not.toHaveBeenCalled();
                 expect(view.render).toHaveBeenCalledWith('found');
-                expect(utils.addToStorage).toHaveBeenCalled();
+                expect(utils.Storage.set).toHaveBeenCalled();
             });
 
             it('Invoke with extraParamas', function () {
@@ -189,7 +189,7 @@
                 );
                 expect(view.showError).not.toHaveBeenCalled();
                 expect(view.render).toHaveBeenCalledWith('found');
-                expect(utils.addToStorage).toHaveBeenCalled();
+                expect(utils.Storage.set).toHaveBeenCalled();
             });
 
             it('status `Error`', function () {
@@ -203,7 +203,7 @@
                 );
                 expect(view.showError).not.toHaveBeenCalled();
                 expect(view.render).toHaveBeenCalledWith('not_found');
-                expect(utils.addToStorage).not.toHaveBeenCalled();
+                expect(utils.Storage.set).not.toHaveBeenCalled();
             });
 
             it('Fail', function () {
@@ -217,7 +217,7 @@
                 );
                 expect(view.showError).toHaveBeenCalled();
                 expect(view.render).not.toHaveBeenCalled();
-                expect(utils.addToStorage).not.toHaveBeenCalled();
+                expect(utils.Storage.set).not.toHaveBeenCalled();
             });
         });
 

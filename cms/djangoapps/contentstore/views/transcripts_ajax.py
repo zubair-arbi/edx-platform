@@ -23,7 +23,7 @@ from ..transcripts_utils import (
     generate_subs_from_source,
     generate_srt_from_sjson, remove_subs_from_store,
     requests as rqsts,
-    download_youtube_subs, get_transcripts_from_youtube,
+    download_youtube_subs, get_transcripts_from_youtube, save_subs_to_store,
     YOUTUBE_API
 )
 
@@ -179,7 +179,7 @@ def download_transcripts(request):
             log.error("Can't find content in storage for non-youtube sub.")
 
     if subs_found['youtube'] or subs_found['html5']:
-        str_subs = generate_srt_from_sjson(json.loads(sjson_transcripts.data), speed)
+        str_subs = generate_srt_from_sjson(json.loads(sjson_transcripts.data.read()), speed)
         if str_subs is None:
             log.error('generate_srt_from_sjson produces no subtitles')
             raise Http404
@@ -328,7 +328,7 @@ def transcripts_logic(transcripts_presence, videos):
                 command = 'choose'
         else:  # html5 source have no subtitles
             # check if item sub has subtitles
-            if transcripts_presence['current_item_subs']:
+            if transcripts_presence['current_item_subs'] and not transcripts_presence['is_youtube_mode']:
                 command = 'use_existing'
             else:
                 command = 'not_found'
@@ -370,6 +370,43 @@ def choose_transcripts(request):
     response['status'] = 'Success'
     response['subs'] = item.sub
     return JsonResponse(response)
+
+def rename_transcripts(request):
+    """
+    Renames html5 subtitles
+    """
+    response = {'status': 'Error'}
+    data, item = validate_transcripts_data(request, response)
+
+    old_name = item.sub
+
+    # preprocess data
+    videos = {'youtube': '', 'html5': {}}
+    for video_data in data.get('videos'):
+        if video_data['type'] == 'youtube':
+            videos['youtube'] = video_data['video']
+        else:  # do not add same html5 videos
+            if videos['html5'].get('video') != video_data['video']:
+                videos['html5'][video_data['video']] = video_data['type']
+
+    new_name = videos['html5'].keys()[0]
+    filename = 'subs_{0}.srt.sjson'.format(old_name)
+    content_location = StaticContent.compute_location(
+        item.location.org, item.location.course, filename)
+    try:
+        transcripts = contentstore().find(content_location).data.read()
+        save_subs_to_store(json.loads(transcripts), new_name, item)
+
+        item.sub = slugify(new_name)
+        item.save()
+        response['status'] = 'Success'
+        response['subs'] = item.sub
+    except NotFoundError:
+        log.debug("Can't find transcripts in storage for id: {}".format(old_name))
+    else:
+        remove_subs_from_store(old_name, item)
+    finally:
+        return JsonResponse(response)
 
 
 def replace_transcripts(request):

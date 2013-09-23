@@ -247,7 +247,7 @@
                 });
 
                 it('Timed Transcripts field is updated', function () {
-                    Transcripts.Utils.addToStorage('sub', 'test_value');
+                    Transcripts.Utils.Storage.set('sub', 'test_value');
 
                     transcripts.syncAdvancedTab(metadataCollection);
 
@@ -258,7 +258,7 @@
                 });
 
                 it('Timed Transcripts field is updated just once', function () {
-                    Transcripts.Utils.addToStorage('sub', 'test_value');
+                    Transcripts.Utils.Storage.set('sub', 'test_value');
 
                     var collection = metadataCollection.models,
                         subModel = collection[1];

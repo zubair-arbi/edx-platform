@@ -19,6 +19,7 @@ from xmodule.modulestore.inheritance import own_metadata
 from xmodule.contentstore.content import StaticContent
 from xmodule.contentstore.django import contentstore
 from xmodule.modulestore import Location
+from .utils import get_modulestore
 
 log = logging.getLogger(__name__)
 
@@ -211,20 +212,20 @@ def manage_video_transcripts(old_item, new_item):
                 remove_subs_from_store(youtube_id, new_item)
 
     # If user has changed HTML5 sources, we remove transcripts.
-    old_src = set([src for src in old_item.html5_sources if src])
-    new_src = set([src for src in new_item.html5_sources if src])
-    if (old_src - new_src) and old_item.sub:
-        remove_subs_from_store(old_item.sub, new_item)
-        if new_item.sub == old_item.sub:
-            new_item.sub = ''
-            new_item.save()
-            store = get_modulestore(Location(new_item.location))
-            store.update_metadata(new_item.location, own_metadata(new_item))
+    # old_src = set([src for src in old_item.html5_sources if src])
+    # new_src = set([src for src in new_item.html5_sources if src])
+    # if (old_src - new_src) and old_item.sub:
+    #     remove_subs_from_store(old_item.sub, new_item)
+    #     if new_item.sub == old_item.sub:
+    #         new_item.sub = ''
+    #         new_item.save()
+    #         store = get_modulestore(Location(new_item.location))
+    #         store.update_metadata(new_item.location, own_metadata(new_item))
 
     # Always download fresh transcripts from Youtube service if video
     # module has youtube type.
-    if new_item.youtube_id_1_0:
-        download_youtube_subs(youtube_subs, new_item)
+    # if new_item.youtube_id_1_0:
+    #     download_youtube_subs(youtube_subs, new_item)
 
 
 def generate_subs_from_source(speed_subs, subs_type, subs_filedata, item):

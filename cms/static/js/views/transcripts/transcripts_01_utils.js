@@ -12,10 +12,10 @@
         * @param {any} data Data that should be stored.
         *
         */
-        var _addToStorage = function (data_id, data) {
-            if (!Storage[data_id]) {
-                Storage[data_id] = data;
-            }
+        Storage.set = function (data_id, data) {
+            Storage[data_id] = data;
+
+            return this;
         };
 
         /**
@@ -27,7 +27,7 @@
         *
         * @returns {any} Stored data.
         */
-        var _getFromStorage = function (data_id) {
+        Storage.get= function (data_id) {
 
             return Storage[data_id];
         };
@@ -42,7 +42,7 @@
         *
         * @returns {boolean} Boolean value that indicate if data is removed.
         */
-        var _deleteFromStorage = function (data_id) {
+        Storage.remove = function (data_id) {
 
             return (delete Storage[data_id]);
         };
@@ -317,9 +317,11 @@
             getYoutubeLink: _getYoutubeLink,
             syncCollections: _syncCollections,
             command: _command,
-            addToStorage: _addToStorage,
-            getFromStorage: _getFromStorage,
-            deleteFromStorage: _deleteFromStorage
+            Storage: {
+                set: Storage.set,
+                get: Storage.get,
+                remove: Storage.remove,
+            }
         };
     }());
 }(this));
