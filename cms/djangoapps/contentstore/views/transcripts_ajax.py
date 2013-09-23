@@ -82,14 +82,14 @@ def upload_transcripts(request):
         1.5: item.youtube_id_1_5
     }
 
-    if any(speed_subs.values()):
-        log.debug("Do nothing.")
-        return JsonResponse(response)
-    elif any(item.html5_sources):
-        sub_attr = slugify(source_subs_name)
+    if item.youtube_id_1_0 or any(item.html5_sources):
+        if item.youtube_id_1_0:
+            sub_attr = item.youtube_id_1_0
+        else:
+            sub_attr = slugify(source_subs_name)
 
         # Generate only one subs for speed = 1.0
-        status = generate_subs_from_source(
+        status, subs = generate_subs_from_source(
             {1: sub_attr},
             source_subs_ext,
             source_subs_filedata,
@@ -102,6 +102,25 @@ def upload_transcripts(request):
             store.update_metadata(item_location, own_metadata(item))
             response['subs'] = item.sub
             response['status'] = 'Success'
+
+            if item.youtube_id_1_0:
+                # Generate transcripts for missed speeds.
+                for speed, youtube_id in speed_subs.iteritems():
+                    if youtube_id and speed != 1.0:
+                        save_subs_to_store(
+                            generate_subs(speed, 1.0, subs),
+                            youtube_id,
+                            item)
+
+                        log.info(
+                            """transcripts for Youtube ID {0} (speed {1})
+                            are generated from Youtube ID {2} (speed {3}) and
+                            saved.""".format(
+                            '1.0',
+                            speed,
+                            youtube_id,
+                            available_speed)
+                        )
     else:
         log.error('Empty video sources.')
         return JsonResponse(response)

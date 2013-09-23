@@ -394,7 +394,7 @@ At the left we can see...
         """
         self.clear_subs_content(youtube_subs)
 
-        status = utils.generate_subs_from_source(
+        status, __ = utils.generate_subs_from_source(
             youtube_subs,
             'srt',
             srt_filedata,
@@ -427,7 +427,7 @@ Elephant's Dream
 At the left we can see...
         """
 
-        status = utils.generate_subs_from_source(
+        status, __ = utils.generate_subs_from_source(
             youtube_subs,
             'BAD_FORMAT',
             srt_filedata,
@@ -443,7 +443,7 @@ At the left we can see...
 
         srt_filedata = """BAD_DATA"""
 
-        status = utils.generate_subs_from_source(
+        status, __ = utils.generate_subs_from_source(
             youtube_subs,
             'srt',
             srt_filedata,

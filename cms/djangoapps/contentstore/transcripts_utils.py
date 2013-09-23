@@ -269,7 +269,7 @@ def generate_subs_from_source(speed_subs, subs_type, subs_filedata, item):
             subs_id,
             item)
 
-    return True
+    return True, subs
 
 
 def generate_srt_from_sjson(sjson_subs, speed):
