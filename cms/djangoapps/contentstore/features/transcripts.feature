@@ -1,13 +1,6 @@
 Feature: Video Component Editor
   As a course author, I want to be able to create video components.
 
-#  Scenario: User inputs YouTube source first
-#    Given I have created a Video component
-#    And It has no YouTube transcripts locally
-#    And I edit the component
-#    And I input YouTube source which doesn't have transcripts on YouTube
-#    Then I see not found message
-
   Scenario: Check input error messages
     Given I have created a Video component
     And I edit the component
@@ -49,7 +42,6 @@ Feature: Video Component Editor
     # why??? possible bug
     And I see download_to_edit button
 
-
 Scenario: Entering youtube id only - 1a and 1c
     Given I have created a Video component with subtitles
     And I edit the component
@@ -75,7 +67,6 @@ Scenario: Entering youtube id only - 1a and 1c
     #btw, when i update sub, I do not create file in upload section
     And I remove t__eq_exist transcripts id from store
 
-
 Scenario: Entering youtube id only - 1b
     # Separate from previous, because we need to close editor
     # to upload subtitles, that's why we uploading them before
@@ -85,7 +76,6 @@ Scenario: Entering youtube id only - 1b
     And I enter a http://youtu.be/t_not_exist source to field number 1
     Then I see found status message
     And I remove t_not_exist transcripts id from store
-
 
 Scenario: Entering youtube id only - 1d-1
     Given I have created a Video component with t__eq_exist subtitles
@@ -103,3 +93,16 @@ Scenario: Entering youtube id only - 1d-2
     And I click replace button
     And I see found status message
     And I remove t_neq_exist transcripts id from store
+
+Scenario: Entering html5 source only - Timed Transcripts found 2a
+    Given I have created a Video component
+    And I edit the component
+    And I enter a t_not_exist.mp4 source to field number 1
+    Then I see not found status message
+
+Scenario: Entering html5 source only - Timed Transcripts not found 2b
+    Given I have created a Video component with t_not_exist subtitles
+    And I edit the component
+    And I enter a t_not_exist.mp4 source to field number 1
+    Then I see found status message
+
