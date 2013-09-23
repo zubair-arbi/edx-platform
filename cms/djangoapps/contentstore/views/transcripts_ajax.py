@@ -217,7 +217,7 @@ def check_transcripts(request):
         'youtube_server': False,
         'youtube_diff': True,
         'current_item_subs': None,
-        'status': 'Error'
+        'status': 'Error',
     }
     data, item = validate_transcripts_data(request, transcripts_presence)
 
@@ -274,14 +274,17 @@ def check_transcripts(request):
         except NotFoundError:
             log.debug("Can't find transcripts in storage for non-youtube video_id: {}".format(html5_id))
 
+    command, subs_to_use = transcripts_logic(transcripts_presence, videos)
     response = {
         'status': transcripts_presence,
-        'command': transcripts_logic(transcripts_presence)
+        'command': command,
+        'subs': subs_to_use,
+
     }
     return JsonResponse(response)
 
 
-def transcripts_logic(transcripts_presence):
+def transcripts_logic(transcripts_presence, videos):
     """
     By trascripts status figure what show to user:
     transcripts_presence = {
@@ -298,10 +301,12 @@ def transcripts_logic(transcripts_presence):
     output: command to do::
         'choose',
         'replace',
-        'import'
+        'import',
     """
     command = None
 
+    # subtitles to put in video module html5 subtitles field
+    subs = ''
     # youtube transcripts are more prioritized that html5 by design
     if (
             transcripts_presence['youtube_diff'] and
@@ -310,12 +315,14 @@ def transcripts_logic(transcripts_presence):
         command = 'replace'
     elif transcripts_presence['youtube_local']:  # only youtube local exist
         command = 'found'
+        subs = videos['youtube']
     elif transcripts_presence['youtube_server']:  # only youtube server exist
         command = 'import'
     else:  # html5 part
         if transcripts_presence['html5_local']:
             if len(transcripts_presence['html5_local']) == 1:
                 command = 'found'
+                subs = transcripts_presence['html5_local']
             else:  # len is 2
                 assert len(transcripts_presence['html5_local']) == 2
                 command = 'choose'
@@ -326,7 +333,7 @@ def transcripts_logic(transcripts_presence):
             else:
                 command = 'not_found'
 
-    return command
+    return command, subs
 
 
 def choose_transcripts(request):
@@ -359,6 +366,7 @@ def choose_transcripts(request):
         item.sub = slugify(html5_id)
         item.save()
     response['status'] = 'Success'
+    response['subs'] = item.sub
     return JsonResponse(response)
 
 
