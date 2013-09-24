@@ -328,3 +328,6 @@ Feature: Video Component Editor
         And I don't see upload_new_timed_transcripts button
         And I see choose button t__eq_exist.mp4 number 1
         And I see choose button t_neq_exist.webm number 2
+
+        And I click choose button number 2
+        And I see "t_neq_exist" value in the "HTML5 Timed Transcript" field
