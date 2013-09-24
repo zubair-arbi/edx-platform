@@ -303,3 +303,27 @@ Feature: Video Component Editor
         Then I see found status message
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button
+
+    #19
+    Scenario: Enter 2 HTML5 sources with transcripts, they are not the same, choose
+        Given I have created a Video component with t_neq_exist subtitles
+
+        And I remove t__eq_exist transcripts id from store
+        And I remove t_neq_exist transcripts id from store
+        And I remove t_not_exist transcripts id from store
+
+        And I have uploaded t__eq_exist subtitles
+        And I have uploaded t_neq_exist subtitles
+
+        And I edit the component
+
+        And I enter a t__eq_exist.mp4 source to field number 1
+        Then I see found status message
+        And I see download_to_edit button
+        And I see upload_new_timed_transcripts button
+
+        And I enter a t_neq_exist.webm source to field number 2
+        Then I see replace status message
+        And I don't see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+        And I see replace button
