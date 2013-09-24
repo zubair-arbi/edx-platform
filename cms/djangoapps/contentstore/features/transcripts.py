@@ -37,7 +37,7 @@ BUTTONS = {
     'disabled_download_to_edit': ('.setting-download.is-disabled', 'Download to Edit'),
     'upload_new_timed_transcripts': ('.setting-upload',  'Upload New Timed Transcripts'),
     'replace': ('.setting-replace', 'Yes, Replace EdX Timed Transcripts with YouTube Timed Transcripts'),
-    'choose': ('.setting-choose', 'Yes, Replace EdX Timed Transcripts with YouTube Timed Transcripts')
+    'choose': ('.setting-choose', 'Timed Transcripts from {}')
 }
 
 
@@ -94,6 +94,21 @@ def i_see_button(_step, not_see, button_type):
             assert world.is_css_not_present(BUTTONS[button][0])
         else:
             assert world.css_has_text(BUTTONS[button][0], BUTTONS[button][1])
+    else:
+        assert False  # not implemented
+
+
+@step('I (.*)see (.*)button (.*) number (\d+)$')
+def i_see_button_with_custom_text(_step, not_see, button_type, custom_text, index):
+    world.wait(DELAY)
+    button = button_type.strip()
+    custom_text = custom_text.strip()
+    index = int(index.strip()) - 1
+    if BUTTONS.get(button):
+        if not_see:
+            assert world.is_css_not_present(BUTTONS[button][0])
+        else:
+            assert world.css_has_text(BUTTONS[button][0], BUTTONS[button][1].format(custom_text), index)
     else:
         assert False  # not implemented
 
