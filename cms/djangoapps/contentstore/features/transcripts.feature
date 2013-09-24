@@ -163,17 +163,124 @@ Feature: Video Component Editor
     Scenario: Entering youtube with imported transcripts - html5 w/o transcripts w/o import - html5 w/o transcripts
         Given I have created a Video component
         And I edit the component
+
         And I enter a http://youtu.be/t__eq_exist source to field number 1
         Then I see not found status message
         And I see import button
         And I click import button
         Then I see found status message
         And I don't see upload_new_timed_transcripts button
+
         And I enter a t_not_exist.mp4 source to field number 2
         Then I see found status message
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button
+
         And I enter a t_not_exist.webm source to field number 3
+        Then I see found status message
+        And I see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+    #14
+    Scenario: Entering youtube w/o transcripts - html5 w/o transcripts - html5 with transcripts
+        Given I have created a Video component with t_neq_exist subtitles
+        And I edit the component
+
+        And I enter a http://youtu.be/t_not_exist source to field number 1
+        Then I see not found status message
+        And I see disabled_download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_not_exist.mp4 source to field number 2
+        Then I see not found status message
+        And I see disabled_download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_neq_exist.webm source to field number 3
+        Then I see found status message
+        And I see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+    #15
+    Scenario: Entering youtube w/o imported transcripts - html5 w/o transcripts w/o import - html5 with transcripts
+        Given I have created a Video component with t_neq_exist subtitles
+        And I edit the component
+
+        And I enter a http://youtu.be/t__eq_exist source to field number 1
+        Then I see not found status message
+        And I see import button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_not_exist.mp4 source to field number 2
+        Then I see not found status message
+        And I see import button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_neq_exist.webm source to field number 3
+        Then I see not found status message
+        And I see import button
+        And I don't see upload_new_timed_transcripts button
+
+    #16
+    Scenario: Entering youtube w/o imported transcripts - html5 with transcripts - html5 w/o transcripts w/o import
+        Given I have created a Video component with t_neq_exist subtitles
+        And I edit the component
+
+        And I enter a http://youtu.be/t__eq_exist source to field number 1
+        Then I see not found status message
+        And I see import button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_neq_exist.mp4 source to field number 2
+        Then I see not found status message
+        And I see import button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_not_exist.webm source to field number 3
+        Then I see not found status message
+        And I see import button
+        And I don't see upload_new_timed_transcripts button
+
+    #17
+    Scenario: Entering youtube with imported transcripts - html5 with transcripts - html5 w/o transcripts
+        Given I have created a Video component with t_neq_exist subtitles
+        And I edit the component
+
+        And I enter a http://youtu.be/t__eq_exist source to field number 1
+        Then I see not found status message
+        And I see import button
+        And I click import button
+        Then I see found status message
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_neq_exist.mp4 source to field number 2
+        Then I see found status message
+        And I see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_not_exist.webm source to field number 3
+        Then I see found status message
+        And I see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+    #18
+    Scenario: Entering youtube with imported transcripts - html5 w/o transcripts - html5 with transcripts
+        Given I have created a Video component with t_neq_exist subtitles
+        And I edit the component
+
+        And I enter a http://youtu.be/t__eq_exist source to field number 1
+        Then I see not found status message
+        And I see import button
+        And I click import button
+        Then I see found status message
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_not_exist.mp4 source to field number 2
+        Then I see found status message
+        And I see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+        And I enter a t_neq_exist.webm source to field number 3
         Then I see found status message
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button

@@ -245,7 +245,7 @@ def check_transcripts(request):
         content_location = StaticContent.compute_location(
             item.location.org, item.location.course, filename)
         try:
-            local_transcripts = contentstore().find(content_location).data.read()
+            local_transcripts = contentstore().find(content_location).data
             transcripts_presence['youtube_local'] = True
         except NotFoundError:
             log.debug("Can't find transcripts in storage for youtube id: {}".format(youtube_id))
