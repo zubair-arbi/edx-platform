@@ -181,7 +181,7 @@ Feature: Video Component Editor
         And I don't see upload_new_timed_transcripts button
 
     #12
-    Scenario: Entering youtube w/o transcripts - html5 w/o transcripts w/o import - html5 w/o transcripts
+    Scenario: Entering youtube (no importing), and 2 html5 sources without transcripts - "Not Found"
         Given I have created a Video component
         And I edit the component
         And I enter a http://youtu.be/t_not_exist source to field number 1
@@ -198,7 +198,7 @@ Feature: Video Component Editor
         And I don't see upload_new_timed_transcripts button
 
     #13
-    Scenario: Entering youtube with imported transcripts - html5 w/o transcripts w/o import - html5 w/o transcripts
+    Scenario: Entering youtube with imported transcripts, and 2 html5 sources without transcripts - "Found"
         Given I have created a Video component
         And I edit the component
 
@@ -342,6 +342,9 @@ Feature: Video Component Editor
         Then I see found status message
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button
+
+        And I enter a test_transcripts.mp4 source to field number 3
+        Then I see found status message
 
     #20
     Scenario: Enter 2 HTML5 sources with transcripts, they are not the same, choose
