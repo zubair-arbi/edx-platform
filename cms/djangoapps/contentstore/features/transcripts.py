@@ -123,6 +123,17 @@ def click_button(_step, button_type):
         assert False  # not implemented
 
 
+@step('I click (.*)button number (\d+)$')
+def click_button(_step, button_type, index):
+    world.wait(DELAY)
+    button = button_type.strip()
+    index = int(index.strip()) - 1
+    if BUTTONS.get(button):
+        world.css_click(BUTTONS[button][0], index)
+    else:
+        assert False  # not implemented
+
+
 @step('I remove (.*)transcripts id from store')
 def remove_transcripts_from_store(_step, subs_id):
     """Remove from store, if transcripts content exists."""
