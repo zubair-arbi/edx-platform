@@ -85,10 +85,7 @@ def upload_transcripts(request):
     }
 
     if item.youtube_id_1_0 or any(item.html5_sources):
-        if item.youtube_id_1_0:
-            sub_attr = item.youtube_id_1_0
-        else:
-            sub_attr = slugify(source_subs_name)
+        sub_attr = slugify(source_subs_name)
 
         # Generate only one subs for speed = 1.0
         status, subs = generate_subs_from_source(
@@ -105,24 +102,7 @@ def upload_transcripts(request):
             response['subs'] = item.sub
             response['status'] = 'Success'
 
-            if item.youtube_id_1_0:
-                # Generate transcripts for missed speeds.
-                for speed, youtube_id in speed_subs.iteritems():
-                    if youtube_id and speed != 1.0:
-                        save_subs_to_store(
-                            generate_subs(speed, 1.0, subs),
-                            youtube_id,
-                            item)
 
-                        log.info(
-                            """transcripts for Youtube ID {0} (speed {1})
-                            are generated from Youtube ID {2} (speed {3}) and
-                            saved.""".format(
-                            youtube_id,
-                            speed,
-                            item.youtube_id_1_0,
-                            '1.0')
-                        )
     else:
         log.error('Empty video sources.')
         return JsonResponse(response)
@@ -329,10 +309,11 @@ def transcripts_logic(transcripts_presence, videos):
                 command = 'choose'
         else:  # html5 source have no subtitles
             # check if item sub has subtitles
-            if transcripts_presence['current_item_subs']:
-                command = 'use_existing'
-            else:
-                command = 'not_found'
+            # if transcripts_presence['current_item_subs']:
+            #     command = 'use_existing'
+            # else:
+            #     command = 'not_found'
+            command = 'not_found'
 
     return command, subs
 
@@ -347,7 +328,11 @@ def choose_transcripts(request):
 
     Do nothing with youtube id's.
     """
-    response = {'status': 'Error'}
+    response = {
+        'status': 'Error',
+        'subs': '',
+    }
+
     validation_status, data, item = validate_transcripts_data(request)
     if not validation_status:
         return JsonResponse(response)
@@ -373,11 +358,59 @@ def choose_transcripts(request):
     return JsonResponse(response)
 
 
+def rename_transcripts(request):
+    """
+    Renames html5 subtitles
+    """
+
+    response = {
+        'status': 'Error',
+        'subs': '',
+    }
+
+    data, item = validate_transcripts_data(request)
+
+    old_name = item.sub
+
+    # preprocess data
+    videos = {'youtube': '', 'html5': {}}
+    for video_data in data.get('videos'):
+        if video_data['type'] == 'youtube':
+            videos['youtube'] = video_data['video']
+        else:  # do not add same html5 videos
+            if videos['html5'].get('video') != video_data['video']:
+                videos['html5'][video_data['video']] = video_data['type']
+
+    new_name = videos['html5'].keys()[0]
+    filename = 'subs_{0}.srt.sjson'.format(old_name)
+    content_location = StaticContent.compute_location(
+        item.location.org, item.location.course, filename)
+    try:
+        transcripts = contentstore().find(content_location).data.read()
+        save_subs_to_store(json.loads(transcripts), new_name, item)
+
+        item.sub = slugify(new_name)
+        item.save()
+        response['status'] = 'Success'
+        response['subs'] = item.sub
+    except NotFoundError:
+        log.debug("Can't find transcripts in storage for id: {}".format(old_name))
+    else:
+        remove_subs_from_store(old_name, item)
+    finally:
+        return JsonResponse(response)
+
+
 def replace_transcripts(request):
     """
     Replaces all transcripts with youtube ones.
     """
-    response = {'status': 'Error'}
+    response = {
+        'status': 'Error',
+        'subs': '',
+        'is_youtube_mode': True,
+    }
+
     validation_status, data, item = validate_transcripts_data(request)
     if not validation_status:
         return JsonResponse(response)

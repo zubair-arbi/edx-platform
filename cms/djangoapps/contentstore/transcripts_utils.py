@@ -95,6 +95,7 @@ def get_transcripts_from_youtube(youtube_id):
     Returns (status, transcripts): bool, dict.
     """
     html_parser = HTMLParser.HTMLParser()
+    utf8_parser = etree.XMLParser(encoding='utf-8')
     YOUTUBE_API['params']['v'] = youtube_id
     data = requests.get(
         YOUTUBE_API['url'],
@@ -105,12 +106,14 @@ def get_transcripts_from_youtube(youtube_id):
         return False,  {}
 
     sub_starts, sub_ends, sub_texts = [], [], []
-
-    xmltree = etree.fromstring(str(data.text))
+    xmltree = etree.fromstring(data.text.encode('utf-8'), parser=utf8_parser)
     for element in xmltree:
         if element.tag == "text":
             start = float(element.get("start"))
-            duration = float(element.get("dur"))
+            try:
+                duration = float(element.get("dur"))
+            except:
+                duration = 0
             text = element.text
             end = start + duration
 
@@ -210,10 +213,10 @@ def manage_video_transcripts(old_item, new_item):
     }
 
     # If user has changed YT id, we remove transcripts.
-    if new_item.youtube_id_1_0 != old_item.youtube_id_1_0:
-        for youtube_id in youtube_subs.values():
-            if youtube_id:
-                remove_subs_from_store(youtube_id, new_item)
+    # if new_item.youtube_id_1_0 != old_item.youtube_id_1_0:
+    #     for youtube_id in youtube_subs.values():
+    #         if youtube_id:
+    #             remove_subs_from_store(youtube_id, new_item)
 
     # If user has changed HTML5 sources, we remove transcripts.
     # old_src = set([src for src in old_item.html5_sources if src])
