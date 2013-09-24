@@ -61,7 +61,7 @@ def generate_subs(speed, source_speed, source_subs):
     if speed == source_speed:
         return source_subs
 
-    coefficient = speed / source_speed
+    coefficient = 1.0 * speed / source_speed
     subs = {
         'start': [
             int(round(timestamp * coefficient)) for
@@ -126,17 +126,20 @@ def get_transcripts_from_youtube(youtube_id):
 def download_youtube_subs(youtube_subs, item):
     """Download transcripts from Youtube using `youtube_ids`, and
     save them to assets for `item` module.
-
+c
     Test: http://video.google.com/timedtext?lang=en&v=j_jEn79vS3g
     """
     status_dict = {}
     # Iterate from lowest to highest speed and try to do download transcripts
     # from the Youtube service.
+    good_subs = {}
     for speed, youtube_id in sorted(youtube_subs.iteritems()):
         if not youtube_id:
             continue
 
         status, subs = get_transcripts_from_youtube(youtube_id)
+        if not subs:  # google returning empty subs
+            status = False
         if not status:
             status_dict.update({speed: status})
             continue
@@ -151,6 +154,7 @@ def download_youtube_subs(youtube_subs, item):
         )
 
         status_dict.update({speed: True})
+        good_subs = subs
 
     if not any(status_dict.itervalues()):
         log.error("Can't find any transcripts on the Youtube service.")
@@ -161,7 +165,7 @@ def download_youtube_subs(youtube_subs, item):
     # Youtube service. We use the highest speed as main speed for the
     # generation other transcripts, cause during calculation timestamps
     # for lower speeds we just use multiplication istead of division.
-
+    subs = good_subs
     # Generate transcripts for missed speeds.
     for speed, status in status_dict.iteritems():
         if not status:

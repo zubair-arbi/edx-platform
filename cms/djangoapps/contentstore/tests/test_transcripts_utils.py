@@ -1,19 +1,14 @@
 """ Tests for transcripts_utils. """
 from contentstore import transcripts_utils
-import mock
 import unittest
-import collections
-import copy
 import json
 from uuid import uuid4
 
-from django.test import TestCase
 from xmodule.modulestore.tests.factories import CourseFactory
-from django.test.utils import override_settings
 
 from xmodule.contentstore.content import StaticContent
 from xmodule.contentstore.django import contentstore
-from xmodule.modulestore.tests.djangp_utils import ModuleStoreTestCase
+from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.exceptions import NotFoundError
 
 
@@ -181,7 +176,6 @@ class TestDownloadYoutubeSubs(ModuleStoreTestCase):
             2.0: 'AKqURZnYqpk'
         }
         self.clear_subs_content(good_youtube_subs)
-
         status = transcripts_utils.download_youtube_subs(good_youtube_subs, self.course)
         self.assertTrue(status)
 
