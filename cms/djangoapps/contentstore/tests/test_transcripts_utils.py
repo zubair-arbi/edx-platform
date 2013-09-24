@@ -1,7 +1,6 @@
 """ Tests for transcripts_utils. """
 from contentstore import transcripts_utils
 import unittest
-import json
 from uuid import uuid4
 
 from xmodule.modulestore.tests.factories import CourseFactory
@@ -10,34 +9,6 @@ from xmodule.contentstore.content import StaticContent
 from xmodule.contentstore.django import contentstore
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.exceptions import NotFoundError
-
-
-class TestReturnAjaxStatus(unittest.TestCase):
-    """Tests for `return_ajax_status` decorator."""
-    def setUp(self):
-        self.true_view_func = lambda *args, **kwargs: True
-        self.true_extra_view_func = lambda *args, **kwargs: (True, {'msg': 'some message'})
-        self.false_view_func = lambda *args, **kwargs: False
-
-    def test_success_response(self):
-        request = None
-        response = transcripts_utils.return_ajax_status(self.true_view_func)(request)
-        status = json.loads(response.content).get('success')
-        self.assertTrue(status)
-
-    def test_fail_response(self):
-        request = None
-        response = transcripts_utils.return_ajax_status(self.false_view_func)(request)
-        status = json.loads(response.content).get('success')
-        self.assertFalse(status)
-
-    def test_extra_response_data(self):
-        request = None
-        response = transcripts_utils.return_ajax_status(self.true_extra_view_func)(request)
-        resp = json.loads(response.content)
-
-        self.assertTrue(resp.get('success'))
-        self.assertEqual(resp.get('msg'), 'some message')
 
 
 class TestGenerateSubs(unittest.TestCase):

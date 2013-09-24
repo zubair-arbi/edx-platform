@@ -1,5 +1,8 @@
 """
-Views for transcripts ajax calls.
+**Views for transcripts ajax calls**.
+
+Module do not support rollback (pressing "Cancel" button in Studio)
+All user changes are saved immediately.
 """
 import os
 import logging
@@ -35,7 +38,14 @@ log = logging.getLogger(__name__)
 
 
 def upload_transcripts(request):
-    """Try to upload transcripts for current module."""
+    """
+    Upload transcripts for current module.
+
+    returns: response dict::
+
+        status: 'Success' or 'Error'
+        subs: Value of uploaded and saved html5 sub field in  video item.
+    """
 
     response = {
         'status': 'Error',
@@ -76,31 +86,25 @@ def upload_transcripts(request):
         log.error('transcripts are supported only for "video" modules.')
         return JsonResponse(response)
 
-    speed_subs = {
-        0.75: item.youtube_id_0_75,
-        1: item.youtube_id_1_0,
-        1.25: item.youtube_id_1_25,
-        1.5: item.youtube_id_1_5
-    }
-
+    # Allow upload only if any video link is presented
     if item.youtube_id_1_0 or any(item.html5_sources):
         sub_attr = slugify(source_subs_name)
 
-        # Generate only one subs for speed = 1.0
-        status, subs = generate_subs_from_source(
+        # Assuming we uploaded subs for speed = 1.0
+        # Generate subs and save
+        status, __ = generate_subs_from_source(
             {1: sub_attr},
             source_subs_ext,
             source_subs_filedata,
             item)
 
-        if status:
+        if status:  # saving generated subtitles
             item.sub = sub_attr
             item.save()
             store = get_modulestore(Location(item_location))
             store.update_metadata(item_location, own_metadata(item))
             response['subs'] = item.sub
             response['status'] = 'Success'
-
 
     else:
         log.error('Empty video sources.')
@@ -110,7 +114,8 @@ def upload_transcripts(request):
 
 
 def download_transcripts(request):
-    """Try to download transcripts for current modules.
+    """
+    Download transcripts from current module.
     """
     item_location = request.GET.get('id')
     if not item_location:
@@ -133,7 +138,7 @@ def download_transcripts(request):
 
     speed = 1
     subs_found = {'youtube': False, 'html5': False}
-    # youtube subtitles is higher priority
+    # youtube subtitles has higher priority by design
     if item.youtube_id_1_0:  # downloading subtitles from youtube speed 1.0
         filename = 'subs_{0}.srt.sjson'.format(item.youtube_id_1_0)
         content_location = StaticContent.compute_location(
@@ -167,28 +172,35 @@ def download_transcripts(request):
         response['Content-Disposition'] = 'attachment; filename="{0}.srt"'.format(srt_file_name)
         return response
     else:
-        log.error('No youtube 1.0 or html5 sub transcripts')
+        log.error('No youtube 1.0 or html5 transcripts')
         raise Http404
 
 
 def check_transcripts(request):
-    """Check transcripts availability for current modules.
+    """
+    Check transcripts availability current module state..
 
-    request.GET has key videos, which can contain any of the following::
-    [
-        {u'type': u'youtube', u'video': u'OEoXaMPEzfM', u'mode': u'youtube'},
-        {u'type': u'html5',    u'video': u'video1',             u'mode': u'mp4'}
-        {u'type': u'html5',    u'video': u'video2',             u'mode': u'webm'}
-    ]
+    request.GET['data'] has key videos, which can contain any of the following::
+
+        [
+            {u'type': u'youtube', u'video': u'OEoXaMPEzfM', u'mode': u'youtube'},
+            {u'type': u'html5',    u'video': u'video1',             u'mode': u'mp4'}
+            {u'type': u'html5',    u'video': u'video2',             u'mode': u'webm'}
+        ]
 
     Returns transcripts_presence object::
 
-        html5_local: [], [True], [True], if html5 subtitles exist locally for any of [0-2] sources
-        html5_diff: bool, if html5 transcripts are different
-        'youtube_local': bool, if youtube transcripts exist locally
-        'youtube_server': bool, if youtube transcripts exist on server
-        'youtube_diff': bool, if youtube transcripts exist on youtube server, and different from local
-        'status': 'Error' or 'Success'
+        html5_local: [], [True], [True], if html5 subtitles exist locally for any of [0-2] sources.
+        is_youtube_mode: bool, if we have youtube_id, and as youtube_id are of higher priority, reflect this with flag.
+        youtube_local: bool, if youtube transcripts exist locally.
+        youtube_server: bool, if youtube transcripts exist on server.
+        youtube_diff: bool, if youtube transcripts exist on youtube server, and are different from local youtube ones.
+        current_item_subs: string, value of item.sub filed,
+        status: string, 'Error' or 'Success'
+
+    With `command` and `subs`.
+    `command`: str,  action to frontend what to do and what show to user.
+    `subs`: str, new value of item.sub field, that should be set in module.
     """
     transcripts_presence = {
         'html5_local': [],
@@ -206,7 +218,7 @@ def check_transcripts(request):
     transcripts_presence['status'] = 'Success'
     transcripts_presence['current_item_subs'] = item.sub
 
-    # preprocess data
+    # parse data form requst.GET.['data']['video'] to useful format
     videos = {'youtube': '', 'html5': {}}
     for video_data in data.get('videos'):
         if video_data['type'] == 'youtube':
@@ -266,28 +278,27 @@ def check_transcripts(request):
 
 def transcripts_logic(transcripts_presence, videos):
     """
-    By trascripts status figure what show to user:
-    transcripts_presence = {
-        'html5_local': [],
-        'html5_diff': False,
-        'is_youtube_mode': False,
-        'youtube_local': False,
-        'youtube_server': False,
-        'youtube_diff': False,
-        'current_item_subs': None,
-        'status': 'Error'
-    }
+    By trasncripts status, figure what show to user:
 
-    output: command to do::
-        'choose',
-        'replace',
-        'import',
+    returns: `command` and `subs`.
+
+    `command`: str,  action to frontend what to do and what show to user.
+    `subs`: str, new value of item.sub field, that should be set in module.
+
+    `command` is one of::
+
+        replace: replace local youtube subtitles with server one's
+        found: subtitles are found
+        import: import subtitles from youtube server
+        choose: choose one from two html5 subtitles
+        not found: subtitles are not found
     """
     command = None
 
-    # subtitles to put in video module html5 subtitles field
+    # new value of item.sub field, that should be set in module.
     subs = ''
-    # youtube transcripts are more prioritized that html5 by design
+
+    # youtube transcripts are of high priority than html5 by design
     if (
             transcripts_presence['youtube_diff'] and
             transcripts_presence['youtube_local'] and
@@ -303,15 +314,9 @@ def transcripts_logic(transcripts_presence, videos):
             if len(transcripts_presence['html5_local']) == 1:
                 command = 'found'
                 subs = transcripts_presence['html5_local'][0]
-            else:  # len is 2
-                assert len(transcripts_presence['html5_local']) == 2
+            else:
                 command = 'choose'
-        else:  # html5 source have no subtitles
-            # check if item sub has subtitles
-            # if transcripts_presence['current_item_subs']:
-            #     command = 'use_existing'
-            # else:
-            #     command = 'not_found'
+        else:
             command = 'not_found'
 
     return command, subs
@@ -319,13 +324,13 @@ def transcripts_logic(transcripts_presence, videos):
 
 def choose_transcripts(request):
     """
-    Replaces html5 subtitles, presented for both html5 sources,
-    with chosen one.
+    Replaces html5 subtitles, presented for both html5 sources, with chosen one.
 
-    1. Remove rejeceted html5 subtitles
-    2. Update sub attribute with correct html5_id
+    Code removes rejected html5 subtitles and updates sub attribute with choosen html5_id.
 
-    Do nothing with youtube id's.
+    It does nothing with youtube id's.
+
+    Returns: status (Success or Error) and resulted item.sub value
     """
     response = {
         'status': 'Error',
@@ -336,7 +341,7 @@ def choose_transcripts(request):
     if not validation_status:
         return JsonResponse(response)
 
-    # preprocess data
+    # preprocess request data
     videos = {'html5': {}}
     for video_data in data.get('videos'):
         videos['html5'][video_data['video']] = video_data['mode']
@@ -357,52 +362,11 @@ def choose_transcripts(request):
     return JsonResponse(response)
 
 
-def rename_transcripts(request):
-    """
-    Renames html5 subtitles
-    """
-
-    response = {
-        'status': 'Error',
-        'subs': '',
-    }
-
-    data, item = validate_transcripts_data(request)
-
-    old_name = item.sub
-
-    # preprocess data
-    videos = {'youtube': '', 'html5': {}}
-    for video_data in data.get('videos'):
-        if video_data['type'] == 'youtube':
-            videos['youtube'] = video_data['video']
-        else:  # do not add same html5 videos
-            if videos['html5'].get('video') != video_data['video']:
-                videos['html5'][video_data['video']] = video_data['type']
-
-    new_name = videos['html5'].keys()[0]
-    filename = 'subs_{0}.srt.sjson'.format(old_name)
-    content_location = StaticContent.compute_location(
-        item.location.org, item.location.course, filename)
-    try:
-        transcripts = contentstore().find(content_location).data
-        save_subs_to_store(json.loads(transcripts), new_name, item)
-
-        item.sub = slugify(new_name)
-        item.save()
-        response['status'] = 'Success'
-        response['subs'] = item.sub
-    except NotFoundError:
-        log.debug("Can't find transcripts in storage for id: {}".format(old_name))
-    else:
-        remove_subs_from_store(old_name, item)
-    finally:
-        return JsonResponse(response)
-
-
 def replace_transcripts(request):
     """
     Replaces all transcripts with youtube ones.
+
+    Returns: status (Success or Error), resulted item.sub value and True for  is_youtube_mode value.
     """
     response = {
         'status': 'Error',
@@ -436,7 +400,7 @@ def validate_transcripts_data(request):
     """
     Validates, that request containts all proper data for transcripts processing.
 
-    Returns parsed data from request and video item from store.
+    Returns parsed data from request and video item from storage.
     """
     validation_status = False
 

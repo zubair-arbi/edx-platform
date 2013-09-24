@@ -70,47 +70,6 @@ class Basetranscripts(CourseTestCase):
             1.5: item.youtube_id_1_5
         }
 
-# this is disabled because we do not support rollback and
-# autodownloading on save for now
-# class TestImporttranscriptsFromYoutube(Basetranscripts):
-#     """Tests for saving video item."""
-
-#     def test_success_video_module_subs_importing(self):
-#         # Import transcripts.
-#         resp = self.client.post(
-#             reverse('save_item'), {'id': self.item_location, 'metadata': {}})
-
-#         self.assertEqual(resp.status_code, 204)
-
-#         # Check assets status after importing transcripts.
-#         for youtube_id in self.get_youtube_ids().values():
-#             filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-#             content_location = StaticContent.compute_location(
-#                 self.org, self.number, filename)
-#             self.assertTrue(contentstore().find(content_location))
-
-#     def test_fail_youtube_ids_unavailable(self):
-#         data = '<video youtube="0.75:BAD_YOUTUBE_ID1,1:BAD_YOUTUBE_ID2,1.25:BAD_YOUTUBE_ID3,1.5:BAD_YOUTUBE_ID4" />'
-#         modulestore().update_item(self.item_location, data)
-
-#         # Import transcripts.
-#         resp = self.client.post(
-#             reverse('save_item'), {'id': self.item_location, 'metadata': {}})
-
-#         self.assertEqual(resp.status_code, 204)
-
-#         for youtube_id in self.get_youtube_ids().values():
-#             filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-#             content_location = StaticContent.compute_location(
-#                 self.org, self.number, filename)
-#             self.assertRaises(
-#                 NotFoundError, contentstore().find, content_location)
-
-#     def tearDown(self):
-#         super(TestImporttranscriptsFromYoutube, self).tearDown()
-
-#         # Remove all transcripts for current module.
-#         self.clear_subs_content()
 
 
 class TestUploadtranscripts(Basetranscripts):

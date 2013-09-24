@@ -20,10 +20,7 @@ from .transcripts_ajax import (
     check_transcripts,
     choose_transcripts,
     replace_transcripts,
-    rename_transcripts
 )
-
-from ..transcripts_utils import manage_video_transcripts
 
 from ..utils import get_modulestore
 
@@ -129,9 +126,6 @@ def save_item(request):
         log.error("Can't find item by location.")
         return JsonResponse()
 
-    if new_item.category == 'video':
-        manage_video_transcripts(old_item, new_item)
-
     return JsonResponse()
 
 
@@ -229,6 +223,5 @@ def process_transcripts(request, action):
         'check': check_transcripts,
         'choose': choose_transcripts,
         'replace': replace_transcripts,
-        'rename': rename_transcripts
     }
     return allowed_actions.get(action, lambda x: JsonResponse())(request)
