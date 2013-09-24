@@ -39,8 +39,7 @@ Feature: Video Component Editor
         And I enter a http://youtu.be/t_not_exist source to field number 1
         Then I see not found status message
         And I do not see import button
-        # why??? possible bug
-        And I see download_to_edit button
+        And I see disabled_download_to_edit button
     #3
     Scenario: Entering youtube id only - 1a and 1c
         Given I have created a Video component with subtitles
@@ -281,6 +280,26 @@ Feature: Video Component Editor
         And I don't see upload_new_timed_transcripts button
 
         And I enter a t_neq_exist.webm source to field number 3
+        Then I see found status message
+        And I see download_to_edit button
+        And I don't see upload_new_timed_transcripts button
+
+    #19
+    Scenario: Entering html5 with transcripts - upload - youtube w/o transcripts
+        Given I have created a Video component with t__eq_exist subtitles
+        And I edit the component
+
+        And I enter a t__eq_exist.mp4 source to field number 1
+        Then I see found status message
+        And I see download_to_edit button
+        And I see upload_new_timed_transcripts button
+        And I upload the transcripts file "test_transcripts.srt"
+        Then I see uploaded_successfully status message
+        And I see download_to_edit button
+        And I see upload_new_timed_transcripts button
+        And I see "test_transcripts" value in the "HTML5 Timed Transcript" field
+
+        And I enter a http://youtu.be/t_not_exist source to field number 2
         Then I see found status message
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button
