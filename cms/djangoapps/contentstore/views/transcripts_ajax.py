@@ -25,7 +25,6 @@ from ..transcripts_utils import (
     requests as rqsts,
     download_youtube_subs, get_transcripts_from_youtube,
     save_subs_to_store,
-    generate_subs,
     YOUTUBE_API
 )
 
@@ -160,7 +159,7 @@ def download_transcripts(request):
             log.error("Can't find content in storage for non-youtube sub.")
 
     if subs_found['youtube'] or subs_found['html5']:
-        str_subs = generate_srt_from_sjson(json.loads(sjson_transcripts.data.read()), speed)
+        str_subs = generate_srt_from_sjson(json.loads(sjson_transcripts.data), speed)
         if str_subs is None:
             log.error('generate_srt_from_sjson produces no subtitles')
             raise Http404
@@ -386,7 +385,7 @@ def rename_transcripts(request):
     content_location = StaticContent.compute_location(
         item.location.org, item.location.course, filename)
     try:
-        transcripts = contentstore().find(content_location).data.read()
+        transcripts = contentstore().find(content_location).data
         save_subs_to_store(json.loads(transcripts), new_name, item)
 
         item.sub = slugify(new_name)

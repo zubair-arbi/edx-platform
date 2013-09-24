@@ -172,32 +172,6 @@ At the left we can see...
             self.org, self.number, 'subs_{0}.srt.sjson'.format(filename))
         self.assertTrue(contentstore().find(content_location))
 
-    def test_fail_video_module_youtube_subs_uploading(self):
-        # Check assets status before uploading transcripts.
-        for youtube_id in self.get_youtube_ids().values():
-            filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-            content_location = StaticContent.compute_location(
-                self.org, self.number, filename)
-            self.assertRaises(
-                NotFoundError, contentstore().find, content_location)
-
-        link = reverse('process_transcripts', args=('upload',))
-        resp = self.client.post(link, {'id': self.item_location, 'file': self.good_srt_file})
-        self.assertEqual(resp.status_code, 200)
-        self.assertTrue(json.loads(resp.content).get('status'), 'Success')
-
-        item = modulestore().get_item(self.item_location)
-        self.assertEqual(item.sub, self.item.youtube_id_1_0)
-
-        # Check assets status after uploading transcripts.
-        # do not need it, as latest logic uses youtube_id_1_0 name
-        # for youtube_id in self.get_youtube_ids().values():
-        #     filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-        #     content_location = StaticContent.compute_location(
-        #         self.org, self.number, filename)
-        #     self.assertRaises(
-        #         NotFoundError, contentstore().find, content_location)
-
     def test_fail_data_without_id(self):
         link = reverse('process_transcripts', args=('upload',))
         resp = self.client.post(link, {'file': self.good_srt_file})
