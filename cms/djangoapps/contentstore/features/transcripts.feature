@@ -4,6 +4,8 @@ Feature: Video Component Editor
     Scenario: Check input error messages
         Given I have created a Video component
         And I edit the component
+
+        #User inputs html5 links with equal extension
         And I enter a 123.webm source to field number 1
         And I enter a 456.webm source to field number 2
         Then I see file_type error message
@@ -13,6 +15,8 @@ Feature: Video Component Editor
         And I expect 1, 3 inputs are disabled
         When I clear fields
         And I expect inputs are enabled
+
+        #User input URL with incorrect format
         And I enter a htt://link.c source to field number 1
         Then I see url_format error message
         # Currently we are working with 1st field. It means, that if 1st field
@@ -306,28 +310,21 @@ Feature: Video Component Editor
 
     #20
     Scenario: Enter 2 HTML5 sources with transcripts, they are not the same, choose
-        Given I have created a Video component with t_neq_exist subtitles
-
-        And I remove t__eq_exist transcripts id from store
-        And I remove t_neq_exist transcripts id from store
-        And I remove t_not_exist transcripts id from store
-
-        And I have uploaded t__eq_exist subtitles
-        And I have uploaded t_neq_exist subtitles
-
+        Given I have created a Video component with t_not_exist subtitles
         And I edit the component
 
-        And I enter a t__eq_exist.mp4 source to field number 1
-        Then I see found status message
+        And I enter a test_transcripts.mp4 source to field number 1
+        Then I see not found status message
         And I see download_to_edit button
         And I see upload_new_timed_transcripts button
+        And I upload the transcripts file "test_transcripts.srt"
+        Then I see uploaded_successfully status message
+        And I see "test_transcripts" value in the "HTML5 Timed Transcript" field
 
-        And I enter a t_neq_exist.webm source to field number 2
+        And I enter a t_not_exist.webm source to field number 2
         Then I see replace status message
-        And I don't see download_to_edit button
-        And I don't see upload_new_timed_transcripts button
-        And I see choose button t__eq_exist.mp4 number 1
-        And I see choose button t_neq_exist.webm number 2
 
+        And I see choose button test_transcripts.mp4 number 1
+        And I see choose button t_not_exist.webm number 2
         And I click choose button number 2
-        And I see "t_neq_exist" value in the "HTML5 Timed Transcript" field
+        And I see "t_not_exist" value in the "HTML5 Timed Transcript" field
