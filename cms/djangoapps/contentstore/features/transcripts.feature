@@ -304,7 +304,7 @@ Feature: Video Component Editor
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button
 
-    #19
+    #20
     Scenario: Enter 2 HTML5 sources with transcripts, they are not the same, choose
         Given I have created a Video component with t_neq_exist subtitles
 
@@ -326,4 +326,5 @@ Feature: Video Component Editor
         Then I see replace status message
         And I don't see download_to_edit button
         And I don't see upload_new_timed_transcripts button
-        And I see replace button
+        And I see choose button t__eq_exist.mp4 number 1
+        And I see choose button t_neq_exist.webm number 2
