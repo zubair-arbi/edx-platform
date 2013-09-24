@@ -7,11 +7,9 @@ import StringIO
 import requests
 import logging
 from pysrt import SubRipTime, SubRipItem, SubRipFile
-from functools import wraps
 from lxml import etree
 
 from cache_toolbox.core import del_cached_content
-from django_comment_client.utils import JsonResponse
 from django.conf import settings
 
 from xmodule.exceptions import NotFoundError
@@ -97,7 +95,7 @@ def get_transcripts_from_youtube(youtube_id):
         params=YOUTUBE_API['params']
     )
     if data.status_code != 200 or not data.text:
-        log.debug("Can't recieved correct transcripts from Youtube.")
+        log.debug("Can't receive correct transcripts from Youtube.")
         return False,  {}
 
     sub_starts, sub_ends, sub_texts = [], [], []

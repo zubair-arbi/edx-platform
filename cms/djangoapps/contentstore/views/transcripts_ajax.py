@@ -27,7 +27,6 @@ from ..transcripts_utils import (
     generate_srt_from_sjson, remove_subs_from_store,
     requests as rqsts,
     download_youtube_subs, get_transcripts_from_youtube,
-    save_subs_to_store,
     YOUTUBE_API
 )
 
@@ -151,7 +150,7 @@ def download_transcripts(request):
         except NotFoundError:
             log.debug("Can't find content in storage for youtube sub.")
 
-    if item.sub and not subs_found['youtube']:  # dowloading subtitles from html5
+    if item.sub and not subs_found['youtube']:  # downloading subtitles from html5
         filename = 'subs_{0}.srt.sjson'.format(item.sub)
         content_location = StaticContent.compute_location(
             item.location.org, item.location.course, filename)
@@ -199,7 +198,7 @@ def check_transcripts(request):
         status: string, 'Error' or 'Success'
 
     With `command` and `subs`.
-    `command`: str,  action to frontend what to do and what show to user.
+    `command`: str,  action to front-end what to do and what show to user.
     `subs`: str, new value of item.sub field, that should be set in module.
     """
     transcripts_presence = {
@@ -211,21 +210,12 @@ def check_transcripts(request):
         'current_item_subs': None,
         'status': 'Error',
     }
-    validation_status, data, item = validate_transcripts_data(request)
+    validation_status, __, videos, item = validate_transcripts_data(request)
     if not validation_status:
         return JsonResponse(transcripts_presence)
 
     transcripts_presence['status'] = 'Success'
     transcripts_presence['current_item_subs'] = item.sub
-
-    # parse data form requst.GET.['data']['video'] to useful format
-    videos = {'youtube': '', 'html5': {}}
-    for video_data in data.get('videos'):
-        if video_data['type'] == 'youtube':
-            videos['youtube'] = video_data['video']
-        else:  # do not add same html5 videos
-            if videos['html5'].get('video') != video_data['video']:
-                videos['html5'][video_data['video']] = video_data['type']
 
     # Check for youtube transcripts presence
     youtube_id = videos.get('youtube', None)
@@ -253,7 +243,7 @@ def check_transcripts(request):
         #check youtube local and server transcripts for equality
         if transcripts_presence['youtube_server'] and transcripts_presence['youtube_local']:
             status, youtube_server_subs = get_transcripts_from_youtube(youtube_id)
-            if status:  # check transcrips for equality
+            if status:  # check transcripts for equality
                 if json.loads(local_transcripts) == youtube_server_subs:
                     transcripts_presence['youtube_diff'] = False
 
@@ -278,11 +268,11 @@ def check_transcripts(request):
 
 def transcripts_logic(transcripts_presence, videos):
     """
-    By trasncripts status, figure what show to user:
+    By transcripts status, figure what show to user:
 
     returns: `command` and `subs`.
 
-    `command`: str,  action to frontend what to do and what show to user.
+    `command`: str,  action to front-end what to do and what show to user.
     `subs`: str, new value of item.sub field, that should be set in module.
 
     `command` is one of::
@@ -326,7 +316,7 @@ def choose_transcripts(request):
     """
     Replaces html5 subtitles, presented for both html5 sources, with chosen one.
 
-    Code removes rejected html5 subtitles and updates sub attribute with choosen html5_id.
+    Code removes rejected html5 subtitles and updates sub attribute with chosen html5_id.
 
     It does nothing with youtube id's.
 
@@ -337,14 +327,9 @@ def choose_transcripts(request):
         'subs': '',
     }
 
-    validation_status, data, item = validate_transcripts_data(request)
+    validation_status, data, videos, item = validate_transcripts_data(request)
     if not validation_status:
         return JsonResponse(response)
-
-    # preprocess request data
-    videos = {'html5': {}}
-    for video_data in data.get('videos'):
-        videos['html5'][video_data['video']] = video_data['mode']
 
     html5_id = data.get('html5_id')
 
@@ -353,12 +338,10 @@ def choose_transcripts(request):
     if html5_id_to_remove:
         remove_subs_from_store(html5_id_to_remove, item)
 
-    # update sub value
-    if item.sub != slugify(html5_id):
+    if item.sub != slugify(html5_id):  # update sub value
         item.sub = slugify(html5_id)
         item.save()
-    response['status'] = 'Success'
-    response['subs'] = item.sub
+    response = {'status': 'Success',  'subs': item.sub}
     return JsonResponse(response)
 
 
@@ -374,17 +357,11 @@ def replace_transcripts(request):
         'is_youtube_mode': True,
     }
 
-    validation_status, data, item = validate_transcripts_data(request)
+    validation_status, __, videos, item = validate_transcripts_data(request)
     if not validation_status:
         return JsonResponse(response)
 
-    # preprocess data
-    youtube_id = None
-    for video_data in data.get('videos'):
-        if video_data['type'] == 'youtube':
-            youtube_id = video_data['video']
-            break
-
+    youtube_id = videos['youtube']
     if not youtube_id:
         return JsonResponse(response)
 
@@ -398,7 +375,7 @@ def replace_transcripts(request):
 
 def validate_transcripts_data(request):
     """
-    Validates, that request containts all proper data for transcripts processing.
+    Validates, that request contains all proper data for transcripts processing.
 
     Returns parsed data from request and video item from storage.
     """
@@ -407,14 +384,14 @@ def validate_transcripts_data(request):
     data = json.loads(request.GET.get('data', '{}'))
     if not data:
         log.error('Incoming video data is empty.')
-        return validation_status, None, None
+        return validation_status, None, {}, None
 
     item_location = data.get('id')
     try:
         item = modulestore().get_item(item_location)
     except (ItemNotFoundError, InvalidLocationError):
         log.error("Can't find item by location.")
-        return validation_status, None, None
+        return validation_status, None, {}, None
 
     # Check permissions for this user within this course.
     if not has_access(request.user, item_location):
@@ -422,6 +399,15 @@ def validate_transcripts_data(request):
 
     if item.category != 'video':
         log.error('transcripts are supported only for "video" modules.')
-        return validation_status, None, None
+        return validation_status, None, {}, None
 
-    return True, data, item
+    # parse data form request.GET.['data']['video'] to useful format
+    videos = {'youtube': '', 'html5': {}}
+    for video_data in data.get('videos'):
+        if video_data['type'] == 'youtube':
+            videos['youtube'] = video_data['video']
+        else:  # do not add same html5 videos
+            if videos['html5'].get('video') != video_data['video']:
+                videos['html5'][video_data['video']] = video_data['mode']
+
+    return True, data, videos, item
