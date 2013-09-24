@@ -172,7 +172,7 @@
                     void(0)
                 );
                 expect(view.showError).not.toHaveBeenCalled();
-                expect(view.render).toHaveBeenCalledWith('found');
+                expect(view.render.mostRecentCall.args[0]).toEqual('found');
                 expect(utils.Storage.set).toHaveBeenCalled();
             });
 
@@ -188,7 +188,7 @@
                     }
                 );
                 expect(view.showError).not.toHaveBeenCalled();
-                expect(view.render).toHaveBeenCalledWith('found');
+                expect(view.render.mostRecentCall.args[0]).toEqual('found');
                 expect(utils.Storage.set).toHaveBeenCalled();
             });
 
@@ -202,7 +202,7 @@
                     void(0)
                 );
                 expect(view.showError).not.toHaveBeenCalled();
-                expect(view.render).toHaveBeenCalledWith('not_found');
+                expect(view.render.mostRecentCall.args[0]).toEqual('not_found');
                 expect(utils.Storage.set).not.toHaveBeenCalled();
             });
 

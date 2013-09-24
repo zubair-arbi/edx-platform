@@ -14,7 +14,7 @@ jasmine.stubRequests = function () {
             dfd.reject();
             break;
           case 'errorStatus':
-            var r = $.extend(true, resp, { status: { status: 'Error' } });
+            var r = $.extend(true, resp, { status: 'Error' });
             dfd.resolve(r);
             break;
           default:
