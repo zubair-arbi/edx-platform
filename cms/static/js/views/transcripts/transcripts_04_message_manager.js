@@ -45,10 +45,6 @@
                 isYoutubeMode = params && params.is_youtube_mode,
                 template;
 
-            if (params && params.current_item_subs) {
-                this.currentItemSubs = params.current_item_subs
-            }
-
             if (!tplHtml) {
                 console.error('Couldn\'t load Transcripts status template');
 

@@ -24,7 +24,7 @@
             class="action setting-choose"
             type="button"
             name="setting-choose"
-            data-video-id="<%= val %>"
+            data-video-id="<%= value %>"
             value="<%= message %>"
             data-tooltip="<%= message %>"
         >
