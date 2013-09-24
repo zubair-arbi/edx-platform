@@ -328,10 +328,11 @@ def transcripts_logic(transcripts_presence, videos):
                 command = 'choose'
         else:  # html5 source have no subtitles
             # check if item sub has subtitles
-            if transcripts_presence['current_item_subs'] and not transcripts_presence['is_youtube_mode']:
-                command = 'use_existing'
-            else:
-                command = 'not_found'
+            # if transcripts_presence['current_item_subs'] and not transcripts_presence['is_youtube_mode']:
+            #     command = 'use_existing'
+            # else:
+            #     command = 'not_found'
+            command = 'not_found'
 
     return command, subs
 
