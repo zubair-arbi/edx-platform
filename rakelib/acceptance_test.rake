@@ -1,13 +1,19 @@
 ACCEPTANCE_DB = 'test_root/db/test_edx.db'
-ACCEPTANCE_REPORT_DIR = report_dir_path('acceptance')
-directory ACCEPTANCE_REPORT_DIR
+
+def acceptance_dir_path(system)
+    return File.join(report_dir_path('acceptance'), system.to_s)
+end
+
+[:lms, :cms].each do |system|
+    directory acceptance_dir_path(system)
+end
 
 def run_acceptance_tests(system, harvest_args)
     # Create the acceptance report directory
     # because if it doesn't exist then lettuce will give an IOError.
-    report_dir = report_dir_path('acceptance')
+    report_dir = acceptance_dir_path(system)
 
-    report_file = File.join(ACCEPTANCE_REPORT_DIR, "#{system}.xml")
+    report_file = File.join(report_dir, "lettucetests.xml")
     report_args = "--with-xunit --xunit-file #{report_file}"
     test_sh(django_admin(system, 'acceptance', 'harvest', '--debug-mode', '--verbosity 2', '--tag -skip', report_args, harvest_args))
 end
@@ -30,7 +36,7 @@ task :setup_acceptance_db do
 end
 
 task :prep_for_acceptance_tests => [
-    :clean_reports_dir, :clean_test_files, ACCEPTANCE_REPORT_DIR,
+    :clean_reports_dir, :clean_test_files,
     :install_prereqs, :setup_acceptance_db
 ]
 
@@ -39,7 +45,9 @@ namespace :test do
         task :all, [:harvest_args] => [
             :prep_for_acceptance_tests,
             "^^lms:gather_assets:acceptance",
-            "^^cms:gather_assets:acceptance"
+            "^^cms:gather_assets:acceptance",
+            acceptance_dir_path('lms'),
+            acceptance_dir_path('cms')
         ] do |t, args|
             run_acceptance_tests('lms', args.harvest_args)
             run_acceptance_tests('cms', args.harvest_args)
@@ -48,7 +56,7 @@ namespace :test do
         ['lms', 'cms'].each do |system|
             desc "Run the acceptance tests for the #{system}"
             task system, [:harvest_args] => [
-                :prep_for_acceptance_tests,
+                :prep_for_acceptance_tests, acceptance_dir_path(system),
                 "^^#{system}:gather_assets:acceptance"
             ] do |t, args|
                 args.with_defaults(:harvest_args => '')
@@ -57,7 +65,7 @@ namespace :test do
 
             desc "Run acceptance tests for the #{system} without collectstatic or db migrations"
             task "#{system}:fast", [:harvest_args] => [
-                :clean_reports_dir, ACCEPTANCE_REPORT_DIR,
+                :clean_reports_dir, acceptance_dir_path(system)
             ] do |t, args|
                 args.with_defaults(:harvest_args => '')
                 run_acceptance_tests(system, args.harvest_args)
