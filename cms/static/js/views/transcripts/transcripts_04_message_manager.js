@@ -133,11 +133,11 @@
                     if (resp.status && resp.status === 'Success') {
                         var sub = resp.subs;
 
-                        self.render('found');
+                        self.render('found', resp);
                         utils.Storage.set('sub', sub);
                         self.currentItemSubs = sub;
                     } else {
-                        self.render('not_found');
+                        self.render('not_found', resp);
                     }
                 })
                 .fail(function (resp) {

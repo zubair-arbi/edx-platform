@@ -427,6 +427,7 @@ def replace_transcripts(request):
     response = {
         'status': 'Error',
         'subs': '',
+        'is_youtube_mode': True
     }
 
     validation_status, data, item = validate_transcripts_data(request, response)

@@ -62,7 +62,7 @@ Feature: Video Component Editor
         And I see import button
         And I click import button
         Then I see found status message
-        And I see upload_new_timed_transcripts button
+        And I don't see upload_new_timed_transcripts button
         And I see download_to_edit button
         #btw, when i update sub, I do not create file in upload section
         And I remove t__eq_exist transcripts id from store

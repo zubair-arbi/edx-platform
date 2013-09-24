@@ -60,7 +60,10 @@
                     } else {
                         self.messenger
                             .render('not_found')
-                            .showError('Error: Connection with server failed.');
+                            .showError(
+                                'Error: Connection with server failed.',
+                                true
+                            );
                     }
 
                     utils.Storage.set('sub', resp.subs);
@@ -68,7 +71,10 @@
                 .fail(function() {
                     self.messenger
                         .render('not_found')
-                        .showError('Error: Connection with server failed.');
+                        .showError(
+                            'Error: Connection with server failed.',
+                            true
+                        );
                 });
         },
 
