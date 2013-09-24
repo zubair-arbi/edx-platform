@@ -160,7 +160,6 @@ Feature: Video Component Editor
         And I don't see upload_new_timed_transcripts button
 
     #13
-    #12
     Scenario: Entering youtube with imported transcripts - html5 w/o transcripts w/o import - html5 w/o transcripts
         Given I have created a Video component
         And I edit the component

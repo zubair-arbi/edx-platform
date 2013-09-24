@@ -346,8 +346,13 @@ def choose_transcripts(request):
 
     Do nothing with youtube id's.
     """
-    response = {'status': 'Error'}
-    validation_status, data, item = validate_transcripts_data(request, transcripts_presence)
+
+    response = {
+        'status': 'Error',
+        'subs': '',
+    }
+
+    validation_status, data, item = validate_transcripts_data(request, response)
     if not validation_status:
         return JsonResponse(response)
 
@@ -375,7 +380,12 @@ def rename_transcripts(request):
     """
     Renames html5 subtitles
     """
-    response = {'status': 'Error'}
+
+    response = {
+        'status': 'Error',
+        'subs': '',
+    }
+
     data, item = validate_transcripts_data(request, response)
 
     old_name = item.sub
@@ -413,8 +423,13 @@ def replace_transcripts(request):
     """
     Replaces all transcripts with youtube ones.
     """
-    response = {'status': 'Error'}
-    validation_status, data, item = validate_transcripts_data(request, transcripts_presence)
+
+    response = {
+        'status': 'Error',
+        'subs': '',
+    }
+
+    validation_status, data, item = validate_transcripts_data(request, response)
     if not validation_status:
         return JsonResponse(response)
 
