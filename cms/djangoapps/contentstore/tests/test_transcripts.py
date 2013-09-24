@@ -7,7 +7,6 @@ from uuid import uuid4
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
 
-from contentstore import utils
 from contentstore import transcripts_utils
 from contentstore.tests.utils import CourseTestCase
 from cache_toolbox.core import del_cached_content
@@ -71,46 +70,47 @@ class Basetranscripts(CourseTestCase):
             1.5: item.youtube_id_1_5
         }
 
+# this is disabled because we do not support rollback and
+# autodownloading on save for now
+# class TestImporttranscriptsFromYoutube(Basetranscripts):
+#     """Tests for saving video item."""
 
-class TestImporttranscriptsFromYoutube(Basetranscripts):
-    """Tests for saving video item."""
+#     def test_success_video_module_subs_importing(self):
+#         # Import transcripts.
+#         resp = self.client.post(
+#             reverse('save_item'), {'id': self.item_location, 'metadata': {}})
 
-    def test_success_video_module_subs_importing(self):
-        # Import transcripts.
-        resp = self.client.post(
-            reverse('save_item'), {'id': self.item_location, 'metadata': {}})
+#         self.assertEqual(resp.status_code, 204)
 
-        self.assertEqual(resp.status_code, 204)
+#         # Check assets status after importing transcripts.
+#         for youtube_id in self.get_youtube_ids().values():
+#             filename = 'subs_{0}.srt.sjson'.format(youtube_id)
+#             content_location = StaticContent.compute_location(
+#                 self.org, self.number, filename)
+#             self.assertTrue(contentstore().find(content_location))
 
-        # Check assets status after importing transcripts.
-        for youtube_id in self.get_youtube_ids().values():
-            filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-            content_location = StaticContent.compute_location(
-                self.org, self.number, filename)
-            self.assertTrue(contentstore().find(content_location))
+#     def test_fail_youtube_ids_unavailable(self):
+#         data = '<video youtube="0.75:BAD_YOUTUBE_ID1,1:BAD_YOUTUBE_ID2,1.25:BAD_YOUTUBE_ID3,1.5:BAD_YOUTUBE_ID4" />'
+#         modulestore().update_item(self.item_location, data)
 
-    def test_fail_youtube_ids_unavailable(self):
-        data = '<video youtube="0.75:BAD_YOUTUBE_ID1,1:BAD_YOUTUBE_ID2,1.25:BAD_YOUTUBE_ID3,1.5:BAD_YOUTUBE_ID4" />'
-        modulestore().update_item(self.item_location, data)
+#         # Import transcripts.
+#         resp = self.client.post(
+#             reverse('save_item'), {'id': self.item_location, 'metadata': {}})
 
-        # Import transcripts.
-        resp = self.client.post(
-            reverse('save_item'), {'id': self.item_location, 'metadata': {}})
+#         self.assertEqual(resp.status_code, 204)
 
-        self.assertEqual(resp.status_code, 204)
+#         for youtube_id in self.get_youtube_ids().values():
+#             filename = 'subs_{0}.srt.sjson'.format(youtube_id)
+#             content_location = StaticContent.compute_location(
+#                 self.org, self.number, filename)
+#             self.assertRaises(
+#                 NotFoundError, contentstore().find, content_location)
 
-        for youtube_id in self.get_youtube_ids().values():
-            filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-            content_location = StaticContent.compute_location(
-                self.org, self.number, filename)
-            self.assertRaises(
-                NotFoundError, contentstore().find, content_location)
+#     def tearDown(self):
+#         super(TestImporttranscriptsFromYoutube, self).tearDown()
 
-    def tearDown(self):
-        super(TestImporttranscriptsFromYoutube, self).tearDown()
-
-        # Remove all transcripts for current module.
-        self.clear_subs_content()
+#         # Remove all transcripts for current module.
+#         self.clear_subs_content()
 
 
 class TestUploadtranscripts(Basetranscripts):
@@ -158,15 +158,10 @@ At the left we can see...
 """
         modulestore().update_item(self.item_location, data)
 
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(json.loads(resp.content).get('success'))
+        self.assertEqual(json.loads(resp.content).get('status'), 'Success')
 
         filename = slugify(
             os.path.splitext(os.path.basename(self.good_srt_file.name))[0])
@@ -186,61 +181,45 @@ At the left we can see...
             self.assertRaises(
                 NotFoundError, contentstore().find, content_location)
 
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(json.loads(resp.content).get('success'))
+        self.assertTrue(json.loads(resp.content).get('status'), 'Success')
 
         item = modulestore().get_item(self.item_location)
-        self.assertEqual(item.sub, '')
+        self.assertEqual(item.sub, self.item.youtube_id_1_0)
 
         # Check assets status after uploading transcripts.
-        for youtube_id in self.get_youtube_ids().values():
-            filename = 'subs_{0}.srt.sjson'.format(youtube_id)
-            content_location = StaticContent.compute_location(
-                self.org, self.number, filename)
-            self.assertRaises(
-                NotFoundError, contentstore().find, content_location)
+        # do not need it, as latest logic uses youtube_id_1_0 name
+        # for youtube_id in self.get_youtube_ids().values():
+        #     filename = 'subs_{0}.srt.sjson'.format(youtube_id)
+        #     content_location = StaticContent.compute_location(
+        #         self.org, self.number, filename)
+        #     self.assertRaises(
+        #         NotFoundError, contentstore().find, content_location)
 
     def test_fail_data_without_id(self):
-        resp = self.client.post(
-            reverse('upload_transcripts'), {'file': self.good_srt_file})
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
     def test_fail_data_without_file(self):
-        resp = self.client.post(
-            reverse('upload_transcripts'), {'id': self.item_location})
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
     def test_fail_data_with_bad_location(self):
         # Test for raising `InvalidLocationError` exception.
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': 'BAD_LOCATION',
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': 'BAD_LOCATION', 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
         # Test for raising `ItemNotFoundError` exception.
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': '{0}_{1}'.format(self.item_location, 'BAD_LOCATION'),
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': '{0}_{1}'.format(self.item_location, 'BAD_LOCATION'), 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
@@ -257,12 +236,9 @@ At the left we can see...
         modulestore().update_item(item_location, data)
 
         # Videoalpha module: testing
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': item_location,
-                'file': self.good_srt_file
-            })
+
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': item_location, 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
@@ -270,13 +246,8 @@ At the left we can see...
         data = '<<<video youtube="0.75:JMD_ifUUfsU,1.25:AKqURZnYqpk,1.50:DYpADpL7jAY" />'
         modulestore().update_item(self.item_location, data)
 
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
@@ -288,48 +259,29 @@ At the left we can see...
 """
         modulestore().update_item(self.item_location, data)
 
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
         data = '<video />'
         modulestore().update_item(self.item_location, data)
 
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.good_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.good_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
     def test_fail_bad_data_srt_file(self):
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.bad_data_srt_file
-            })
 
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.bad_data_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
     def test_fail_bad_name_srt_file(self):
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': self.bad_name_srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': self.bad_data_srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
@@ -346,13 +298,8 @@ At the left we can see...
         """)
         srt_file.seek(0)
 
-        resp = self.client.post(
-            reverse('upload_transcripts'),
-            {
-                'id': self.item_location,
-                'file': srt_file
-            })
-
+        link = reverse('process_transcripts', args=('upload',))
+        resp = self.client.post(link, {'id': self.item_location, 'file': srt_file})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(json.loads(resp.content).get('success'))
 
@@ -392,6 +339,7 @@ class TestDownloadtranscripts(Basetranscripts):
             pass
 
     def test_fail_download_youtube(self):
+        # rename this test
         data = '<video youtube="1:JMD_ifUUfsU" />'
         modulestore().update_item(self.item_location, data)
 
@@ -406,9 +354,10 @@ class TestDownloadtranscripts(Basetranscripts):
         }
         self.save_subs_to_store(subs, 'JMD_ifUUfsU')
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': self.item_location})
-        self.assertEqual(resp.status_code, 404)
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': self.item_location})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content, """0\n00:00:00,100 --> 00:00:00,200\nsubs #1\n\n1\n00:00:00,200 --> 00:00:00,240\nsubs #2\n\n2\n00:00:00,240 --> 00:00:00,380\nsubs #3\n\n""")
 
     def test_success_download_nonyoutube(self):
         subs_id = str(uuid4())
@@ -432,31 +381,29 @@ class TestDownloadtranscripts(Basetranscripts):
         }
         self.save_subs_to_store(subs, subs_id)
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': self.item_location})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': self.item_location})
         self.assertEqual(resp.status_code, 200)
 
         transcripts_utils.remove_subs_from_store(subs_id, self.item)
 
     def test_fail_data_without_file(self):
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': ''})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': ''})
         self.assertEqual(resp.status_code, 404)
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {})
+        resp = self.client.get(link, {})
         self.assertEqual(resp.status_code, 404)
 
     def test_fail_data_with_bad_location(self):
         # Test for raising `InvalidLocationError` exception.
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': 'BAD_LOCATION'})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': 'BAD_LOCATION'})
         self.assertEqual(resp.status_code, 404)
 
         # Test for raising `ItemNotFoundError` exception.
-        resp = self.client.get(
-            reverse('download_transcripts'),
-            {'id': '{0}_{1}'.format(self.item_location, 'BAD_LOCATION')})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': '{0}_{1}'.format(self.item_location, 'BAD_LOCATION')})
         self.assertEqual(resp.status_code, 404)
 
     def test_fail_for_non_video_module(self):
@@ -489,8 +436,8 @@ class TestDownloadtranscripts(Basetranscripts):
         }
         self.save_subs_to_store(subs, subs_id)
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': item_location})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': item_location})
         self.assertEqual(resp.status_code, 404)
 
     def test_fail_nonyoutube_subs_dont_exist(self):
@@ -503,8 +450,8 @@ class TestDownloadtranscripts(Basetranscripts):
 """
         modulestore().update_item(self.item_location, data)
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': self.item_location})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': self.item_location})
         self.assertEqual(resp.status_code, 404)
 
     def test_empty_youtube_attr_and_sub_attr(self):
@@ -517,8 +464,9 @@ class TestDownloadtranscripts(Basetranscripts):
 """
         modulestore().update_item(self.item_location, data)
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': self.item_location})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': self.item_location})
+
         self.assertEqual(resp.status_code, 404)
 
     def test_fail_bad_sjson_subs(self):
@@ -541,8 +489,9 @@ class TestDownloadtranscripts(Basetranscripts):
         }
         self.save_subs_to_store(subs, 'JMD_ifUUfsU')
 
-        resp = self.client.get(
-            reverse('download_transcripts'), {'id': self.item_location})
+        link = reverse('process_transcripts', args=('download',))
+        resp = self.client.get(link, {'id': self.item_location})
+
         self.assertEqual(resp.status_code, 404)
 
 
