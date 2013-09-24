@@ -23,7 +23,9 @@ from ..transcripts_utils import (
     generate_subs_from_source,
     generate_srt_from_sjson, remove_subs_from_store,
     requests as rqsts,
-    download_youtube_subs, get_transcripts_from_youtube, save_subs_to_store,
+    download_youtube_subs, get_transcripts_from_youtube,
+    save_subs_to_store,
+    generate_subs,
     YOUTUBE_API
 )
 
@@ -116,10 +118,10 @@ def upload_transcripts(request):
                             """transcripts for Youtube ID {0} (speed {1})
                             are generated from Youtube ID {2} (speed {3}) and
                             saved.""".format(
-                            '1.0',
-                            speed,
                             youtube_id,
-                            available_speed)
+                            speed,
+                            item.youtube_id_1_0,
+                            '1.0')
                         )
     else:
         log.error('Empty video sources.')
@@ -131,7 +133,6 @@ def upload_transcripts(request):
 def download_transcripts(request):
     """Try to download transcripts for current modules.
     """
-
     item_location = request.GET.get('id')
     if not item_location:
         log.error('GET data without "id" property.')

@@ -243,12 +243,12 @@ def generate_subs_from_source(speed_subs, subs_type, subs_filedata, item):
 
     if subs_type != 'srt':
         log.error("We support only SubRip (*.srt) transcripts format.")
-        return False
+        return False, {}
 
     srt_subs_obj = SubRipFile.from_string(subs_filedata)
     if not srt_subs_obj:
         log.error("Something wrong with SubRip transcripts file during parsing.")
-        return False
+        return False, {}
 
     sub_starts = []
     sub_ends = []
