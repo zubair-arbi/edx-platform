@@ -11,6 +11,7 @@
         * @param {string} data_id Unique identifier for the data.
         * @param {any} data Data that should be stored.
         *
+        * @returns {object} Object itself for chaining.
         */
         Storage.set = function (data_id, data) {
             Storage[data_id] = data;
@@ -320,7 +321,7 @@
             Storage: {
                 set: Storage.set,
                 get: Storage.get,
-                remove: Storage.remove,
+                remove: Storage.remove
             }
         };
     }());

@@ -3,22 +3,39 @@
 
         tagName: 'div',
 
-        // TODO: JS test.
         initialize: function () {
+            // prepare data for CMS.Views.Metadata.Editor
             var metadata = this.$el.data('metadata'),
                 models = this.toModels(metadata);
 
             this.collection = new CMS.Models.MetadataCollection(models);
 
+            // inititlaize CMS.Views.Metadata.Editor
             this.metadataEditor = new CMS.Views.Metadata.Editor({
                 el: this.$el,
                 collection: this.collection
             });
         },
 
-        // Convert metadata JSON to List of models
-        //
-        // TODO: JS test.
+        /**
+        * @function
+        *
+        * Convert JSON metadata to List of models
+        *
+        * @param {object|string} data Data containing information about metadata
+        *                             setting editors.
+        *
+        * @returns {array} Processed objects list.
+        *
+        * @example:
+        * var metadata = {
+        *       field_1: {.1.},
+        *       field_2: {.2.}
+        *    };
+        *
+        * toModels(metadata) // => [{.1.}, {.2.}]
+        *
+        */
         toModels: function (data) {
             var metadata = (_.isString(data)) ? JSON.parse(data) : data,
                 models = [];
@@ -32,37 +49,70 @@
             return models;
         },
 
+        /**
+        * @function
+        *
+        * Synchronize data from `Advanced` tab of Video player with data in
+        * `Basic` tab. It calls when we goes from `Advanced` to `Basic` tab.
+        *
+        * @param {object} metadataCollection Collection containing all models
+        *                                    with information about metadata
+        *                                    setting editors in `Advanced` tab.
+        *
+        */
         syncBasicTab: function (metadataCollection) {
             var result = [],
                 utils = Transcripts.Utils,
                 getField = utils.getField,
-                html5SourcesValue, youtubeValue, videoUrl;
+                values = {},
+                videoUrl;
 
+            // if metadataCollection is not passed, just exit.
             if (!metadataCollection) {
                 return false;
             }
 
-            html5SourcesValue = getField(metadataCollection, 'html5_sources')
+            // Get values from `Advanced` tab fields (`html5_sources`,
+            // `youtube_id_1_0`) that should be synchronized.
+            values.html5Sources = getField(metadataCollection, 'html5_sources')
                                     .getDisplayValue();
 
-            youtubeValue = getField(metadataCollection, 'youtube_id_1_0')
+            values.youtube = getField(metadataCollection, 'youtube_id_1_0')
                                     .getDisplayValue();
 
+            // Get field that should be synchronized with `Advanced` tab fields.
             videoUrl = getField(this.collection, 'video_url');
 
-            if (youtubeValue.length === 11) {
-                youtubeValue = utils.getYoutubeLink(youtubeValue);
+            // The length of youtube video_id should be 11 characters.
+            if (values.youtube.length === 11) {
+                // Just video id is retrieved from `Advanced` tab field and
+                // it should be transformed to appropriate format.
+                // OEoXaMPEzfM => http://youtu.be/OEoXaMPEzfM
+                values.youtube = utils.getYoutubeLink(values.youtube);
             } else {
-                youtubeValue = '';
+                values.youtube = '';
             }
 
-            result.push(youtubeValue);
-            result = result.concat(html5SourcesValue);
+            result.push(values.youtube);
+            result = result.concat(values.html5Sources);
 
             videoUrl.setValue(result);
+
+            //Synchronize other fields that has the same `field_name` property.
             utils.syncCollections(metadataCollection, this.collection);
         },
 
+        /**
+        * @function
+        *
+        * Synchronize data from `Basic` tab of Video player with data in
+        * `Advanced` tab. It calls when we goes from `Basic` to `Advanced` tab.
+        *
+        * @param {object} metadataCollection Collection containing all models
+        *                                    with information about metadata
+        *                                    setting editors in `Advanced` tab.
+        *
+        */
         syncAdvancedTab: function (metadataCollection) {
             var utils = Transcripts.Utils,
                 getField = utils.getField,
@@ -70,15 +120,38 @@
                 subs = getField(metadataCollection, 'sub'),
                 html5Sources, youtube, videoUrlValue, result;
 
+            // if metadataCollection is not passed, just exit.
             if (!metadataCollection) {
                 return false;
             }
 
+            // Get fields from `Advenced` tab (`html5_sources`, `youtube_id_1_0`)
+            // that should be synchronized.
             html5Sources = getField(metadataCollection, 'html5_sources');
+
             youtube = getField(metadataCollection, 'youtube_id_1_0');
+
+            // Get value from `Basic` tab `VideoUrl` field that should be
+            // synchronized.
             videoUrlValue = getField(this.collection, 'video_url')
                                 .getDisplayValue();
 
+            // Change list representation format to more convenient format and
+            // group them by mode (`youtube`, `html5`).
+            //                  Before:
+            // [
+            //      {mode: `youtube`, type: `youtube`, ...},
+            //      {mode: `html5`, type: `mp4`, ...}
+            //      {mode: `html5`, type: `webm`, ...}
+            // ]
+            //                  After:
+            // {
+            //      youtube: [{mode: `youtube`, type: `youtube`, ...}],
+            //      html5: [
+            //          {mode: `html5`, type: `mp4`, ...}
+            //          {mode: `html5`, type: `webm`, ...}
+            //      ]
+            // }
             result = _.groupBy(
                 videoUrlValue,
                 function (value) {
@@ -100,11 +173,15 @@
                 youtube.setValue(result);
             }
 
+            // if utils.Storage contain some subtitles, update them.
             if (_.isString(subsValue)) {
                 subs.setValue(subsValue);
+                // After updating should be removed, because it might overwrite
+                // subtitles added by user manually.
                 utils.Storage.remove('sub');
             }
 
+            //Synchronize other fields that has the same `field_name` property.
             utils.syncCollections(this.collection, metadataCollection);
         }
 
