@@ -1,5 +1,21 @@
 Feature: Video Component Editor
   As a course author, I want to be able to create video components.
+
+    # For transcripts acceptance tests there are 3 available caption
+    # files. They can be used to test various transcripts features. Two of
+    # them can be imported from YouTube.
+    #
+    # The length of each file name is 11 characters. This is because the
+    # YouTube's ID length is 11 characters. If file name is not of length 11,
+    # front-end validation will not pass.
+    #
+    #     t__eq_exist - this file exists on YouTube, and can be imported
+    #                   via the transcripts menu; after import, this file will
+    #                   be equal to the one stored locally
+    #     t_neq_exist - same as above, except local file will differ from the
+    #                   one stored on YouTube
+    #     t_not_exist - this file does not exist on YouTube; it exists locally
+
     #1
     Scenario: Check input error messages
         Given I have created a Video component
@@ -28,6 +44,7 @@ Feature: Video Component Editor
         And I enter a http://youtu.be/OEoXaMPEzfM source to field number 1
         Then I do not see error message
         And I expect inputs are enabled
+
     #2
     Scenario: Testing interaction with test youtube server
         Given I have created a Video component with subtitles
@@ -44,21 +61,19 @@ Feature: Video Component Editor
         Then I see not found status message
         And I do not see import button
         And I see disabled_download_to_edit button
+
     #3
-    Scenario: Entering youtube id only - 1a and 1c
+    Scenario: Youtube id only: check "not found" and "import" states
         Given I have created a Video component with subtitles
         And I edit the component
 
-        # first part of transcripts url of requests to youtube will be substituted by mock_youtube_server address
-
-        # 1a
-        # for t_not_exist id server will respond with 404
+        # Not found: w/o local or server subs
         And I remove t_not_exist transcripts id from store
         And I enter a http://youtu.be/t_not_exist source to field number 1
         Then I see not found status message
+        And I see "" value in the "HTML5 Timed Transcript" field
 
-        # 1c
-        # for t__eq_exist id server will respond with transcripts
+        # Import: w/o local but with server subs
         And I remove t__eq_exist transcripts id from store
         And I enter a http://youtu.be/t__eq_exist source to field number 1
         Then I see not found status message
@@ -67,86 +82,106 @@ Feature: Video Component Editor
         Then I see found status message
         And I don't see upload_new_timed_transcripts button
         And I see download_to_edit button
-        #btw, when i update sub, I do not create file in upload section
-        And I remove t__eq_exist transcripts id from store
+        And I see "t__eq_exist" value in the "HTML5 Timed Transcript" field
+
     #4
-    Scenario: Entering youtube id only - 1b
-        # Separate from previous, because we need to close editor
-        # to upload subtitles, that's why we uploading them before
-        #opening editor
+    Scenario: Youtube id only: check "Found" state
         Given I have created a Video component with t_not_exist subtitles
         And I edit the component
+
         And I enter a http://youtu.be/t_not_exist source to field number 1
         Then I see found status message
-        And I remove t_not_exist transcripts id from store
+        And I see "t_not_exist" value in the "HTML5 Timed Transcript" field
+
     #5
-    Scenario: Entering youtube id only - 1d-1
+    Scenario: Youtube id only: check "Found" state when user sets youtube_id with local and server subs and they are equal
+
         Given I have created a Video component with t__eq_exist subtitles
         And I edit the component
+
         And I enter a http://youtu.be/t__eq_exist source to field number 1
         And I see found status message
-        And I remove t__eq_exist transcripts id from store
+        And I see "t__eq_exist" value in the "HTML5 Timed Transcript" field
+
     #6
-    Scenario: Entering youtube id only - 1d-2
+    Scenario: Youtube id only: check "Found" state when user sets youtube_id with local and server subs and they are not  equal
         Given I have created a Video component with t_neq_exist subtitles
         And I edit the component
+
         And I enter a http://youtu.be/t_neq_exist source to field number 1
         And I see replace status message
         And I see replace button
         And I click replace button
         And I see found status message
-        And I remove t_neq_exist transcripts id from store
+        And I see "t_neq_exist" value in the "HTML5 Timed Transcript" field
+
     #7
-    Scenario: Entering html5 source only - Timed Transcripts found 2a
+    Scenario: html5 source only: check "Not Found" state
         Given I have created a Video component
         And I edit the component
+
         And I enter a t_not_exist.mp4 source to field number 1
         Then I see not found status message
+        And I see "" value in the "HTML5 Timed Transcript" field
+
     #8
-    Scenario: Entering html5 source only - Timed Transcripts not found 2b
+    Scenario: html5 source only: check "Found" state
         Given I have created a Video component with t_not_exist subtitles
         And I edit the component
+
         And I enter a t_not_exist.mp4 source to field number 1
         Then I see found status message
+        And I see "t_not_exist" value in the "HTML5 Timed Transcript" field
+
     #9
-    Scenario: Entering youtube - html5 - 3a
+    Scenario: User sets youtube_id w/o server but with local subs and one html5 link w/o subs
         Given I have created a Video component with t_not_exist subtitles
         And I edit the component
+
         And I enter a http://youtu.be/t_not_exist source to field number 1
         Then I see found status message
-        And I enter a t_not_exist.mp4 source to field number 2
+
+        And I enter a test_video_name.mp4 source to field number 2
         Then I see found status message
+        And I see "t_not_exist" value in the "HTML5 Timed Transcript" field
+
     #10
-    Scenario: Entering youtube - html5 w/o transcripts with import - 3b
+    Scenario: User sets youtube_id w/o local but with server subs and one html5 link w/o subs
         Given I have created a Video component
         And I edit the component
+
         And I enter a http://youtu.be/t__eq_exist source to field number 1
         Then I see not found status message
         And I see import button
         And I click import button
         Then I see found status message
+
         And I enter a t_not_exist.mp4 source to field number 2
         Then I see found status message
+        And I see "t__eq_exist" value in the "HTML5 Timed Transcript" field
 
     #11
-    Scenario: Entering youtube - html5 w/o transcripts w/o import - html5 w/o transcripts
+    Scenario: User sets youtube_id w/o local but with server subs and one html5 link w/o transcripts w/o import action, then another one html5 link w/o transcripts
         Given I have created a Video component
         And I edit the component
+
         And I enter a http://youtu.be/t__eq_exist source to field number 1
         Then I see not found status message
         And I see import button
         And I don't see upload_new_timed_transcripts button
+
         And I enter a t_not_exist.mp4 source to field number 2
         Then I see not found status message
         And I see import button
         And I don't see upload_new_timed_transcripts button
+
         And I enter a t_not_exist.webm source to field number 3
         Then I see not found status message
         And I see import button
         And I don't see upload_new_timed_transcripts button
 
     #12
-    Scenario: Entering youtube w/o transcripts - html5 w/o transcripts w/o import - html5 w/o transcripts
+    Scenario: Entering youtube (no importing), and 2 html5 sources without transcripts - "Not Found"
         Given I have created a Video component
         And I edit the component
         And I enter a http://youtu.be/t_not_exist source to field number 1
@@ -163,7 +198,7 @@ Feature: Video Component Editor
         And I don't see upload_new_timed_transcripts button
 
     #13
-    Scenario: Entering youtube with imported transcripts - html5 w/o transcripts w/o import - html5 w/o transcripts
+    Scenario: Entering youtube with imported transcripts, and 2 html5 sources without transcripts - "Found"
         Given I have created a Video component
         And I edit the component
 
@@ -307,6 +342,9 @@ Feature: Video Component Editor
         Then I see found status message
         And I see download_to_edit button
         And I don't see upload_new_timed_transcripts button
+
+        And I enter a test_transcripts.mp4 source to field number 3
+        Then I see found status message
 
     #20
     Scenario: Enter 2 HTML5 sources with transcripts, they are not the same, choose
