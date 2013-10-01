@@ -40,26 +40,46 @@ def i_confirm_with_ok(_step):
     world.browser.get_alert().accept()
 
 
-@step(u'I press the "([^"]*)" delete icon$')
-def i_press_the_category_delete_icon(_step, category):
-    if category == 'section':
-        css = 'a.delete-button.delete-section-button span.delete-icon'
-    elif category == 'subsection':
-        css = 'a.delete-button.delete-subsection-button  span.delete-icon'
-    else:
-        assert False, 'Invalid category: %s' % category
-    world.css_click(css)
+def create_course():
+    """
+    Clear out any courses and create a new one
+    """
+    world.clear_courses()
+    course = world.CourseFactory.create()
+    world.scenario_dict['COURSE'] = course
+
+
+def create_course_author(course=None):
+    """
+    Create a course author and add them to the course
+    """
+    user = create_studio_user(is_staff=False)
+    if course==None:
+        course = world.scenario_dict['COURSE']
+    add_course_author(user, course)
+
+def select_course():
+    """
+    Open the first course by selecting its link
+    """
+    course_link_css = 'a.course-link'
+    world.css_click(course_link_css)
+    course_title_css = 'span.course-title'
+    assert world.is_css_present(course_title_css)
 
 
 @step('I have opened a new course in Studio$')
-def i_have_opened_a_new_course(_step):
-    open_new_course()
+@step(u'I am in Studio editing a course$')
+def in_studio_editing_course(step):
+    create_course()
+    create_course_author()
+    log_into_studio()
+    select_course()
 
 
 @step('(I select|s?he selects) the new course')
-def select_new_course(_step, whom):
-    course_link_css = 'a.course-link'
-    world.css_click(course_link_css)
+def select_new_course(_step, _whom):
+    select_course()
 
 
 @step(u'I press the "([^"]*)" notification button$')
@@ -90,6 +110,17 @@ def press_the_notification_button(_step, name):
         world.browser.execute_script("$('{}').click()".format(btn_css))
     else:
         world.css_click(btn_css)
+
+
+@step(u'I press the "([^"]*)" delete icon$')
+def i_press_the_category_delete_icon(_step, category):
+    if category == 'section':
+        css = 'a.delete-button.delete-section-button span.delete-icon'
+    elif category == 'subsection':
+        css = 'a.delete-button.delete-subsection-button  span.delete-icon'
+    else:
+        assert False, 'Invalid category: %s' % category
+    world.css_click(css)
 
 
 @step('I change the "(.*)" field to "(.*)"$')
