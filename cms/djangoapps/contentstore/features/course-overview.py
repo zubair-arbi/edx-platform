@@ -22,10 +22,6 @@ def have_a_course_with_1_section(step):
     course = create_course()
     create_course_author(course=course)
     section = world.ItemFactory.create(parent_location=course.location)
-    world.ItemFactory.create(
-        parent_location=section.location,
-        category='sequential',
-        display_name='Subsection One',)
     log_into_studio()
 
 

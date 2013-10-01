@@ -52,10 +52,8 @@ def register_by_course_id(course_id, is_staff=False):
 
 @world.absorb
 def clear_courses():
-    # Flush and initialize the module store
-    # Note that if your test module gets in some weird state
-    # (though it shouldn't), do this manually
-    # from the bash shell to drop it:
-    # $ mongo test_xmodule --eval "db.dropDatabase()"
+    """
+    Flush the modulestore and the contentstore
+    """
     editable_modulestore().collection.drop()
     contentstore().fs_files.drop()

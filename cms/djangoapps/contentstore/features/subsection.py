@@ -11,11 +11,7 @@ from nose.tools import assert_equal  # pylint: disable=E0611
 def i_have_opened_a_new_course_section(step):
     course = create_course()
     create_course_author(course=course)
-    section = world.ItemFactory.create(parent_location=course.location)
-    world.ItemFactory.create(
-        parent_location=section.location,
-        category='sequential',
-        display_name='Subsection One',)
+    world.ItemFactory.create(parent_location=course.location)
     log_into_studio()
     select_course()
 
@@ -27,8 +23,15 @@ def i_have_added_a_new_subsection(step):
 
 @step('I have opened a new subsection in Studio$')
 def i_have_opened_a_new_subsection(step):
-    step.given('I have opened a new course section in Studio')
-    step.given('I have added a new subsection')
+    course = create_course()
+    create_course_author(course=course)
+    section = world.ItemFactory.create(parent_location=course.location)
+    world.ItemFactory.create(
+        parent_location=section.location,
+        category='sequential',
+        display_name='Subsection One',)
+    log_into_studio()
+    select_course()
     world.css_click('span.subsection-name-value')
 
 

@@ -61,6 +61,8 @@ Feature: CMS.Course Overview
 
    Scenario: Notification is shown on grading status changes
         Given I have a course with 1 section
+        And I navigate to the course overview page
+        And I have added a new subsection
         When I navigate to the course overview page
         And I change an assignment's grading status
         Then I am shown a notification
