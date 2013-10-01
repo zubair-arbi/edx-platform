@@ -47,6 +47,20 @@ def create_course():
     world.clear_courses()
     course = world.CourseFactory.create()
     world.scenario_dict['COURSE'] = course
+    return course
+
+
+def add_course_author(user, course):
+    """
+    Add the user to the instructor group of the course
+    so they will have the permissions to see it in studio
+    """
+    for role in ("staff", "instructor"):
+        groupname = get_course_groupname_for_role(course.location, role)
+        group, __ = Group.objects.get_or_create(name=groupname)
+        user.groups.add(group)
+    user.save()
+    return user
 
 
 def create_course_author(course=None):
@@ -54,9 +68,10 @@ def create_course_author(course=None):
     Create a course author and add them to the course
     """
     user = create_studio_user(is_staff=False)
-    if course==None:
+    if course is None:
         course = world.scenario_dict['COURSE']
     add_course_author(user, course)
+
 
 def select_course():
     """
@@ -68,7 +83,7 @@ def select_course():
     assert world.is_css_present(course_title_css)
 
 
-@step('I have opened a new course in Studio$')
+@step(u'I have opened a new course in Studio$')
 @step(u'I am in Studio editing a course$')
 def in_studio_editing_course(step):
     create_course()
@@ -197,18 +212,6 @@ def log_into_studio(
     # Navigate to the studio dashboard
     world.visit('/')
     assert_in(uname, world.css_text('h2.title', timeout=10))
-
-
-def add_course_author(user, course):
-    """
-    Add the user to the instructor group of the course
-    so they will have the permissions to see it in studio
-    """
-    for role in ("staff", "instructor"):
-        groupname = get_course_groupname_for_role(course.location, role)
-        group, __ = Group.objects.get_or_create(name=groupname)
-        user.groups.add(group)
-    user.save()
 
 
 def create_a_course():

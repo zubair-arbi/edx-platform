@@ -2,7 +2,8 @@
 # pylint: disable=W0621
 
 from lettuce import world, step
-from common import *
+from common import create_course, create_course_author, log_into_studio
+from common import select_course, add_section
 from nose.tools import assert_true, assert_false, assert_equal  # pylint: disable=E0611
 
 from logging import getLogger
@@ -11,38 +12,40 @@ logger = getLogger(__name__)
 
 @step(u'I have a course with no sections$')
 def have_a_course(step):
-    world.clear_courses()
-    course = world.CourseFactory.create()
+    course = create_course()
+    create_course_author(course=course)
+    log_into_studio()
 
 
 @step(u'I have a course with 1 section$')
 def have_a_course_with_1_section(step):
-    world.clear_courses()
-    course = world.CourseFactory.create()
+    course = create_course()
+    create_course_author(course=course)
     section = world.ItemFactory.create(parent_location=course.location)
-    subsection1 = world.ItemFactory.create(
+    world.ItemFactory.create(
         parent_location=section.location,
         category='sequential',
         display_name='Subsection One',)
+    log_into_studio()
 
 
 @step(u'I have a course with multiple sections$')
 def have_a_course_with_two_sections(step):
-    world.clear_courses()
-    course = world.CourseFactory.create()
+    course = create_course()
+    create_course_author(course=course)
     section = world.ItemFactory.create(parent_location=course.location)
-    subsection1 = world.ItemFactory.create(
+    world.ItemFactory.create(
         parent_location=section.location,
         category='sequential',
         display_name='Subsection One',)
     section2 = world.ItemFactory.create(
         parent_location=course.location,
         display_name='Section Two',)
-    subsection2 = world.ItemFactory.create(
+    world.ItemFactory.create(
         parent_location=section2.location,
         category='sequential',
         display_name='Subsection Alpha',)
-    subsection3 = world.ItemFactory.create(
+    world.ItemFactory.create(
         parent_location=section2.location,
         category='sequential',
         display_name='Subsection Beta',)
@@ -50,10 +53,8 @@ def have_a_course_with_two_sections(step):
 
 @step(u'I navigate to the course overview page$')
 def navigate_to_the_course_overview_page(step):
-    create_studio_user(is_staff=True)
     log_into_studio()
-    course_locator = 'a.course-link'
-    world.css_click(course_locator)
+    select_course()
 
 
 @step(u'I navigate to the courseware page of a course with multiple sections')
