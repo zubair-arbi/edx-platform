@@ -2,16 +2,22 @@
 #pylint: disable=W0621
 
 from lettuce import world, step
-from common import *
+from common import create_course, create_course_author, log_into_studio
+from common import select_course, add_subsection, set_date_and_time
 from nose.tools import assert_equal  # pylint: disable=E0611
-
-############### ACTIONS ####################
 
 
 @step('I have opened a new course section in Studio$')
 def i_have_opened_a_new_course_section(step):
-    open_new_course()
-    add_section()
+    course = create_course()
+    create_course_author(course=course)
+    section = world.ItemFactory.create(parent_location=course.location)
+    world.ItemFactory.create(
+        parent_location=section.location,
+        category='sequential',
+        display_name='Subsection One',)
+    log_into_studio()
+    select_course()
 
 
 @step('I have added a new subsection$')
@@ -93,9 +99,6 @@ def click_sync_release_date(step):
     world.css_click('.sync-date')
 
 
-############ ASSERTIONS ###################
-
-
 @step('I see my subsection on the Courseware page$')
 def i_see_my_subsection_on_the_courseware_page(step):
     see_subsection_name('Subsection One')
@@ -130,7 +133,6 @@ def i_see_subsection_due(_step, datestring, timestring):
         assert_equal(timestring, get_date('input#due_time'))
 
 
-############ HELPER METHODS ###################
 def get_date(css):
     return world.css_find(css).first.value.strip()
 
