@@ -119,6 +119,7 @@ class @CombinedOpenEnded
   next_rubric_sel: '.rubric-next-button'
   previous_rubric_sel: '.rubric-previous-button'
   oe_alert_sel: '.open-ended-alert'
+  save_button_sel: '.save-button'
 
   constructor: (el) ->
     @el=el
@@ -183,6 +184,7 @@ class @CombinedOpenEnded
     @hint_wrapper = @$(@oe).find(@hint_wrapper_sel)
     @message_wrapper = @$(@oe).find(@message_wrapper_sel)
     @submit_button = @$(@oe).find(@submit_button_sel)
+    @save_button = @$(@oe).find(@save_button_sel)
     @child_state = @oe.data('state')
     @child_type = @oe.data('child-type')
     if @child_type=="openended"
@@ -270,6 +272,8 @@ class @CombinedOpenEnded
     # rebind to the appropriate function for the current state
     @submit_button.unbind('click')
     @submit_button.show()
+    @save_button.unbind('click')
+    @save_button.hide()
     @reset_button.hide()
     @hide_file_upload()
     @next_problem_button.hide()
@@ -295,6 +299,8 @@ class @CombinedOpenEnded
       @submit_button.prop('value', 'Submit')
       @submit_button.click @confirm_save_answer
       @setup_file_upload()
+      @save_button.click @store_answer
+      @save_button.show()
     else if @child_state == 'assessing'
       @answer_area.attr("disabled", true)
       @replace_text_inputs()
@@ -334,12 +340,25 @@ class @CombinedOpenEnded
       else
         @reset_button.show()
 
-
   find_assessment_elements: ->
     @assessment = @$('input[name="grade-selection"]')
 
   find_hint_elements: ->
     @hint_area = @$('textarea.post_assessment')
+
+  store_answer:  (event) =>
+    event.preventDefault()
+    if @child_state == 'initial'
+      data = {'student_answer' : @answer_area.val()}
+      @save_button.attr("disabled",true)
+      $.postWithPrefix "#{@ajax_url}/store_answer", data, (response) =>
+        if response.success
+          @gentle_alert("Answer saved, but not yet submitted.")
+        else
+          @errors_area.html(response.error)
+        @save_button.attr("disabled",false)
+    else
+      @errors_area.html(@out_of_sync_message)
 
   replace_answer: (response) =>
     if response.success
@@ -353,35 +372,41 @@ class @CombinedOpenEnded
       answer_area_div = @$(@answer_area_div_sel)
       answer_area_div.html(response.student_response)
     else
-      @can_upload_files = pre_can_upload_files
+      @submit_button.show()
+      @submit_button.attr('disabled', false)
       @gentle_alert response.error
 
   confirm_save_answer: (event) =>
     @save_answer(event) if confirm('Please confirm that you wish to submit your work. You will not be able to make any changes after submitting.')
 
   save_answer: (event) =>
+    @$el.find(@oe_alert_sel).remove()
     @submit_button.attr("disabled",true)
     @submit_button.hide()
     event.preventDefault()
     @answer_area.attr("disabled", true)
     max_filesize = 2*1000*1000 #2MB
-    pre_can_upload_files = @can_upload_files
     if @child_state == 'initial'
       files = ""
+      valid_files_attached = false
       if @can_upload_files == true
         files = @$(@file_upload_box_sel)[0].files[0]
         if files != undefined
+          valid_files_attached = true
           if files.size > max_filesize
-            @can_upload_files = false
             files = ""
-        else
-          @can_upload_files = false
+            # Don't submit the file in the case of it being too large, deal with the error locally.
+            @submit_button.show()
+            @submit_button.attr('disabled', false)
+            @gentle_alert "You are trying to upload a file that is too large for our system.  Please choose a file under 2MB or paste a link to it into the answer box."
+            return
 
       fd = new FormData()
       fd.append('student_answer', @answer_area.val())
       fd.append('student_file', files)
-      fd.append('can_upload_files', @can_upload_files)
+      fd.append('valid_files_attached', valid_files_attached)
 
+      that=this
       settings =
         type: "POST"
         data: fd
@@ -556,12 +581,12 @@ class @CombinedOpenEnded
   collapse_question: (event) =>
     @prompt_container.slideToggle()
     @prompt_container.toggleClass('open')
-    if @question_header.text() == "Hide Prompt"
-      new_text = "Show Prompt"
+    if @question_header.text() == "Hide Question"
+      new_text = "Show Question"
       Logger.log 'oe_hide_question', {location: @location}
     else
       Logger.log 'oe_show_question', {location: @location}
-      new_text = "Hide Prompt"
+      new_text = "Hide Question"
     @question_header.text(new_text)
     return false
 
@@ -601,13 +626,13 @@ class @CombinedOpenEnded
     if @prompt_container.is(":hidden")==true
       @prompt_container.slideToggle()
       @prompt_container.toggleClass('open')
-      @question_header.text("Hide Prompt")
+      @question_header.text("Hide Question")
 
   prompt_hide: () =>
     if @prompt_container.is(":visible")==true
       @prompt_container.slideToggle()
       @prompt_container.toggleClass('open')
-      @question_header.text("Show Prompt")
+      @question_header.text("Show Question")
 
   log_feedback_click: (event) ->
     link_text = @$(event.target).html()

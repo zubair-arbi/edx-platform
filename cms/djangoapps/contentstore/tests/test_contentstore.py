@@ -170,6 +170,16 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
             resp = self.client.get(reverse('edit_unit', kwargs={'location': descriptor.location.url()}))
             self.assertEqual(resp.status_code, 200)
 
+    def lockAnAsset(self, content_store, course_location):
+        """
+        Lock an arbitrary asset in the course
+        :param course_location:
+        """
+        course_assets = content_store.get_all_content_for_course(course_location)
+        self.assertGreater(len(course_assets), 0, "No assets to lock")
+        content_store.set_attr(course_assets[0]['_id'], 'locked', True)
+        return course_assets[0]['_id']
+
     def test_edit_unit_toy(self):
         self.check_edit_unit('toy')
 
@@ -593,9 +603,9 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
 
         # go through the website to do the delete, since the soft-delete logic is in the view
 
-        url = reverse('remove_asset', kwargs={'org': 'edX', 'course': 'toy', 'name': '2012_Fall'})
-        resp = self.client.post(url, {'location': '/c4x/edX/toy/asset/sample_static.txt'})
-        self.assertEqual(resp.status_code, 200)
+        url = reverse('update_asset', kwargs={'org': 'edX', 'course': 'toy', 'name': '2012_Fall', 'asset_id': '/c4x/edX/toy/asset/sample_static.txt'})
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, 204)
 
         asset_location = StaticContent.get_location_from_path('/c4x/edX/toy/asset/sample_static.txt')
 
@@ -628,7 +638,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
 
     def test_empty_trashcan(self):
         '''
-        This test will exercise the empting of the asset trashcan
+        This test will exercise the emptying of the asset trashcan
         '''
         content_store = contentstore()
         trash_store = contentstore('trashcan')
@@ -644,9 +654,9 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
 
         # go through the website to do the delete, since the soft-delete logic is in the view
 
-        url = reverse('remove_asset', kwargs={'org': 'edX', 'course': 'toy', 'name': '2012_Fall'})
-        resp = self.client.post(url, {'location': '/c4x/edX/toy/asset/sample_static.txt'})
-        self.assertEqual(resp.status_code, 200)
+        url = reverse('update_asset', kwargs={'org': 'edX', 'course': 'toy', 'name': '2012_Fall', 'asset_id': '/c4x/edX/toy/asset/sample_static.txt'})
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, 204)
 
         # make sure there's something in the trashcan
         all_assets = trash_store.get_all_content_for_course(course_location)
@@ -907,7 +917,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         draft_store = modulestore('draft')
         content_store = contentstore()
 
-        import_from_xml(module_store, 'common/test/data/', ['toy'])
+        import_from_xml(module_store, 'common/test/data/', ['toy'], static_content_store=content_store)
         location = CourseDescriptor.id_to_location('edX/toy/2012_Fall')
 
         # get a vertical (and components in it) to copy into an orphan sub dag
@@ -952,6 +962,11 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
 
         self.assertIn(private_location_no_draft.url(), sequential.children)
 
+        locked_asset = self.lockAnAsset(content_store, location)
+        locked_asset_attrs = content_store.get_attrs(locked_asset)
+        # the later import will reupload
+        del locked_asset_attrs['uploadDate']
+
         print 'Exporting to tempdir = {0}'.format(root_dir)
 
         # export out to a tempdir
@@ -984,11 +999,33 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
 
         # remove old course
         delete_course(module_store, content_store, location, commit=True)
+        # reimport over old course
+        stub_location = Location(['i4x', 'edX', 'toy', None, None])
+        course_location = course.location
+        self.check_import(
+            module_store, root_dir, draft_store, content_store, stub_location, course_location,
+            locked_asset, locked_asset_attrs
+        )
+        # import to different course id
+        stub_location = Location(['i4x', 'anotherX', 'anotherToy', None, None])
+        course_location = stub_location.replace(category='course', name='Someday')
+        self.check_import(
+            module_store, root_dir, draft_store, content_store, stub_location, course_location,
+            locked_asset, locked_asset_attrs
+        )
 
+        shutil.rmtree(root_dir)
+
+    def check_import(self, module_store, root_dir, draft_store, content_store, stub_location, course_location,
+        locked_asset, locked_asset_attrs):
         # reimport
-        import_from_xml(module_store, root_dir, ['test_export'], draft_store=draft_store)
+        import_from_xml(
+            module_store, root_dir, ['test_export'], draft_store=draft_store,
+            static_content_store=content_store,
+            target_location_namespace=course_location
+        )
 
-        items = module_store.get_items(Location(['i4x', 'edX', 'toy', 'vertical', None]))
+        items = module_store.get_items(stub_location.replace(category='vertical', name=None))
         self.assertGreater(len(items), 0)
         for descriptor in items:
             # don't try to look at private verticals. Right now we're running
@@ -999,11 +1036,13 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
                 self.assertEqual(resp.status_code, 200)
 
         # verify that we have the content in the draft store as well
-        vertical = draft_store.get_item(Location(['i4x', 'edX', 'toy',
-                                                  'vertical', 'vertical_test', None]), depth=1)
+        vertical = draft_store.get_item(
+            stub_location.replace(category='vertical', name='vertical_test', revision=None),
+            depth=1
+        )
 
         self.assertTrue(getattr(vertical, 'is_draft', False))
-        self.assertNotIn('index_in_children_list', child.xml_attributes)
+        self.assertNotIn('index_in_children_list', vertical.xml_attributes)
         self.assertNotIn('parent_sequential_url', vertical.xml_attributes)
 
         for child in vertical.get_children():
@@ -1016,23 +1055,34 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
                 self.assertNotIn('parent_sequential_url', child.data)
 
         # make sure that we don't have a sequential that is in draft mode
-        sequential = draft_store.get_item(Location(['i4x', 'edX', 'toy',
-                                                    'sequential', 'vertical_sequential', None]))
+        sequential = draft_store.get_item(
+            stub_location.replace(category='sequential', name='vertical_sequential', revision=None)
+        )
 
         self.assertFalse(getattr(sequential, 'is_draft', False))
 
         # verify that we have the private vertical
-        test_private_vertical = draft_store.get_item(Location(['i4x', 'edX', 'toy',
-                                                               'vertical', 'a_private_vertical', None]))
+        test_private_vertical = draft_store.get_item(
+            stub_location.replace(category='vertical', name='a_private_vertical', revision=None)
+        )
 
         self.assertTrue(getattr(test_private_vertical, 'is_draft', False))
 
         # make sure the textbook survived the export/import
-        course = module_store.get_item(Location(['i4x', 'edX', 'toy', 'course', '2012_Fall', None]))
+        course = module_store.get_item(course_location)
 
         self.assertGreater(len(course.textbooks), 0)
 
-        shutil.rmtree(root_dir)
+        locked_asset['course'] = stub_location.course
+        locked_asset['org'] = stub_location.org
+        new_attrs = content_store.get_attrs(locked_asset)
+        for key, value in locked_asset_attrs.iteritems():
+            if key == '_id':
+                self.assertEqual(value['name'], new_attrs[key]['name'])
+            elif key == 'filename':
+                pass
+            else:
+                self.assertEqual(value, new_attrs[key])
 
     def test_export_course_with_metadata_only_video(self):
         module_store = modulestore('direct')

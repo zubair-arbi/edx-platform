@@ -33,8 +33,7 @@ CMS.Views.Settings.Details = CMS.Views.ValidatingView.extend({
             $(this).show();
         });
 
-        var dateIntrospect = new Date();
-        this.$el.find('#timezone').html("(" + dateIntrospect.getTimezone() + ")");
+        this.$el.find('#timezone').html("(" + tzAbbr() + ")");
 
         this.listenTo(this.model, 'invalid', this.handleValidationError);
         this.listenTo(this.model, 'change', this.showNotificationBar);
@@ -60,7 +59,7 @@ CMS.Views.Settings.Details = CMS.Views.ValidatingView.extend({
         this.$el.find('#' + this.fieldToSelectorMap['effort']).val(this.model.get('effort'));
 
         var imageURL = this.model.get('course_image_asset_path');
-        this.$el.find('#course-image-url').val(imageURL)
+        this.$el.find('#course-image-url').val(imageURL);
         this.$el.find('#course-image').attr('src', imageURL);
 
         return this;
@@ -262,9 +261,9 @@ CMS.Views.Settings.Details = CMS.Views.ValidatingView.extend({
             model: upload,
             onSuccess: function(response) {
                 var options = {
-                    'course_image_name': response.displayname,
-                    'course_image_asset_path': response.url
-                }
+                    'course_image_name': response.asset.display_name,
+                    'course_image_asset_path': response.asset.url
+                };
                 self.model.set(options);
                 self.render();
                 $('#course-image').attr('src', self.model.get('course_image_asset_path'))

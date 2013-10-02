@@ -50,13 +50,13 @@ from instructor_task.api import (get_running_instructor_tasks,
 from instructor_task.views import get_task_completion_info
 from mitxmako.shortcuts import render_to_response
 from psychometrics import psychoanalyze
-from student.models import CourseEnrollment, CourseEnrollmentAllowed
+from student.models import CourseEnrollment, CourseEnrollmentAllowed, unique_id_for_user
 from student.views import course_from_id
 import track.views
 from mitxmako.shortcuts import render_to_string
 from xblock.field_data import DictFieldData
 from xblock.fields import ScopeIds
-
+from django.utils.translation import ugettext as _u
 from bulk_email.models import CourseEmail
 from html_to_text import html_to_text
 from bulk_email import tasks
@@ -106,7 +106,7 @@ def instructor_dashboard(request, course_id):
     # assemble some course statistics for output to instructor
     def get_course_stats_table():
         datatable = {'header': ['Statistic', 'Value'],
-                     'title': 'Course Statistics At A Glance',
+                     'title': _u('Course Statistics At A Glance'),
                      }
         data = [['# Enrolled', CourseEnrollment.objects.filter(course_id=course_id, is_active=1).count()]]
         data += [['Date', timezone.now().isoformat()]]
@@ -581,6 +581,15 @@ def instructor_dashboard(request, course_id):
             datatable['data'] = [[x.student.username, x.state] for x in smdat]
             datatable['title'] = 'Student state for problem %s' % problem_to_dump
             return return_csv('student_state_from_%s.csv' % problem_to_dump, datatable)
+
+    elif 'Download CSV of all student anonymized IDs' in action:
+        students = User.objects.filter(
+            courseenrollment__course_id=course_id,
+        ).order_by('id')
+
+        datatable = {'header': ['User ID', 'Anonymized user ID']}
+        datatable['data'] = [[s.id, unique_id_for_user(s)] for s in students]
+        return return_csv(course_id.replace('/', '-') + '-anon-ids.csv', datatable)
 
     #----------------------------------------
     # Group management
