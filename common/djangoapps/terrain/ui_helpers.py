@@ -45,7 +45,21 @@ def is_css_not_present(css_selector, wait_time=5):
         world.browser.driver.implicitly_wait(world.IMPLICIT_WAIT)
 
 @world.absorb
-def css_has_text(css_selector, text, index=0):
+def css_has_text(css_selector, text, index=0, allow_blank=True):
+    """
+    Returns True only if the element with `css_selector` has
+    the specified `text`.
+
+    If there are multiple elements on the page, `index` specifies
+    which one to select.
+
+    If `allow_blank` is False, wait for the element to have non-empty
+    text before making the assertion.  This is useful for elements
+    that are populated by JavaScript after the page loads.
+    """
+    if not allow_blank:
+        world.wait_for(lambda _: world.css_text(css_selector, index=index))
+
     return world.css_text(css_selector, index=index) == text
 
 
