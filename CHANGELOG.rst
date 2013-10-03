@@ -34,6 +34,16 @@ duplicated "\index".
 
 LMS: Fixed accessibility bug where users could not tab through wiki (LMS-1307)
 
+Studio: support shuffling of multiple choice question choices, so authors can
+write choices without worrying about their order.
+In XML: <choicegroup type="MultipleChoice" shuffle="true"> enables shuffling
+and <choice fixed="true"> holds a particular choice back from the shuffle, e.g.
+an "All of the above" choice that should remain at the end position.
+Fixed choices should be grouped at the head or tail end of the list
+of choices. Any other fixed choices are moved to the tail end.
+In the markdown: an exclamation (!) in any of the parenthesis enables shuffling
+of all the choices, and (@) sets that choice to be fixed.
+
 Blades: When start time and end time are specified for a video, a visual range
 will be shown on the time slider to highlight the place in the video that will
 be played.
