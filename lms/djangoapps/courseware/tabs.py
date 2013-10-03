@@ -419,6 +419,12 @@ def get_static_tab_contents(request, course, tab):
     html = ''
 
     if tab_module is not None:
-        html = tab_module.runtime.render(tab_module, None, 'student_view').content
+        try:
+            html = tab_module.runtime.render(tab_module, None, 'student_view').content
+        except Exception as exc:                          #pylint: disable=W0703
+            log.exception("Error rendering course={course}, tab_url={tab_url}".format(
+                              course=course,
+                              tab_url=tab['url_slug']
+                              ))
 
     return html

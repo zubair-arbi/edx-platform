@@ -164,7 +164,13 @@ def get_course_about_section(course, section_key):
             html = ''
 
             if about_module is not None:
-                html = about_module.runtime.render(about_module, None, 'student_view').content
+                try:
+                    html = about_module.runtime.render(about_module, None, 'student_view').content
+                except Exception as exc:                          #pylint: disable=W0703
+                    log.exception("Error rendering course={course}, section_key={section_key}".format(
+                                      course=course,
+                                      section_key=section_key
+                                ))
 
             return html
 
@@ -213,7 +219,13 @@ def get_course_info_section(request, course, section_key):
     html = ''
 
     if info_module is not None:
-        html = info_module.runtime.render(info_module, None, 'student_view').content
+        try:
+            html = info_module.runtime.render(info_module, None, 'student_view').content
+        except Exception as exc:                          #pylint: disable=W0703
+            log.exception("Error rendering course={course}, section_key={section_key}".format(
+                              course=course,
+                              section_key=section_key
+                              ))
 
     return html
 
