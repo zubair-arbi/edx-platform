@@ -1,4 +1,5 @@
-Feature: Video Component
+@shard_3
+Feature: CMS.Video Component
   As a course author, I want to be able to view my created videos in Studio.
 
   # Video Alpha Features will work in Firefox only when Firefox is the active window
@@ -32,4 +33,5 @@ Feature: Video Component
 
   Scenario: Video data is shown correctly
     Given I have created a video with only XML data
+    And I reload the page
     Then the correct Youtube video is shown
