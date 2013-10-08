@@ -7,6 +7,7 @@ import json
 import platform
 from textwrap import dedent
 from urllib import quote_plus
+from uuid import uuid4
 from selenium.common.exceptions import (
     WebDriverException, TimeoutException, StaleElementReferenceException)
 from selenium.webdriver.support import expected_conditions as EC
@@ -164,6 +165,49 @@ def wait_for_ajax_complete():
         }, 100);
     """
     world.browser.driver.execute_async_script(dedent(js))
+
+@world.absorb
+def wait_for_dom_events():
+    """
+    Wait for remaining DOM events to execute.
+
+    This is useful in cases where JavaScript has been loaded,
+    but we need to wait for it to finish initializing the page
+    (for example, installing click event handlers).
+
+    This technique is somewhat inefficient, since it may end
+    up waiting for DOM events that we don't care about.
+    In many cases, there are other cues we can look for
+    to verify that the page is initialized (default fields
+    filled in, for example).  But when those fail,
+    this method is useful.
+
+    Shamelessly borrowed and modified from:
+    http://artsy.github.io/blog/2012/02/03/reliably-testing-asynchronous-ui-w-slash-rspec-and-capybara/
+    """
+    # Ensure that 'body' has been loaded.
+    assert_true(world.is_css_present('body'))
+
+    # Ensure underscore is loaded
+    world.wait_for_js_variable_truthy('_')
+
+    # Generate a unique CSS ID to wait for
+    # The ID must start with a letter
+    div_id = 'a' + str(uuid4())
+
+    # Add a new defer event, which will be executed after
+    # all events that have already been deferred.
+    # This takes advantage of the fact that the JS UI event
+    # loop is single-threaded.
+    # Our event adds a new <div> to the DOM, which we can
+    # then wait for.
+    script = """
+        _.defer(function() {{
+        $('body').append('<div id="{}"></div>');
+        }});
+    """.format(div_id)
+    world.browser.execute_script(script)
+    assert_true(world.is_css_present('#' + div_id))
 
 
 @world.absorb

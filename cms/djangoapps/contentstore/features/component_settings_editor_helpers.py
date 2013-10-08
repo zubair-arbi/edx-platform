@@ -37,6 +37,12 @@ def click_new_component_button(step, component_button_css):
         ["jquery", "js/models/course", "coffee/src/models/module",
          "coffee/src/views/unit", "jquery.ui"]
     )
+
+    # Wait for BackBone to finish installing its event handlers
+    # This prevents the case where we click on the "new component"
+    # button before the click event handler is installed.
+    world.wait_for_dom_events()
+
     world.css_click(component_button_css)
 
 
