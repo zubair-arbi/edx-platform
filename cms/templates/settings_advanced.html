@@ -18,6 +18,7 @@
 <script type="text/javascript">
 require(["domReady!", "jquery", "js/models/settings/advanced", "js/views/settings/advanced"],
         function(doc, $, AdvancedSettingsModel, AdvancedSettingsView) {
+  document.body.className += " requireJsLoaded";
   $("form :input").focus(function() {
     $("label[for='" + this.id + "']").addClass("is-focused");
   }).blur(function() {

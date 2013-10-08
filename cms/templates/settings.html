@@ -19,6 +19,7 @@
   <script type="text/javascript">
 require(["domReady!", "jquery", "js/models/settings/course_details", "js/views/settings/main"],
   function(doc, $, CourseDetailsModel, MainView) {
+    document.body.className += " requireJsLoaded";
     // hilighting labels when fields are focused in
     $("form :input").focus(function() {
       $("label[for='" + this.id + "']").addClass("is-focused");

@@ -102,6 +102,7 @@
 require(["domReady!", "jquery", "js/models/location", "js/views/overview_assignment_grader",
   "js/collections/course_grader", "js/views/overview"],
   function(doc, $, Location, OverviewAssignmentGrader, CourseGraderCollection) {
+    document.body.className += " requireJsLoaded";
     // expand the due-date area if the values are set
     if ($('#due_date').val() != '') {
       var $block = $('.set-date').closest('.due-date-input');

@@ -1,6 +1,7 @@
 % if user.is_authenticated():
 <script type="text/javascript">
 require(['jquery'], function($) {
+  document.body.className += " requireJsLoaded";
   window.Tender = {
     hideToggle: true,
     title: '',

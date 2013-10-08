@@ -20,6 +20,7 @@
   <link rel="stylesheet" type="text/css" href="${static.url('js/vendor/timepicker/jquery.timepicker.css')}" />
   <script type="text/javascript">
 require(["domReady!", "jquery", "js/views/settings/grading", "js/models/settings/course_grading_policy"], function(doc, $, GradingView, CourseGradingPolicyModel) {
+    document.body.className += " requireJsLoaded";
     $("form :input").focus(function() {
       $("label[for='" + this.id + "']").addClass("is-focused");
     }).blur(function() {

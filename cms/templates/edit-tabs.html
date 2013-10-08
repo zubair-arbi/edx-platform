@@ -10,6 +10,7 @@
 <%block name="jsextra">
   <script type='text/javascript'>
 require(["coffee/src/views/tabs", "coffee/src/models/module"], function(TabsEditView, ModuleModel) {
+    document.body.className += " requireJsLoaded";
     new TabsEditView({
       el: $('.main-wrapper'),
       model: new ModuleModel({

@@ -166,6 +166,7 @@ var require = {
     % if context_course:
     <script type="text/javascript">
 require(['js/models/course'], function(Course) {
+  document.body.className += " requireJsLoaded";
   window.course = new Course({
     id: "${context_course.id}",
     name: "${context_course.display_name_with_default | h}",

@@ -20,7 +20,7 @@ require(["domReady", "jquery", "gettext", "js/models/asset", "js/collections/ass
          "js/views/assets", "js/views/feedback_prompt",
          "js/views/feedback_notification", "jquery.fileupload"],
         function(domReady, $, gettext, AssetModel, AssetCollection, AssetsView, PromptView, NotificationView) {
-
+    document.body.className += " requireJsLoaded";
     var assets = new AssetCollection(${asset_list});
     assets.url = "${update_asset_callback_url}";
     var assetsView = new AssetsView({collection: assets, el: $('#asset_table_body')});

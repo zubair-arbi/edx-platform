@@ -11,6 +11,7 @@ from django.utils.translation import ugettext as _
   <script type='text/javascript'>
 require(["domReady!", "jquery", "coffee/src/models/module", "coffee/src/views/unit", "jquery.ui"],
     function(doc, $, ModuleModel, UnitEditView, ui) {
+  document.body.className += " requireJsLoaded";
   window.unit_location_analytics = '${unit_location}';
 
   // tabs

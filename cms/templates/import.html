@@ -147,6 +147,7 @@ require(
         ["js/views/import", "jquery", "jquery.fileupload"],
         function(CourseImport, $) {
 
+document.body.className += " requireJsLoaded";
 var file;
 var bar = $('.progress-bar');
 var fill = $('.progress-fill');

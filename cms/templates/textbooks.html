@@ -23,6 +23,7 @@ CMS.URL.TEXTBOOKS = "${textbook_url}"
 CMS.URL.LMS_BASE = "${settings.LMS_BASE}"
 require(["js/models/section", "js/collections/textbook", "js/views/list_textbooks"],
         function(Section, TextbookCollection, ListTextbooksView) {
+  document.body.className += " requireJsLoaded";
   window.section = new Section({
       id: "${course.id}",
       name: "${course.display_name_with_default | h}",

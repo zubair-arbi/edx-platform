@@ -59,6 +59,7 @@ from django.utils.translation import ugettext as _
 <%block name="jsextra">
 <script type="text/javascript">
 require(["jquery", "jquery.cookie", "utility"], function($) {
+  document.body.className += " requireJsLoaded";
   function postJSON(url, data, callback) {
     $.ajax({type:'POST',
       url: url,

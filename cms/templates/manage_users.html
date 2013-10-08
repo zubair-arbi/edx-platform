@@ -164,7 +164,7 @@
 <script type="text/javascript">
 require(["jquery", "underscore", "gettext", "js/views/feedback_prompt"],
     function($, _, gettext, PromptView) {
-
+  document.body.className += " requireJsLoaded";
   var staffEmails = ${json.dumps([user.email for user in staff])};
   var tplUserURL = "${reverse('course_team_user', kwargs=dict(
       org=context_course.location.org,

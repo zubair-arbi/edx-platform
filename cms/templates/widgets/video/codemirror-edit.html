@@ -6,6 +6,7 @@
 
 <script type='text/javascript'>
 require(["domReady!", "jquery", "codemirror"], function(doc, $, CodeMirror) {
+  document.body.className += " requireJsLoaded";
   ## Init CodeMirror editor
   var el = $("#xml-${html_id}"),
         xml_editor = CodeMirror.fromTextArea(el.get(0), {

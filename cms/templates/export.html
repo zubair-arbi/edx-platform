@@ -18,6 +18,7 @@ var hasUnit = ${json.dumps(bool(unit))},
     errMsg = "${raw_err_msg or ""}";
 
 require(["domReady!", "gettext", "js/views/feedback_prompt"], function(doc, gettext, PromptView) {
+  document.body.className += " requireJsLoaded";
   var dialog;
   if(hasUnit) {
     dialog = new PromptView({

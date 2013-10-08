@@ -8,6 +8,7 @@
 <%block name="jsextra">
 <script type="text/javascript">
 require(['jquery', 'jquery.form'], function($) {
+    document.body.className += " requireJsLoaded";
     $(document).ready(function () {
 
         // showing/hiding creation rights UI

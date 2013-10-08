@@ -99,6 +99,7 @@
 <%block name="jsextra">
   <script type="text/javascript">
 require(["jquery", "jquery.cookie"], function($) {
+  document.body.className += " requireJsLoaded";
   $("form :input").focus(function() {
     $("label[for='" + this.id + "']").addClass("is-focused");
   }).blur(function() {

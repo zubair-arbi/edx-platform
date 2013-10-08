@@ -21,6 +21,7 @@
   <script type="text/javascript">
 require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/views/section_show", "js/views/overview_assignment_grader", "js/collections/course_grader", "js/views/overview", "jquery.inputnumber"],
     function(doc, $, Location, SectionModel, SectionShowView, OverviewAssignmentGrader, CourseGraderCollection){
+  document.body.className += " requireJsLoaded";
   // TODO figure out whether these should be in window or someplace else or whether they're only needed as local vars
   // I believe that current (New Section/New Subsection) cause full page reloads which means these aren't needed globally
   // but we really should change that behavior.

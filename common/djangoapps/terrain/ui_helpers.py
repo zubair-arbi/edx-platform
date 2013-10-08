@@ -99,48 +99,49 @@ def wait_for_requirejs(dependencies=None):
         we should wait for requirejs to load. By default, requirejs will only
         wait for jquery.
     """
-    if not dependencies:
-        dependencies = ["jquery"]
-    # stick jquery at the front
-    if dependencies[0] != "jquery":
-        dependencies.insert(0, "jquery")
+    wait_for_present(".requireJsLoaded", timeout=10)
+    # if not dependencies:
+    #     dependencies = ["jquery"]
+    # # stick jquery at the front
+    # if dependencies[0] != "jquery":
+    #     dependencies.insert(0, "jquery")
 
-    js = """
-        var callback = arguments[arguments.length - 1];
-        if(window.require) {{
-          requirejs.onError = callback;
-          var unloadHandler = function() {{
-            callback("unload");
-          }}
-          addEventListener("beforeunload", unloadHandler);
-          addEventListener("unload", unloadHandler);
-          require({deps}, function($) {{
-            setTimeout(function() {{
-              removeEventListener("beforeunload", unloadHandler);
-              removeEventListener("unload", unloadHandler);
-              callback(true);
-            }}, 50);
-          }});
-        }} else {{
-          callback(false);
-        }}
-    """.format(deps=json.dumps(dependencies))
-    for _ in range(5):  # 5 attempts max
-        result = world.browser.driver.execute_async_script(dedent(js))
-        if result == "unload":
-            # we ran this on the wrong page. Wait a bit, and try again, when the
-            # browser has loaded the next page.
-            world.wait(1)
-            continue
-        elif result not in (None, True, False):
-            # we got a require.js error
-            msg = "Error loading dependencies: type={0} modules={1}".format(
-                result['requireType'], result['requireModules'])
-            err = RequireJSError(msg)
-            err.error = result
-            raise err
-        else:
-            return result
+    # js = """
+    #     var callback = arguments[arguments.length - 1];
+    #     if(window.require) {{
+    #       requirejs.onError = callback;
+    #       var unloadHandler = function() {{
+    #         callback("unload");
+    #       }}
+    #       addEventListener("beforeunload", unloadHandler);
+    #       addEventListener("unload", unloadHandler);
+    #       require({deps}, function($) {{
+    #         setTimeout(function() {{
+    #           removeEventListener("beforeunload", unloadHandler);
+    #           removeEventListener("unload", unloadHandler);
+    #           callback(true);
+    #         }}, 50);
+    #       }});
+    #     }} else {{
+    #       callback(false);
+    #     }}
+    # """.format(deps=json.dumps(dependencies))
+    # for _ in range(5):  # 5 attempts max
+    #     result = world.browser.driver.execute_async_script(dedent(js))
+    #     if result == "unload":
+    #         # we ran this on the wrong page. Wait a bit, and try again, when the
+    #         # browser has loaded the next page.
+    #         world.wait(1)
+    #         continue
+    #     elif result not in (None, True, False):
+    #         # we got a require.js error
+    #         msg = "Error loading dependencies: type={0} modules={1}".format(
+    #             result['requireType'], result['requireModules'])
+    #         err = RequireJSError(msg)
+    #         err.error = result
+    #         raise err
+    #     else:
+    #         return result
 
 
 @world.absorb
