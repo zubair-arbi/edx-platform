@@ -167,45 +167,46 @@ def wait_for_ajax_complete():
     world.browser.driver.execute_async_script(dedent(js))
 
 @world.absorb
-def wait_for_dom_events():
+def wait_for_js_callbacks(delay):
     """
-    Wait for remaining DOM events to execute.
+    Wait for remaining JavaScript callbacks to execute.
+
+    `delay` is the time to wait for other JavaScript
+    timers to be installed.  These are guaranteed to complete
+    before this function returns successfully.
 
     This is useful in cases where JavaScript has been loaded,
     but we need to wait for it to finish initializing the page
     (for example, installing click event handlers).
 
     This technique is somewhat inefficient, since it may end
-    up waiting for DOM events that we don't care about.
+    up waiting for callbacks that we don't care about.
     In many cases, there are other cues we can look for
     to verify that the page is initialized (default fields
     filled in, for example).  But when those fail,
     this method is useful.
 
-    Shamelessly borrowed and modified from:
+    Borrowed and modified from:
     http://artsy.github.io/blog/2012/02/03/reliably-testing-asynchronous-ui-w-slash-rspec-and-capybara/
     """
     # Ensure that 'body' has been loaded.
     assert_true(world.is_css_present('body'))
 
-    # Ensure underscore is loaded
-    world.wait_for_js_variable_truthy('_')
-
     # Generate a unique CSS ID to wait for
     # The ID must start with a letter
     div_id = 'a' + str(uuid4())
 
-    # Add a new defer event, which will be executed after
-    # all events that have already been deferred.
-    # This takes advantage of the fact that the JS UI event
-    # loop is single-threaded.
+    # Add a new timer, which will be executed after
+    # all queued callbacks.
+    # This takes advantage of the fact that the
+    # JavaScrip UI loop is single-threaded.
     # Our event adds a new <div> to the DOM, which we can
     # then wait for.
     script = """
-        _.defer(function() {{
-        $('body').append('<div id="{}"></div>');
-        }});
-    """.format(div_id)
+        setTimeout(function() {{
+            $('body').append('<div id="{0}"></div>');
+        }}, {1});
+    """.format(div_id, delay)
     world.browser.execute_script(script)
     assert_true(world.is_css_present('#' + div_id))
 
@@ -282,11 +283,11 @@ def css_has_value(css_selector, value, index=0):
 
 @world.absorb
 def wait_for(func, timeout=5):
-        WebDriverWait(
-            driver=world.browser.driver,
-            timeout=timeout,
-            ignored_exceptions=(StaleElementReferenceException)
-        ).until(func)
+    WebDriverWait(
+        driver=world.browser.driver,
+        timeout=timeout,
+        ignored_exceptions=(StaleElementReferenceException)
+    ).until(func)
 
 
 @world.absorb
