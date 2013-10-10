@@ -502,11 +502,6 @@ WIKI_USE_BOOTSTRAP_SELECT_WIDGET = False
 WIKI_LINK_LIVE_LOOKUPS = False
 WIKI_LINK_DEFAULT_LEVEL = 2
 
-################################# Pearson TestCenter config  ################
-
-PEARSONVUE_SIGNINPAGE_URL = "https://www1.pearsonvue.com/testtaker/signin/SignInPage/EDX"
-# TESTCENTER_ACCOMMODATION_REQUEST_EMAIL = "exam-help@edx.org"
-
 ##### Feedback submission mechanism #####
 FEEDBACK_SUBMISSION_EMAIL = None
 
