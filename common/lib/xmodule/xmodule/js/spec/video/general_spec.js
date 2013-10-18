@@ -118,15 +118,15 @@
                             }, v = document.createElement('video');
 
                         if (!!(v.canPlayType && v.canPlayType('video/webm; codecs="vp8, vorbis"').replace(/no/, ''))) {
-                            html5Sources['webm'] = 'xmodule/include/fixtures/test.webm';
+                            html5Sources['webm'] = 'base/fixtures/test.webm';
                         }
 
                         if (!!(v.canPlayType && v.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"').replace(/no/, ''))) {
-                            html5Sources['mp4'] = 'xmodule/include/fixtures/test.mp4';
+                            html5Sources['mp4'] = 'base/fixtures/test.mp4';
                         }
 
                         if (!!(v.canPlayType && v.canPlayType('video/ogg; codecs="theora"').replace(/no/, ''))) {
-                            html5Sources['ogg'] = 'xmodule/include/fixtures/test.ogv';
+                            html5Sources['ogg'] = 'base/fixtures/test.ogv';
                         }
 
                         expect(state.html5Sources).toEqual(html5Sources);
@@ -184,7 +184,7 @@
             });
         });
 
-        describe('multiple YT on page', function () {
+        xdescribe('multiple YT on page', function () {
             var state1, state2, state3;
 
             beforeEach(function () {

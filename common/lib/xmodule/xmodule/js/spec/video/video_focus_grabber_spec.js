@@ -72,7 +72,7 @@
             expect(state.focusGrabber.disableFocusGrabber).toHaveBeenCalled();
         });
 
-        it('after controls hide focus grabbers are enabled', function () {
+        xit('after controls hide focus grabbers are enabled', function () {
             runs(function () {
                 // Captions should not be "sticky" for the autohide mechanism
                 // to work.

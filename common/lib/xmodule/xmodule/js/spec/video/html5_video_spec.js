@@ -241,7 +241,7 @@
                     });
                 });
 
-                it('set new inccorrect values', function () {
+                xit('set new incorrect values', function () {
                     runs(function () {
                         player.seekTo(-50);
                         expect(player.getCurrentTime()).toBe(seek);

@@ -323,7 +323,7 @@
         expect(videoPlayer.player.seekTo).toHaveBeenCalledWith(60, true);
       });
 
-      it('call updatePlayTime on player', function() {
+      xit('call updatePlayTime on player', function() {
         videoProgressSlider.onSlide(jQuery.Event('slide'), {value: 60});
 
         expect(videoPlayer.updatePlayTime).toHaveBeenCalledWith(60);
@@ -447,7 +447,7 @@
           videoPlayer.update();
         });
 
-        it('trigger updatePlayTime event', function() {
+        xit('trigger updatePlayTime event', function() {
           expect(videoPlayer.updatePlayTime).toHaveBeenCalledWith(60);
         });
       });
@@ -461,7 +461,7 @@
         spyOn(videoProgressSlider, 'updatePlayTime').andCallThrough();
       });
 
-      it('update the video playback time', function() {
+      xit('update the video playback time', function() {
         var duration = 0;
 
         waitsFor(function () {
@@ -495,7 +495,7 @@
         });
       });
 
-      it('update the playback time on caption', function() {
+      xit('update the playback time on caption', function() {
         var duration = 0;
 
         waitsFor(function () {
@@ -515,7 +515,7 @@
         });
       });
 
-      it('update the playback time on progress slider', function() {
+      xit('update the playback time on progress slider', function() {
         var duration = 0;
 
         waitsFor(function () {

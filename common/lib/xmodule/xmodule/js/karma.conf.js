@@ -22,8 +22,6 @@ module.exports = function(config) {
             '../../../../static/js/vendor/CodeMirror/codemirror.js',
             '../../../../static/js/vendor/tiny_mce/jquery.tinymce.js',
             '../../../../static/js/vendor/tiny_mce/tiny_mce.js',
-            '../../../../static/js/vendor/mathjax-MathJax-c9db6ac/MathJax.js',
-            {pattern: '../../../../static/js/vendor/mathjax-MathJax-c9db6ac/extensions/**/*.js', included:false},
             '../../../../static/js/vendor/jquery.timeago.js',
             '../../../../static/js/vendor/sinon-1.7.1.js',
             '../../../../static/js/vendor/analytics.js',
@@ -42,8 +40,12 @@ module.exports = function(config) {
             'spec/**/*.js'
         ],
         exclude: [
-            "src/word_cloud/d3.layout.cloud.js"
+            "src/word_cloud/d3.layout.cloud.js",
+            "spec/capa/*.js",
+            "spec/lti/*.js"
         ],
-        preprocessors: {}
+        preprocessors: {},
+        reporters: ['dots'],
+        logLevel: config.LOG_ERROR
     });
 };

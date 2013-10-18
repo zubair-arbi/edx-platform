@@ -157,3 +157,9 @@ $.fn.scrollTo = jasmine.createSpy 'jQuery.scrollTo'
 # Stub alert() to prevent alerts from popping
 # up and causing tests to hang
 @alert = jasmine.createSpy('alert').andReturn true
+
+# Stub out console logs to avoid cluttering
+# the test runner output.
+@console.log = jasmine.createSpy 'log'
+@console.debug = jasmine.createSpy 'debug'
+@console.warn = jasmine.createSpy 'warn'
