@@ -62,7 +62,7 @@ window.jQuery.ajaxWithPrefix = (url, settings) ->
 # Time waitsFor() should wait for before failing a test.
 window.WAIT_TIMEOUT = 5000
 
-jasmine.getFixtures().fixturesPath += 'fixtures'
+jasmine.getFixtures().fixturesPath = 'base/fixtures'
 
 jasmine.stubbedMetadata =
   '7tqY6eQzVhE':
