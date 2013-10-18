@@ -153,3 +153,7 @@ $.fn.qtip = jasmine.createSpy 'jQuery.qtip'
 
 # Stub jQuery.scrollTo
 $.fn.scrollTo = jasmine.createSpy 'jQuery.scrollTo'
+
+# Stub alert() to prevent alerts from popping
+# up and causing tests to hang
+@alert = jasmine.createSpy('alert').andReturn true
