@@ -63,8 +63,8 @@ CELERY_CACHE_BACKEND = 'celery'
 
 # When the broker is behind an ELB, use a heartbeat to refresh the
 # connection and to detect if it has been dropped.
-BROKER_HEARTBEAT = 10.0
-BROKER_HEARTBEAT_CHECKRATE = 2
+# BROKER_HEARTBEAT = 10.0
+# BROKER_HEARTBEAT_CHECKRATE = 2
 
 # Each worker should only fetch one message at a time
 CELERYD_PREFETCH_MULTIPLIER = 1
