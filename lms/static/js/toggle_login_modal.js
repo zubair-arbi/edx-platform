@@ -7,7 +7,7 @@
         closeButton: null,
         position: 'fixed'
       }
-      
+
       if ($("#lean_overlay").length == 0) {
         var overlay = $("<div id='lean_overlay'></div>");
         $("body").append(overlay);
@@ -23,7 +23,7 @@
           $(".modal").hide();
 
           var modal_id = $(this).attr("href");
-          
+
           if ($(modal_id).hasClass("video-modal")) {
             //Video modals need to be cloned before being presented as a modal
             //This is because actions on the video get recorded in the history.

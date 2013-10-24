@@ -1,9 +1,6 @@
 $(document).ready(function () {
     $('#cheatsheetLink').click(function() {
-        $('#cheatsheetModal').modal('show');
+        $('#cheatsheetModal').leanModal();
     });
-    
-    $('#cheatsheetModal .close-btn').click(function(e) {
-        $('#cheatsheetModal').modal('hide');
-    });
+    accessible_modal("#cheatsheetModal", "#cheatesheetModal .close-modal", "#cheatesheetModal", ".wiki.edit");
 });
