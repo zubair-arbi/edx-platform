@@ -266,6 +266,15 @@ def check_subtask_is_valid(entry_id, current_task_id, new_subtask_status):
         TASK_LOG.warning(msg)
         raise DuplicateTaskException(msg)
 
+    # Now we are ready to start working on this.  Try to lock it.
+    # If it fails, then it means that another worker is already in the
+    # middle of working on this.
+    if not _acquire_subtask_lock(current_task_id):
+        format_str = "Unexpected task_id '{}': already being executed - for subtask of instructor task '{}'"
+        msg = format_str.format(current_task_id, entry)
+        TASK_LOG.warning(msg)
+        raise DuplicateTaskException(msg)
+
 
 @transaction.commit_manually
 def update_subtask_status(entry_id, current_task_id, new_subtask_status):
