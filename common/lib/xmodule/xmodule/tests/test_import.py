@@ -20,6 +20,7 @@ from xmodule.modulestore.inheritance import InheritanceMixin
 
 from xblock.core import XBlock
 from xblock.fields import Scope, String, Integer
+from xblock.runtime import KvsFieldData, DictKeyValueStore, MemoryUsageStore
 
 
 ORG = 'test_org'
@@ -46,7 +47,9 @@ class DummySystem(ImportSystem):
             error_tracker=error_tracker,
             parent_tracker=parent_tracker,
             load_error_modules=load_error_modules,
-            mixins=(InheritanceMixin, XModuleMixin)
+            mixins=(InheritanceMixin, XModuleMixin),
+            field_data=KvsFieldData(DictKeyValueStore()),
+            usage_store=MemoryUsageStore(),
         )
 
     def render_template(self, _template, _context):
@@ -77,13 +80,30 @@ class GenericXBlock(XBlock):
 
 
 class TryItTest(BaseCourseTestCase):
+
+    def assert_xblocks_are_good(self, block):
+        """Assert a number of conditions that must be true for `block` to be good."""
+        scope_ids = block.scope_ids
+        self.assertIsNotNone(scope_ids.usage_id)
+        self.assertIsNotNone(scope_ids.def_id)
+
+        for child_id in block.children:
+            child = block.runtime.get_block(child_id)
+            self.assert_xblocks_are_good(child)
+
     @XBlock.register_temp_plugin(GenericXBlock)
-    def test_pure_xblock(self):
+    def test_parsing_pure_xblock(self):
         system = self.get_system(load_error_modules=False)
-        descriptor = system.process_xml("<course/>")
-        descriptor = system.process_xml("<genericxblock field1='abc' field2='23' />")
-        descriptor = system.process_xml("<genericxblock field1='abc' field2='23'><genericxblock/></genericxblock>")
-        self.assertIsInstance(descriptor, GenericXBlock)
+        for xml in [
+            "<genericxblock/>",
+            "<genericxblock field1='abc' field2='23' />",
+            "<genericxblock field1='abc' field2='23'><genericxblock/></genericxblock>",
+        ]:
+            descriptor = system.process_xml(xml)
+            self.assertIsInstance(descriptor, GenericXBlock)
+            print descriptor.scope_ids.def_id
+            self.assert_xblocks_are_good(descriptor)
+        # TODO: mock out XModuleMixin.location to see that it is never called.                     
 
 
 class ImportTestCase(BaseCourseTestCase):

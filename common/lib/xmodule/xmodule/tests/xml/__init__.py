@@ -8,6 +8,8 @@ from xmodule.x_module import XMLParsingSystem
 from xmodule.mako_module import MakoDescriptorSystem
 from xmodule.modulestore.xml import create_block_from_xml
 
+from xblock.runtime import KvsFieldData, DictKeyValueStore
+
 
 class InMemorySystem(XMLParsingSystem, MakoDescriptorSystem):  # pylint: disable=abstract-method
     """
@@ -25,7 +27,8 @@ class InMemorySystem(XMLParsingSystem, MakoDescriptorSystem):  # pylint: disable
             error_tracker=Mock(),
             resources_fs=xml_import_data.filesystem,
             mixins=xml_import_data.xblock_mixins,
-            render_template=lambda template, context: pprint.pformat((template, context))
+            render_template=lambda template, context: pprint.pformat((template, context)),
+            field_data=KvsFieldData(DictKeyValueStore()),
         )
 
     def process_xml(self, xml):  # pylint: disable=method-hidden

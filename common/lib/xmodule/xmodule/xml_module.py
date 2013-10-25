@@ -7,7 +7,7 @@ from collections import namedtuple
 from lxml import etree
 
 from xblock.fields import Dict, Scope, ScopeIds
-from xmodule.x_module import (XModuleDescriptor, policy_key)
+from xmodule.x_module import XModuleDescriptor, policy_key
 from xmodule.modulestore import Location
 from xmodule.modulestore.inheritance import own_metadata, InheritanceKeyValueStore
 from xmodule.modulestore.xml_exporter import EdxJSONEncoder
@@ -157,8 +157,7 @@ class XmlDescriptor(XModuleDescriptor):
 
         xml_object: An etree Element
         """
-        raise NotImplementedError(
-            "%s does not implement definition_from_xml" % cls.__name__)
+        raise NotImplementedError("%s does not implement definition_from_xml" % cls.__name__)
 
     @classmethod
     def clean_metadata_from_xml(cls, xml_object):
@@ -181,7 +180,7 @@ class XmlDescriptor(XModuleDescriptor):
         return etree.parse(file_object, parser=edx_xml_parser).getroot()
 
     @classmethod
-    def load_file(cls, filepath, fs, location):
+    def load_file(cls, filepath, fs, def_id):
         '''
         Open the specified file in fs, and call cls.file_to_xml on it,
         returning the lxml object.
@@ -194,11 +193,11 @@ class XmlDescriptor(XModuleDescriptor):
         except Exception as err:
             # Add info about where we are, but keep the traceback
             msg = 'Unable to load file contents at path %s for item %s: %s ' % (
-                filepath, location.url(), str(err))
+                filepath, def_id, err)
             raise Exception, msg, sys.exc_info()[2]
 
     @classmethod
-    def load_definition(cls, xml_object, system, location):
+    def load_definition(cls, xml_object, system, def_id):
         '''Load a descriptor definition from the specified xml_object.
         Subclasses should not need to override this except in special
         cases (e.g. html module)'''
@@ -224,7 +223,7 @@ class XmlDescriptor(XModuleDescriptor):
                         filepath = candidate
                         break
 
-            definition_xml = cls.load_file(filepath, system.resources_fs, location)
+            definition_xml = cls.load_file(filepath, system.resources_fs, def_id)
 
         definition_metadata = get_metadata_from_xml(definition_xml)
         cls.clean_metadata_from_xml(definition_xml)
@@ -273,7 +272,7 @@ class XmlDescriptor(XModuleDescriptor):
                 metadata[attr] = value
 
     @classmethod
-    def from_xml(cls, xml_data, system, org=None, course=None):
+    def from_xml(cls, xml_data, system, org=None, course=None): # TODO: org and course are now unused.
         """
         Creates an instance of this descriptor from the supplied xml_data.
         This may be overridden by subclasses
@@ -288,19 +287,20 @@ class XmlDescriptor(XModuleDescriptor):
         xml_object = etree.fromstring(xml_data)
         # VS[compat] -- just have the url_name lookup, once translation is done
         url_name = xml_object.get('url_name', xml_object.get('slug'))
-        location = Location('i4x', org, course, xml_object.tag, url_name)
+        def_id = system.usage_store.create_definition(xml_object.tag, url_name)
+        usage_id = system.usage_store.create_usage(def_id)
 
         # VS[compat] -- detect new-style each-in-a-file mode
         if is_pointer_tag(xml_object):
             # new style:
             # read the actual definition file--named using url_name.replace(':','/')
             filepath = cls._format_filepath(xml_object.tag, name_to_pathname(url_name))
-            definition_xml = cls.load_file(filepath, system.resources_fs, location)
+            definition_xml = cls.load_file(filepath, system.resources_fs, def_id)
         else:
             definition_xml = xml_object
             filepath = None
 
-        definition, children = cls.load_definition(definition_xml, system, location)  # note this removes metadata
+        definition, children = cls.load_definition(definition_xml, system, def_id)  # note this removes metadata
 
         # VS[compat] -- make Ike's github preview links work in both old and
         # new file layouts
@@ -321,9 +321,7 @@ class XmlDescriptor(XModuleDescriptor):
                 metadata['definition_metadata_err'] = str(err)
 
         # Set/override any metadata specified by policy
-        k = policy_key(location)
-        if k in system.policy:
-            cls.apply_policy(metadata, system.policy[k])
+        cls.apply_policy(metadata, system.get_policy(usage_id))
 
         field_data = {}
         field_data.update(metadata)
@@ -331,17 +329,15 @@ class XmlDescriptor(XModuleDescriptor):
         field_data['children'] = children
 
         field_data['xml_attributes']['filename'] = definition.get('filename', ['', None])  # for git link
-        field_data['location'] = location
-        field_data['category'] = xml_object.tag
+        ####field_data['location'] = location
+        ####field_data['category'] = xml_object.tag
         kvs = InheritanceKeyValueStore(initial_values=field_data)
         field_data = KvsFieldData(kvs)
 
         return system.construct_xblock_from_class(
             cls,
             # We're loading a descriptor, so student_id is meaningless
-            # We also don't have separate notions of definition and usage ids yet,
-            # so we use the location for both
-            ScopeIds(None, location.category, location, location),
+            ScopeIds(None, xml_object.tag, def_id, usage_id),
             field_data,
         )
 

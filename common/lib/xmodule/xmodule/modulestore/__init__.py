@@ -160,8 +160,8 @@ class Location(_LocationBase):
         def check_list(list_):
             def check(val, regexp):
                 if val is not None and regexp.search(val) is not None:
-                    log.debug('invalid characters val="%s", list_="%s"' % (val, list_))
-                    raise InvalidLocationError("Invalid characters in '%s'." % (val))
+                    log.debug('invalid characters val=%r, list_=%r' % (val, list_))
+                    raise InvalidLocationError("Invalid characters in %r." % (val))
 
             list_ = list(list_)
             for val in list_[:4] + [list_[5]]:
@@ -174,7 +174,7 @@ class Location(_LocationBase):
         elif isinstance(location, basestring):
             match = URL_RE.match(location)
             if match is None:
-                log.debug('location is instance of %s but no URL match' % basestring)
+                log.debug("location %r doesn't match URL" % location)
                 raise InvalidLocationError(location)
             groups = match.groupdict()
             check_dict(groups)

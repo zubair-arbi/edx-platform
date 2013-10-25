@@ -8,15 +8,16 @@ from lxml import etree
 from collections import namedtuple
 from pkg_resources import resource_listdir, resource_string, resource_isdir
 
-from xmodule.modulestore import Location
-from xmodule.modulestore.exceptions import ItemNotFoundError, InsufficientSpecificationError, InvalidLocationError
-
 from xblock.core import XBlock
 from xblock.fields import Scope, Integer, Float, List, XBlockMixin, String
 from xblock.fragment import Fragment
-from xblock.runtime import Runtime
+from xblock.runtime import Runtime, MemoryUsageStore
+
 from xmodule.errortracker import exc_info_to_str
+from xmodule.modulestore import Location
+from xmodule.modulestore.exceptions import ItemNotFoundError, InsufficientSpecificationError, InvalidLocationError
 from xmodule.modulestore.locator import BlockUsageLocator
+
 
 log = logging.getLogger(__name__)
 
@@ -111,6 +112,8 @@ class XModuleMixin(XBlockMixin):
 
     @property
     def location(self):
+        return self.scope_ids.usage_id
+        #####
         try:
             return Location(self.scope_ids.usage_id)
         except InvalidLocationError:
@@ -785,7 +788,10 @@ class DescriptorSystem(ConfigurableFragmentWrapper, Runtime):  # pylint: disable
     Base class for :class:`Runtime`s to be used with :class:`XModuleDescriptor`s
     """
 
-    def __init__(self, load_item, resources_fs, error_tracker, **kwargs):
+    def __init__(
+        self, load_item, resources_fs, error_tracker, get_policy=None,
+        field_data=None, usage_store=None, **kwargs
+    ):
         """
         load_item: Takes a Location and returns an XModuleDescriptor
 
@@ -820,30 +826,32 @@ class DescriptorSystem(ConfigurableFragmentWrapper, Runtime):  # pylint: disable
 
                NOTE: To avoid duplication, do not call the tracker on errors
                that you're about to re-raise---let the caller track them.
+
+        get_policy: a function that takes a usage id and returns a dict of
+            policy to apply.
+
         """
 
-        from xblock.runtime import UsageStore
-
-        class MyUsageStore(UsageStore):
-            def __init__(self, system):
-                self.system = system
-
-            def create_definition(self, block_type):
-                raw_class = XModuleDescriptor.load_class(block_type) ### TODO: , default_classXXX)
-                xblock_class = self.system.mixologist.mix(raw_class)
-
-
-        # Right now, usage_store is unused, and field_data is always supplanted
-        # with an explicit field_data during construct_xblock, so None's suffice.
-        super(DescriptorSystem, self).__init__(usage_store=MyUsageStore(self), field_data=None, **kwargs)
+        if usage_store is None:
+            usage_store = MemoryUsageStore()
+        super(DescriptorSystem, self).__init__(usage_store=usage_store, field_data=field_data, **kwargs)
 
         self.load_item = load_item
         self.resources_fs = resources_fs
         self.error_tracker = error_tracker
+        if get_policy:
+            self.get_policy = get_policy
+        else:
+            self.get_policy = lambda u: {}
 
-    def get_block(self, block_id):
-        """See documentation for `xblock.runtime:Runtime.get_block`"""
-        return self.load_item(block_id)
+    if 0:
+        def get_block(self, usage_id):
+            """See documentation for `xblock.runtime:Runtime.get_block`"""
+            def_id = self.usage_store.get_definition_id(usage_id)
+            return self.load_item(def_id)
+
+    def load_class(self, block_type, default_class=None):
+        return XModuleDescriptor.load_class(block_type, default_class)
 
     def get_field_provenance(self, xblock, field):
         """
@@ -913,7 +921,9 @@ class ModuleSystem(ConfigurableFragmentWrapper, Runtime):  # pylint: disable=abs
             anonymous_student_id='', course_id=None,
             open_ended_grading_interface=None, s3_interface=None,
             cache=None, can_execute_unsafe_code=None, replace_course_urls=None,
-            replace_jump_to_id_urls=None, error_descriptor_class=None, **kwargs):
+            replace_jump_to_id_urls=None, error_descriptor_class=None,
+            field_data=None,
+            **kwargs):
         """
         Create a closure around the system environment.
 
@@ -964,11 +974,13 @@ class ModuleSystem(ConfigurableFragmentWrapper, Runtime):  # pylint: disable=abs
 
         error_descriptor_class - The class to use to render XModules with errors
 
+        field_data - the `FieldData` to use for backing XBlock storage.
+
         """
 
-        # Right now, usage_store is unused, and field_data is always supplanted
-        # with an explicit field_data during construct_xblock, so None's suffice.
-        super(ModuleSystem, self).__init__(usage_store=None, field_data=None, **kwargs)
+        # Usage_store is unused, and field_data is often supplanted with an
+        # explicit field_data during construct_xblock.
+        super(ModuleSystem, self).__init__(usage_store=None, field_data=field_data, **kwargs)
 
         self.STATIC_URL = static_url
         self.ajax_url = ajax_url

@@ -16,6 +16,8 @@ from mock import Mock
 from path import path
 
 from xblock.field_data import DictFieldData
+from xblock.runtime import MemoryUsageStore
+
 from xmodule.x_module import ModuleSystem, XModuleDescriptor, XModuleMixin
 from xmodule.modulestore.inheritance import InheritanceMixin
 from xmodule.mako_module import MakoDescriptorSystem
@@ -81,6 +83,8 @@ def get_test_descriptor_system():
         error_tracker=Mock(),
         render_template=mock_render_template,
         mixins=(InheritanceMixin, XModuleMixin),
+        field_data=DictFieldData({}),
+        usage_store=MemoryUsageStore(),
     )
 
 

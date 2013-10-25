@@ -23,11 +23,12 @@ from xmodule.html_module import HtmlDescriptor
 from xblock.core import XBlock
 from xblock.fields import ScopeIds
 from xblock.field_data import DictFieldData
+from xblock.runtime import DictKeyValueStore, UsageStore, MemoryUsageStore
 
 from . import ModuleStoreBase, Location, XML_MODULESTORE_TYPE
 
 from .exceptions import ItemNotFoundError
-from .inheritance import compute_inherited_metadata
+from .inheritance import compute_inherited_metadata, inheriting_field_data
 
 edx_xml_parser = etree.XMLParser(dtd_validation=False, load_dtd=False,
                                  remove_comments=True, remove_blank_text=True)
@@ -49,7 +50,7 @@ def clean_out_mako_templating(xml_string):
 class ImportSystem(XMLParsingSystem, MakoDescriptorSystem):
     def __init__(self, xmlstore, course_id, course_dir,
                  error_tracker, parent_tracker,
-                 load_error_modules=True, **kwargs):
+                 load_error_modules=True, usage_store=None, **kwargs):
         """
         A class that handles loading from xml.  Does some munging to ensure that
         all elements have unique slugs.
@@ -59,6 +60,9 @@ class ImportSystem(XMLParsingSystem, MakoDescriptorSystem):
         self.unnamed = defaultdict(int)  # category -> num of new url_names for that category
         self.used_names = defaultdict(set)  # category -> set of used url_names
         self.org, self.course, self.url_name = course_id.split('/')
+        if usage_store is None:
+            usage_store = CourseBasedUsageStore(self.org, self.course, self.url_name)
+
         # cdodge: adding the course_id as passed in for later reference rather than having to recomine the org/course/url_name
         self.course_id = course_id
         self.load_error_modules = load_error_modules
@@ -217,8 +221,30 @@ class ImportSystem(XMLParsingSystem, MakoDescriptorSystem):
             render_template=render_template,
             error_tracker=error_tracker,
             process_xml=process_xml,
+            usage_store=usage_store,
             **kwargs
         )
+
+
+class CourseBasedUsageStore(UsageStore):
+    def __init__(self, org, course, url_name):
+        self.org = org
+        self.course = course
+        self.url_name = url_name
+
+    def create_usage(self, def_id):
+        return def_id
+
+    def get_definition_id(self, usage_id):
+        return usage_id
+
+    def create_definition(self, block_type, slug=None):
+        location = Location('i4x', self.org, self.course, block_type, slug)
+        return location
+
+    def get_block_type(self, def_id):
+        location = def_id
+        return location.category
 
 
 def create_block_from_xml(xml_data, system, org=None, course=None, default_class=None):
@@ -239,16 +265,18 @@ def create_block_from_xml(xml_data, system, org=None, course=None, default_class
 
     """
     node = etree.fromstring(xml_data)
-    raw_class = XModuleDescriptor.load_class(node.tag, default_class)
+    raw_class = system.load_class(node.tag, default_class)
     xblock_class = system.mixologist.mix(raw_class)
 
     # leave next line commented out - useful for low-level debugging
     # log.debug('[create_block_from_xml] tag=%s, class=%s' % (node.tag, xblock_class))
 
+    block_type = node.tag
     url_name = node.get('url_name', node.get('slug'))
-    location = Location('i4x', org, course, node.tag, url_name)
+    def_id = system.usage_store.create_definition(block_type, url_name)
+    usage_id = system.usage_store.create_usage(def_id)
 
-    scope_ids = ScopeIds(None, location.category, location, location)
+    scope_ids = ScopeIds(None, block_type, def_id, usage_id)
     xblock = xblock_class.parse_xml(node, system, scope_ids)
     return xblock
 
@@ -268,8 +296,6 @@ class ParentTracker(object):
 
         child and parent must be something that can be passed to Location.
         """
-        child = Location(child)
-        parent = Location(parent)
         s = self._parents.setdefault(child, set())
         s.add(parent)
 
@@ -277,7 +303,6 @@ class ParentTracker(object):
         """
         returns True iff child has some parents.
         """
-        child = Location(child)
         return child in self._parents
 
     def make_known(self, location):
@@ -289,7 +314,6 @@ class ParentTracker(object):
         """
         Return a list of the parents of this child.  If not is_known(child), will throw a KeyError
         """
-        child = Location(child)
         return list(self._parents[child])
 
 
@@ -326,6 +350,10 @@ class XMLModuleStore(ModuleStoreBase):
             self.default_class = class_
 
         self.parent_trackers = defaultdict(ParentTracker)
+
+        # All field data will be stored in an inheriting field data.
+        self.field_data = inheriting_field_data(kvs=DictKeyValueStore())
+        #self.usage_store = MemoryUsageStore()
 
         # If we are specifically asked for missing courses, that should
         # be an error.  If we are asked for "all" courses, find the ones
@@ -369,7 +397,8 @@ class XMLModuleStore(ModuleStoreBase):
         String representation - for debugging
         '''
         return '<XMLModuleStore data_dir=%r, %d courses, %d modules>' % (
-            self.data_dir, len(self.courses), len(self.modules))
+            self.data_dir, len(self.courses), len(self.modules)
+        )
 
     def load_policy(self, policy_path, tracker):
         """
@@ -461,6 +490,8 @@ class XMLModuleStore(ModuleStoreBase):
                 load_error_modules=self.load_error_modules,
                 policy=policy,
                 mixins=self.xblock_mixins,
+                field_data=self.field_data,
+                #usage_store=self.usage_store,
             )
 
             course_descriptor = system.process_xml(etree.tostring(course_data, encoding='unicode'))
