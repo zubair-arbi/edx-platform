@@ -1,20 +1,21 @@
+from django.core.exceptions import ObjectDoesNotExist
 
 def user_is_article_course_staff(user, article):
     """
-    The root of a course wiki is /<course_number>. This means multiple courses
-    share the same wiki root e.g. MITX/Phy101/Spring and HarvardX/Phy101/Fall
-    share the same wiki root /Phy101.
+    The root of a course wiki is /<course_number>. This means in case there
+    are two courses which have the same course_number they will end up with
+    the same course wiki root e.g. MITX/Phy101/Spring and HarvardX/Phy101/Fall
+    will share /Phy101.
 
-    This looks at the second level ancestor of the article and returns True if
+    This looks at the course wiki root of the article and returns True if
     the user belongs to a group whose name starts with 'instructor_' or
-    'staff_' and contains '/<second_level_ancestor_slug>/'. So if the user is
+    'staff_' and contains '/<course_wiki_root_slug>/'. So if the user is
     staff on course MITX/Phy101/Spring they will be in
     'instructor_MITX/Phy101/Spring' or 'staff_MITX/Phy101/Spring' groups and
     so this will return True.
     """
 
-    # We assume that the second level ancestor is a course wiki root
-    course_number = article_second_level_ancestor_slug(article)
+    course_number = article_course_wiki_root_slug(article)
 
     if course_number is None:
         return False
@@ -24,7 +25,8 @@ def user_is_article_course_staff(user, article):
 
     # The wiki expects article slugs to contain at least one non-digit so if
     # the course number is just a number the course wiki root slug is set to
-    # be '<course_number>_'.
+    # be '<course_number>_'. Again this means that courses with course numbers
+    # like '202' and '202_' will share the same course wiki root.
     if course_number.endswith('_') and user_is_staff_on_course_number(user, course_number[:-1]):
         return True
 
@@ -32,7 +34,7 @@ def user_is_article_course_staff(user, article):
 
 def user_is_staff_on_course_number(user, course_number):
 
-    # Find any user groups with the course number
+    # Find any user groups whose name contains the course number
     # Note that in django+MySQL icontains is case-sensitive if collation is case-sensitive
     # and case-insensitive if collation is case-insensitive (https://code.djangoproject.com/ticket/9682)
     user_course_groups = user.groups.filter(name__icontains='/{0}/'.format(course_number))
@@ -40,11 +42,14 @@ def user_is_staff_on_course_number(user, course_number):
     # Filter down to instructor and staff groups
     user_course_staff_groups = filter(lambda g: g.name.startswith(('instructor_', 'staff_')) , user_course_groups)
 
-    return user_course_staff_groups # So if user is in a staff group of the course
+    if user_course_staff_groups:
+        return True
 
-def article_second_level_ancestor_slug(article):
+    return False
+
+def article_course_wiki_root_slug(article):
     """
-    This returns the slug of the course wiki root. Examples:
+    We assume the second level ancestor is the course wiki root. Examples:
     / returns None
     /Phy101 returns 'Phy101'
     /Phy101/Mechanics returns 'Phy101'
@@ -57,23 +62,23 @@ def article_second_level_ancestor_slug(article):
 
     try:
         urlpath = article.urlpath_set.get()
-    except:
+    except ObjectDoesNotExist:
         return None
 
     # Ancestors of /Phy101/Mechanics/Acceleration/ is a list of URLPaths
     # ['Root', 'Phy101', 'Mechanics']
     ancestors = urlpath.cached_ancestors
 
-    level_two_ancestor_urlpath = None
+    course_wiki_root_urlpath = None
 
     if len(ancestors) == 0: # It is the wiki root article.
-       level_two_ancestor_urlpath = None
+       course_wiki_root_urlpath = None
     elif len(ancestors) == 1: # It is a course wiki root article.
-        level_two_ancestor_urlpath = urlpath
+        course_wiki_root_urlpath = urlpath
     else: # It is an article inside a course wiki.
-        level_two_ancestor_urlpath = ancestors[1]
+        course_wiki_root_urlpath = ancestors[1]
 
-    if level_two_ancestor_urlpath is not None:
-        return level_two_ancestor_urlpath.slug
+    if course_wiki_root_urlpath is not None:
+        return course_wiki_root_urlpath.slug
 
     return None
