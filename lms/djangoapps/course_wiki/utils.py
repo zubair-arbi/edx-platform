@@ -27,21 +27,33 @@ def user_is_article_course_staff(user, article):
     # the course number is just a number the course wiki root slug is set to
     # be '<course_number>_'. Again this means that courses with course numbers
     # like '202' and '202_' will share the same course wiki root.
-    if (course_slug.endswith('_') and course_number_is_numerical(course_slug[:-1]) and
+    if (course_slug.endswith('_') and course_wiki_slug_is_numerical(course_slug[:-1]) and
             user_is_staff_on_course_number(user, course_slug[:-1])):
         return True
 
     return False
 
-def course_number_is_numerical(course_number):
+def course_wiki_slug_is_numerical(course_wiki_slug):
     try:
         # if the float() doesn't throw an exception it's a number
-        float(course_number[:-1])
+        float(course_wiki_slug)
     except:
         pass
     else:
         return True
     return False
+
+def course_wiki_slug(course):
+    course_wiki_slug = course.wiki_slug
+
+    # cdodge: fix for cases where self.location.course can be interpreted as an number rather than
+    # a string. We're seeing in Studio created courses that people often will enter in a stright number
+    # for 'course' (e.g. 201). This Wiki library expects a string to "do the right thing". We haven't noticed this before
+    # because - to now - 'course' has always had non-numeric characters in them
+    if course_wiki_slug_is_numerical(course_wiki_slug):
+        course_wiki_slug = course_wiki_slug + "_"
+
+    return course_wiki_slug
 
 def user_is_staff_on_course_number(user, course_number):
 
