@@ -15,21 +15,32 @@ def user_is_article_course_staff(user, article):
     so this will return True.
     """
 
-    course_number = article_course_wiki_root_slug(article)
+    course_slug = article_course_wiki_root_slug(article)
 
-    if course_number is None:
+    if course_slug is None:
         return False
 
-    if user_is_staff_on_course_number(user, course_number):
+    if user_is_staff_on_course_number(user, course_slug):
         return True
 
     # The wiki expects article slugs to contain at least one non-digit so if
     # the course number is just a number the course wiki root slug is set to
     # be '<course_number>_'. Again this means that courses with course numbers
     # like '202' and '202_' will share the same course wiki root.
-    if course_number.endswith('_') and user_is_staff_on_course_number(user, course_number[:-1]):
+    if (course_slug.endswith('_') and course_number_is_numerical(course_slug[:-1]) and
+            user_is_staff_on_course_number(user, course_slug[:-1])):
         return True
 
+    return False
+
+def course_number_is_numerical(course_number):
+    try:
+        # if the float() doesn't throw an exception it's a number
+        float(course_number[:-1])
+    except:
+        pass
+    else:
+        return True
     return False
 
 def user_is_staff_on_course_number(user, course_number):
