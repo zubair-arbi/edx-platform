@@ -172,6 +172,27 @@
             <input id="name" type="text" name="name" value="" placeholder="example: Jane C Doe" required aria-required="true" />
             <span class="tip tip-input">Needed for any certificates you may earn <strong>(cannot be changed later)</strong></span>
           </li>
+          
+          <li class="field required text" id="field-name">
+            <label for="name">Last Name</label>
+            <input id="last_name" type="text" name="last_name" value="" required aria-required="true" />
+          </li>
+          
+          <li class="field select" id="field-name">
+            <label for="name">Middle Initial</label>
+            <input id="middle_initial" type="text" name="middle_initial" value="" required aria-required="true" />
+          </li>
+          
+          <li class="field required text" id="field-name">
+            <label for="name">First Name</label>
+            <input id="first_name" type="text" name="first_name" value="" required aria-required="true" />
+          </li>
+          
+          <li class="field required text" id="field-name">
+            <label for="name">Birth Date</label>
+            <input id="birth_date" type="text" name="birth_date" value="" required aria-required="true" />
+          </li>
+          
         </ol>
 
         % else:
@@ -218,89 +239,51 @@
        <h3><strong>Professional Information</strong></h3>
    
        <ol class="list-input">
-          <li class="field required text" id="field-profession">
-            <label for="profession">Profession</label>
-            <select id="profession" name="profession">
-              <option value="">--</option>
-              %for code, profession in CmeUserProfile.PROFESSION_CHOICES:
-                <option value="${code}">${profession}</option>
-              %endfor
-            </select>
-          </li>
          
-          <li class="field select" id="field-professional-designation">
-            <label for="professional_designation">Professional Designation</label>
+          <li class="field required text" id="field-professional-designation">
+            <label for="professional_designation">Designation</label>
             <select id="professional_designation" name="professional_designation">
-              <option value="">--</option>
+              <option value="">None</option>
               %for code, professional_designation in CmeUserProfile.PROFESSIONAL_DESIGNATION_CHOICES:
                 <option value="${code}">${professional_designation}</option>
               %endfor
             </select>
           </li>
+          
+ 
+         <div class="field select checkbox" id="stanford-affiliation">
+          <input id="stanford-affiliation-yes" type="checkbox" name="stanford-affiliation" value="true" />
+          <label for="stanford-affiliation-yes">Are you affiliated with Stanford Medicine?</a></label>
+        </div>
+ 
          
-          <li class="field required text" id="license-number">
+          <li class="field select" id="license-number">
             <label for="license_number">License Number</label>
             <input id="license_number" type="text" name="license_number" />
           </li>
          
-      </ol>
-      </fieldset>
-     
-      <fieldset class="group group-form group-form-secondary group-form-organizationinformation">
-       <hr />
-       <h3><strong>Organization Information</strong></h3>
-      
-       <ol class="list-input">
-         <li class="field select" id="organization">
-            <label for="organization">Organization</label>
-            <input id="organization" type="text" name="organization" />
-         </li>
-      
-         <li class="field required" id="stanford_affiliated">
-           <label for="stanford_affiliated">Are you affiliated with Stanford?</label>
-           <div class="field select radio " id="is_stanford_affiliated">
-              <span><input id="stanford_affiliated_yes" class="controller-show" type="radio" value="1" name="stanford_affiliated" aria-label="Yes" /> Yes</span>
-              <span><input id="stanford_affiliated_no" class="controller-hide" type="radio" value="0" name="stanford_affiliated" aria-label="No" style="margin-left: 50px;" /> No</span>
-             
-              <div class="field select controlled" id="how_stanford_affiliated" style="display: none;">
-                <br />
-                <label for="how_stanford_affiliated">How are you affiliated with Stanford?</label>
-                <select class="controller" id="how_stanford_affiliated" name="how_stanford_affiliated">
-                  <option value="">--</option>
-                  % for code, how_stanford_affiliated in CmeUserProfile.HOW_STANFORD_AFFILIATED_CHOICES:
-                    % if code == "Other, please enter:":
-                      <option value="${code}" class="controller-show">${how_stanford_affiliated}</option>
-                    % else:
-                      <option value="${code}" class="controller-hide">${how_stanford_affiliated}</option>
-                    % endif
-                  % endfor
-                </select>
-                <div class="field controlled" id="how_stanford_affililiated_free_container" style="display: none;">
-                  <br />
-                  <input id="how_stanford_affililiated_free" type="text" name="how_stanford_affiliated_free" title="Please enter how you are affiliated with Stanford here." />
-                </div>
-              </div>
-           </div>
-         </li>
+          <li class="field select" id="license-state">
+            <label for="license_state">License State</label>
+           <select id="license_state" name="license_state">
+             <option value="">--</option>
+             %for code, state in CmeUserProfile.STATE_CHOICES:
+               <option value="${code}">${state}</option>
+             %endfor
+           </select>
+          </li>
 
-       </ol>
-      </fieldset>
-
-      <fieldset class="group group-form group-form-secondary group-form-patientinformation">
-       <hr />
-       <h3><strong>Your Patient Information</strong></h3>
-      
-       <ol class="list-input">
         <li class="field required" id="patient_population">
           <label for="patient_population">Patient population</label>
           <select id="patient_population" name="patient_population" class="select-controller">
-            <option value="">--</option>
+            <option value="">None</option>
             %for code, patient_population in patient_population_choices:
               <option value="${code}" class="specialty-${code} sub_specialty">${patient_population}</option>
             %endfor
           </select>
-        </li>
-       
+        </li>          
+         
+         
+         
           #####################################################
           ## Specialty Select Field
           #####################################################
@@ -417,10 +400,53 @@
             <option value="${code}">${sub_specialty}</option>
           %endfor
         </div>
+        
+         <li class="field select" id="sunet_id">
+            <label for="sunet_id">SUNet ID</label>
+            <input id="sunet_id" type="text" name="sunet_id" />
+         </li>
+       
+         <li class="field select" id="affiliation">
+           <label for="stanford_affiliation">Stanford Medicine Affiliation</label>
+           <select id="stanford_affiliation" name="stanford_affiliation">
+             <option value="">--</option>
+             %for code, stanford_affiliation in CmeUserProfile.AFFILIATION_CHOICES:
+               <option value="${code}">${stanford_affiliation}</option>
+             %endfor
+           </select>
+         </li>
+
+       
+         <li class="field select" id="stanford_sub_affiliation">
+            <label for="stanford_sub_affiliation">Stanford Sub Affiliation</label>
+            <input id="stanford_sub_affiliation" type="text" name="stanford_sub_affiliation" />
+         </li>
+         
+         <li class="field select" id="department">
+           <label for="department">Stanford Department</label>
+           <select id="department" name="department">
+             <option value="">--</option>
+             %for code, department in CmeUserProfile.DEPARTMENT_CHOICES:
+               <option value="${code}">${department}</option>
+             %endfor
+           </select>
+         </li>
+       
+         <li class="field select" id="other_affiliation">
+            <label for="other_affiliation">Other Affiliation</label>
+            <input id="other_affiliation" type="text" name="other_affiliation" />
+         </li> 
+       
+         <li class="field select" id="job_title_or_position">
+            <label for="job_title_or_position">Job Title or Position</label>
+            <input id="job_title_or_position" type="text" name="job_title_or_position" />
+         </li> 
+       
+       
        
        </ol>
       </fieldset>
-       
+        
 
       <fieldset class="group group-form group-form-secondary group-form-personalinformation">
         <hr />
@@ -474,35 +500,17 @@
            <input id="phone_number" type="text" name="phone_number" />
          </li>
        
-         <li class="field select" id="extension">
-           <label for="extension">Extension</label>
-           <input id="extension" type="text" name="extension" />
-         </li>
-       
-         <li class="field select" id="fax">
-           <label for="fax">Fax</label>
-           <input id="fax" type="text" name="fax" />
-         </li>
-       
-         <li class="field required" id="hear_about_us">
-           <label for="hear_about_us">How did you hear about us?</label>
-           <select class="controller" id="hear_about_us" name="hear_about_us">
+         <li class="field select" id="gender">
+           <label for="gender">Gender</label>
+           <select id="gender" name="gender">
              <option value="">--</option>
-             %for code, about_us in CmeUserProfile.HEAR_ABOUT_US_CHOICES:
-                % if code == "Other, please enter:":
-                  <option value="${code}" class="controller-show">${about_us}</option>
-                % else:
-                  <option value="${code}" class="controller-hide">${about_us}</option>
-                % endif
-              %endfor
+             %for code, gender in CmeUserProfile.GENDER_CHOICES:
+               <option value="${code}">${gender}</option>
+             %endfor
            </select>
-           <div class="field controlled" id="hear_about_us_free" style="display: none;">
-              <br />
-              <input id="hear_about_us_free" type="text" name="hear_about_us_free" title="Please enter how you heard about us here." />
-           </div>
          </li>
        
-            <input id="mailing_list" type="hidden" name="mailing_list" value="true" />
+       
 
         </ol>
       </fieldset>

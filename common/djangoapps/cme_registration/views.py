@@ -163,6 +163,7 @@ def _do_cme_create_account(post_vars):
     Since CmeUserProfile is implemented using multi-table inheritence of UserProfile, the CmeUserProfile object
     will also contain all the UserProfile fields.
     """
+
     user = User(username=post_vars['username'],
                 email=post_vars['email'],
                 is_active=False)
@@ -191,18 +192,18 @@ def _do_cme_create_account(post_vars):
 
     #UserProfile fields
     cme_user_profile.name = post_vars['name']
+    cme_user_profile.gender = post_vars.get('gender')
 
     #CmeUserProfile fields
-    cme_user_profile.profession = post_vars.get('profession')
+    cme_user_profile.last_name = post_vars['last_name']
+    cme_user_profile.first_name = post_vars['first_name']
+    cme_user_profile.middle_initial = post_vars.get('middle_initial')
+    cme_user_profile.birth_date = post_vars['birth_date']
+    
     cme_user_profile.professional_designation = post_vars.get('professional_designation')
     cme_user_profile.license_number = post_vars.get('license_number')
-    cme_user_profile.organization = post_vars.get('organization')
-    cme_user_profile.stanford_affiliated = True if post_vars.get('stanford_affiliated') == '1' else False
-
-    if post_vars.get('how_stanford_affiliated') == 'Other':
-        cme_user_profile.how_stanford_affiliated = post_vars.get('how_stanford_affiliated_free')
-    else:
-        cme_user_profile.how_stanford_affiliated = post_vars.get('how_stanford_affiliated')
+    cme_user_profile.license_state = post_vars.get('license_state')
+    cme_user_profile.physician_status = post_vars.get('physician_status')
 
     cme_user_profile.patient_population = post_vars.get('patient_population')
 
@@ -215,6 +216,11 @@ def _do_cme_create_account(post_vars):
         cme_user_profile.sub_specialty = post_vars.get('sub_specialty_free')
     else:
         cme_user_profile.sub_specialty = post_vars.get('sub_specialty')
+        
+    cme_user_profile.sunet_id = post_vars.get('sunet_id')
+    cme_user_profile.stanford_medicine_affiliation = post_vars.get('stanford_affiliation')
+  #  cme_user_profile.stanford_sub_affiliation = post_vars.get('stanford_sub_affiliation')
+    cme_user_profile.stanford_department = post_vars.get('stanford_department')
 
     cme_user_profile.address_1 = post_vars.get('address_1')
     cme_user_profile.address_2 = post_vars.get('address_2')
@@ -223,15 +229,6 @@ def _do_cme_create_account(post_vars):
     cme_user_profile.postal_code = post_vars.get('postal_code')
     cme_user_profile.country = post_vars.get('country')
     cme_user_profile.phone_number = post_vars.get('phone_number')
-    cme_user_profile.extension = post_vars.get('extension')
-    cme_user_profile.fax = post_vars.get('fax')
-
-    if post_vars.get('hear_about_us') == 'Other':
-        cme_user_profile.hear_about_us = post_vars.get('hear_about_us_free')
-    else:
-        cme_user_profile.hear_about_us = post_vars.get('hear_about_us')
-
-    cme_user_profile.mailing_list = 1 if post_vars.get('mailing_list') == 'true' else 0
 
     try:
         cme_user_profile.save()
@@ -371,7 +368,7 @@ SUB_SPECIALTY_CHOICES = {}
 
 PATIENT_POPULATION_CHOICES = (('Adult', 'Adult'),
                               ('Pediatric', 'Pediatric'),
-                              ('Both', 'Both (Adult/Pediatric)'))
+                              ('Both', 'Both'))
 SPECIALTY_CHOICES['Adult'] = (('Addiction_Medicine', 'Addiction Medicine'),
                               ('Allergy', 'Allergy'),
                               ('Anesthesiology', 'Anesthesiology'),
