@@ -65,6 +65,9 @@ log = logging.getLogger(__name__)
 FORUM_ROLE_ADD = 'add'
 FORUM_ROLE_REMOVE = 'remove'
 
+# For determining if a shibboleth course
+SHIBBOLETH_DOMAIN_PREFIX = 'shib:'
+
 
 def split_by_comma_and_whitespace(a_str):
     """
@@ -685,10 +688,11 @@ def instructor_dashboard(request, course_id):
 
     elif action == 'Enroll multiple students':
 
+        is_shib_course = uses_shib(course)
         students = request.POST.get('multiple_students', '')
         auto_enroll = bool(request.POST.get('auto_enroll'))
         email_students = bool(request.POST.get('email_students'))
-        ret = _do_enroll_students(course, course_id, students, auto_enroll=auto_enroll, email_students=email_students)
+        ret = _do_enroll_students(course, course_id, students, auto_enroll=auto_enroll, email_students=email_students, is_shib_course=is_shib_course)
         datatable = ret['datatable']
 
     elif action == 'Unenroll multiple students':
@@ -1208,7 +1212,7 @@ def grade_summary(request, course_id):
 #-----------------------------------------------------------------------------
 # enrollment
 
-def _do_enroll_students(course, course_id, students, overload=False, auto_enroll=False, email_students=False):
+def _do_enroll_students(course, course_id, students, overload=False, auto_enroll=False, email_students=False, is_shib_course=False):
     """
     Do the actual work of enrolling multiple students, presented as a string
     of emails separated by commas or returns
@@ -1245,6 +1249,8 @@ def _do_enroll_students(course, course_id, students, overload=False, auto_enroll
              'course': course,
              'auto_enroll': auto_enroll,
              'course_url': 'https://' + stripped_site_name + '/courses/' + course_id,
+             'course_about_url': 'https://' + stripped_site_name + '/courses/' + course_id + '/about',
+             'is_shib_course': is_shib_course,
              }
 
     for student in new_students:
@@ -1611,3 +1617,10 @@ def get_background_task_table(course_id, problem_url=None, student=None, task_ty
             datatable['title'] = "{course_id} > {location}".format(course_id=course_id, location=problem_url)
 
     return msg, datatable
+
+
+def uses_shib(course):
+    """
+    Used to return whether course has Shibboleth as the enrollment domain
+    """
+    return course.enrollment_domain and course.enrollment_domain.startswith(SHIBBOLETH_DOMAIN_PREFIX)
