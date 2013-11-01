@@ -141,6 +141,13 @@ class LoncapaResponse(object):
         self.context = context
         self.system = system
 
+        # Shuffle the order of the choices.
+        # Note that by shuffling before other processing, the choice_0 choice_1 ...
+        # numbering uses the post-shuffled ordering, so we do not leak any info
+        # to the user about the authored order. So if the author likes to always
+        # put the right answer first and then the others, they can just do that.
+        self.shuffle_tree(self.xml)
+
         self.id = xml.get('id')
 
         for abox in inputfields:
@@ -195,6 +202,47 @@ class LoncapaResponse(object):
         Return the total maximum points of all answer fields under this Response
         '''
         return sum(self.maxpoints.values())
+
+    def shuffle_choices(self, choices):
+        """
+        Returns a list of choice nodes with the shuffling done.
+        Uses the context seed for the randomness of the shuffle.
+        Choices with 'fixed'='true' are held back from the shuffle.
+        """
+        # Separate out a list of the stuff to be shuffled
+        # vs. the head/tail of fixed==true choices to be held back from the shuffle.
+        # Rare corner case: A fixed==true choice "island" in the middle is lumped in
+        # with the tail group of fixed choices.
+        # Slightly tricky one-pass implementation using a state machine
+        head = []
+        middle = []  # only this one gets shuffled
+        tail = []
+        at_head = True
+        for choice in choices:
+            if at_head and choice.get('fixed') == 'true':
+                head.append(choice)
+                continue
+            at_head = False
+            if choice.get('fixed') == 'true':
+                tail.append(choice)
+            else:
+                middle.append(choice)
+        rng = random.Random(self.context['seed'])  # make one vs. messing with the global one
+        rng.shuffle(middle)
+        return head + middle + tail
+
+    def shuffle_tree(self, tree):
+        """
+        Shuffles the options in-place in the given tree.
+        """
+        for choicegroup in tree.xpath('//choicegroup[@shuffle="true"]'):
+            # Move elements from tree to list for shuffling, then put them back.
+            ordering = list(choicegroup.getchildren())
+            for choice in ordering:
+                choicegroup.remove(choice)
+            ordering = self.shuffle_choices(ordering)
+            for choice in ordering:
+                choicegroup.append(choice)
 
     def render_html(self, renderer, response_msg=''):
         '''

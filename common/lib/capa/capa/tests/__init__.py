@@ -54,6 +54,6 @@ def test_system():
     return the_system
 
 
-def new_loncapa_problem(xml, system=None):
+def new_loncapa_problem(xml, system=None, seed=723):
     """Construct a `LoncapaProblem` suitable for unit tests."""
-    return LoncapaProblem(xml, id='1', seed=723, system=system or test_system())
+    return LoncapaProblem(xml, id='1', seed=seed, system=system or test_system())
