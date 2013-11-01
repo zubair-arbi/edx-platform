@@ -65,7 +65,7 @@ def cme_create_account(request, post_override=None):
             json_string['field'] = var
             return HttpResponse(json.dumps(json_string))
 
-    #Validate required felds
+    #Validate required fields
     error = validate_required_fields(post_vars)
     if error is not None:
         return HttpResponse(json.dumps(error))
@@ -245,26 +245,31 @@ def validate_required_fields(post_vars):
     Returns a dict indicating failure, field and message on empty field else None
     """
 
+    print post_vars
     #Add additional required fields here
     required_fields_list = [{'email': 'A properly formatted e-mail is required.'},
                             {'password': 'A valid password is required.'},
                             {'username': 'Username must be minimum of two characters long.'},
                             {'name': 'Your legal name must be a minimum of two characters long.'},
-                            {'profession': 'Choose your profession.'},
-                            {'license_number': 'Enter your license number.'},
-                            {'patient_population': 'Choose your patient population'},
-                            {'specialty': 'Choose your specialty'},
-                            {'address_1': 'Enter your Address 01'},
+                 #           {'profession': 'Choose your profession.'},
+                            {'last_name': 'Enter your last name.'},
+                            {'first_name': 'Enter your first name'},
+                            {'birth_date': 'Enter your birth date'},
+                            {'professional_designation': 'Choose your professional designation'},
+              #              {'patient_population': 'Choose your patient population'},
+              #              {'specialty': 'Choose your specialty'},
+                            {'address_1': 'Enter your Address 1'},
                             {'city': 'Enter your city'},
                             {'state_province': 'Choose your state/Province'},
                             {'postal_code': 'Enter your postal code'},
                             {'country': 'Choose your country'},
                             {'phone_number': 'Enter your phone number'},
-                            {'hear_about_us': 'Choose how you heard about us'}
+              #              {'hear_about_us': 'Choose how you heard about us'}
                            ]
 
     error = {}
     for required_field in required_fields_list:
+        print required_field
         for key, val in required_field.iteritems():   
             if len(post_vars.get(key)) < 2:
                 error['success'] = False
@@ -328,7 +333,8 @@ def validate_required_radios(post_vars):
     """
 
     #Add additional required radios here
-    required_radios_dict = {'stanford_affiliated': 'Select whether, or not, you are affiliated with Stanford.'
+    required_radios_dict = {
+              #              'stanford_affiliated': 'Select whether, or not, you are affiliated with Stanford.'
                             }
 
     error = {}

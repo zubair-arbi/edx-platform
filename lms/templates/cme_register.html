@@ -243,7 +243,7 @@
           <li class="field required text" id="field-professional-designation">
             <label for="professional_designation">Designation</label>
             <select id="professional_designation" name="professional_designation">
-              <option value="">None</option>
+              <option value="">--</option>
               %for code, professional_designation in CmeUserProfile.PROFESSIONAL_DESIGNATION_CHOICES:
                 <option value="${code}">${professional_designation}</option>
               %endfor
@@ -261,7 +261,7 @@
             <label for="license_number">License Number</label>
             <input id="license_number" type="text" name="license_number" />
           </li>
-         
+
           <li class="field select" id="license-state">
             <label for="license_state">License State</label>
            <select id="license_state" name="license_state">
@@ -272,10 +272,20 @@
            </select>
           </li>
 
+          <li class="field select" id="physician_status">
+            <label for="physician_status">Physician Status</label>
+           <select id="physician_status" name="physician_status">
+             <option value="">--</option>
+             %for code, status in CmeUserProfile.PHYSICIAN_STATUS_CHOICES:
+               <option value="${code}">${status}</option>
+             %endfor
+           </select>
+          </li>
+
         <li class="field required" id="patient_population">
           <label for="patient_population">Patient population</label>
           <select id="patient_population" name="patient_population" class="select-controller">
-            <option value="">None</option>
+            <option value="">--</option>
             %for code, patient_population in patient_population_choices:
               <option value="${code}" class="specialty-${code} sub_specialty">${patient_population}</option>
             %endfor

@@ -30,19 +30,22 @@ class CmeUserProfile(UserProfile):
                                         ('NP', 'NP'),
                                         ('PA', 'PA'),
                                         ('RN', 'RN'),
-                                        ('Other', 'Other'))
+                                        ('Other', 'Other'),
+                                        ('None', 'None'))
     professional_designation = models.CharField(blank=True, null=True, max_length=3, choices=PROFESSIONAL_DESIGNATION_CHOICES)
     license_number = models.CharField(max_length=20, blank=True, null=True, )
     professional_license_state = models.CharField(max_length=50, blank=True, null=True)
     
-    PHYSICIAN_STATUS_CHOICES = (('Resident', 'Resident'),
+    PHYSICIAN_STATUS_CHOICES = (('Active', 'Active'),
+                                ('Resident', 'Resident'),
                                 ('Fellow', 'Fellow'),
                                 ('Retired', 'Retired'))
     physician_status = models.CharField(blank=True, null=True, max_length=8)
 
     PATIENT_POPULATION_CHOICES = (('Adult', 'Adult'),
                                   ('Pediatric', 'Pediatric'),
-                                  ('Both', 'Both'))
+                                  ('Both', 'Both'),
+                                  ('None', 'None'))
     patient_population = models.CharField(blank=True, null=True, max_length=25, choices=PATIENT_POPULATION_CHOICES)
     specialty = models.CharField(blank=True, null=True, max_length=255)
     sub_specialty = models.CharField(blank=True, null=True, max_length=255)
