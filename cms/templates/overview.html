@@ -135,7 +135,12 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
     </header>
   </div>
 
-  <div class="main-wrapper">
+
+  <div class="wrapper-content wrapper">
+    <section class="content">
+      <article class="content-primary" role="main">
+
+
     <div class="inner-wrapper">
 
       <div class="wrapper-dnd">
@@ -165,21 +170,21 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
                   %else:
                     <span class="published-status"><strong>${_("Will Release:")}</strong>
                     ${date_utils.get_default_time_display(section.start)}</span>
-                    <a href="#" class="edit-button" data-date="${start_date_str}"
-                      data-time="${start_time_str}" data-id="${section.location}">${_("Edit")}</a>
+                    <a href="#" class="edit" data-date="${start_date_str}"
+                      data-time="${start_time_str}" data-id="${section.location}"><i class="icon-time"></i> <span class="sr">${_("Edit section release date")}</span></a>
                   %endif
                 </div>
               </div>
 
               <div class="item-actions">
-                <a href="#" data-tooltip="${_('Delete this section')}" class="delete-button delete-section-button"><span class="delete-icon"></span></a>
-                <span data-tooltip="${_('Drag to reorder')}" class="drag-handle section-drag-handle"></span>
+                <a href="#" data-tooltip="${_('Delete this section')}" class="delete-button delete-section-button"><i class="icon-trash"></i> <span class="sr">${_("Delete section")}</span></a>
+                <span data-tooltip="${_('Drag to reorder')}" class="drag-handle section-drag-handle"><span class="sr">${_("Delete section")}</span></span>
               </div>
             </header>
             <div class="subsection-list">
               <div class="list-header">
                 <a href="#" class="new-subsection-item" data-category="${new_subsection_category}">
-                  <span class="new-folder-icon"></span>${_("New Subsection")}
+                  <i class="icon-plus"></i> ${_("New Subsection")}
                 </a>
               </div>
               <ol class="sortable-subsection-list" data-id="${section.location.url()}">
@@ -192,7 +197,6 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
                     <div class="details">
                       <a href="#" data-tooltip="${_('Expand/collapse this subsection')}" class="expand-collapse-icon expand"></a>
                       <a href="${reverse('edit_subsection', args=[subsection.location])}">
-                        <span class="folder-icon"></span>
                         <span class="subsection-name"><span class="subsection-name-value">${subsection.display_name_with_default}</span></span>
                       </a>
                     </div>
@@ -201,8 +205,8 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
                     </div>
 
                     <div class="item-actions">
-                      <a href="#" data-tooltip="${_('Delete this subsection')}" class="delete-button delete-subsection-button"><span class="delete-icon"></span></a>
-                      <span data-tooltip="${_('Drag to reorder')}" class="drag-handle subsection-drag-handle"></span>
+                      <a href="#" data-tooltip="${_('Delete this subsection')}" class="delete-button delete-subsection-button"><i class="icon-trash"></i> <span class="sr">${_("Delete subsection")}</span></a>
+                      <span data-tooltip="${_('Drag to reorder')}" class="drag-handle subsection-drag-handle"><span class="sr">${_("Drag to reorder")}</span></span>
                     </div>
                   </div>
                   ${units.enum_units(subsection)}
@@ -221,8 +225,22 @@ require(["domReady!", "jquery", "js/models/location", "js/models/section", "js/v
           % endfor
         </article>
       </div>
-    </div>
+
   </div>
+
+      </article>
+      <aside class="content-supplementary" role="complimentary">
+        <div class="bit">
+          <h3 class="title-3">${_("What can I do on this page?")}</h3>
+          <p>${_("This is where you create the structure and content for your course. You can create new sections and subsections for organization, and new units for content. You can also set what subsections are graded. ")}</p>
+        </div>
+        <div class="bit">
+          <h3 class="title-3">${_("What do all the symbols mean?")}</h3>
+          <p>${_("The ")}</p>
+        </div>
+      </aside>
+    </section>
+
   <footer></footer>
 
   <div class="edit-subsection-publish-settings showAsModal">
