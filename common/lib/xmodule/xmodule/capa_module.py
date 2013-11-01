@@ -536,20 +536,22 @@ class CapaModule(CapaFields, XModule):
         else:
             check_button = False
 
-        content = {'name': self.display_name_with_default,
-                   'html': html,
-                   'weight': self.weight,
-                   }
+        content = {
+            'name': self.display_name_with_default,
+            'html': html,
+            'weight': self.weight,
+        }
 
-        context = {'problem': content,
-                   'id': self.id,
-                   'check_button': check_button,
-                   'reset_button': self.should_show_reset_button(),
-                   'save_button': self.should_show_save_button(),
-                   'answer_available': self.answer_available(),
-                   'attempts_used': self.attempts,
-                   'attempts_allowed': self.max_attempts,
-                   }
+        context = {
+            'problem': content,
+            'id': self.id,
+            'check_button': check_button,
+            'reset_button': self.should_show_reset_button(),
+            'save_button': self.should_show_save_button(),
+            'answer_available': self.answer_available(),
+            'attempts_used': self.attempts,
+            'attempts_allowed': self.max_attempts,
+        }
 
         html = self.system.render_template('problem.html', context)
 
@@ -588,7 +590,7 @@ class CapaModule(CapaFields, XModule):
             'problem_show': self.get_answer,
             'score_update': self.update_score,
             'input_ajax': self.handle_input_ajax,
-            'ungraded_response': self.handle_ungraded_response
+            'ungraded_response': self.handle_ungraded_response,
         }
 
         generic_error_message = (
