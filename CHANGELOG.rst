@@ -16,10 +16,19 @@ Blades: Disallow users to enter video url's in http.
 
 LMS: Improve the acessibility of the forum follow post buttons.
 
+Blades: Latex problems are now enabled via use_latex_compiler
+key in course settings. (BLD-426)
+
 Blades: Fix bug when the speed can only be changed when the video is playing.
 
 LMS: Change bulk email implementation to use less memory, and to better handle
 duplicate tasks in celery.
+
+LMS: When a topic is selected in the forums navigation sidebar, fetch
+the thread list using the /threads endpoint of the comments service
+instead of /search/threads, which does not sort and paginate
+correctly. This requires at least version 31ef160 of
+cs_comments_service.
 
 LMS: Improve forum error handling so that errors in the logs are
 clearer and HTTP status codes from the comments service indicating
