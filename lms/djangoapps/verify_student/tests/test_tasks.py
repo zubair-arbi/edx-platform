@@ -129,7 +129,7 @@ class TestVerifyStudentTask(TestCase):
 		attempt.mark_ready()
 		attempt.submit()
 
-	def test_nonsense(self):
+	def setUp(self):
 		self.create_and_submit("SuccessfulSally")
 		self.create_and_submit("SuccessfulSue")
 		with patch('verify_student.models.requests.post', new=mock_software_secure_post_error):
