@@ -1,5 +1,5 @@
 from djcelery import celery
-from verify_student.models import PhotoVerification, SoftwareSecure
+from verify_student.models import SoftwareSecurePhotoVerification
 
 @celery.task
 def retry_failed_photo_verifications():
