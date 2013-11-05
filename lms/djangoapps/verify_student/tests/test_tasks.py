@@ -13,6 +13,7 @@ import requests.exceptions
 
 from student.tests.factories import UserFactory
 from verify_student.models import SoftwareSecurePhotoVerification, VerificationException
+from verify_student.tasks import retry_failed_photo_verifications
 from util.testing import UrlResetMixin
 import verify_student.models
 
@@ -120,7 +121,6 @@ def mock_software_secure_post_unavailable(url, headers=None, data=None, **kwargs
 class TestVerifyStudentTask(TestCase):
 
 	def create_and_submit(self, username, error=None):
-		from nose.tools import set_trace; set_trace()
 		user = UserFactory.create()
 		attempt = SoftwareSecurePhotoVerification(user=user)
 		user.profile.name = username
@@ -128,28 +128,19 @@ class TestVerifyStudentTask(TestCase):
 		attempt.upload_photo_id_image("yolo")
 		attempt.mark_ready()
 		attempt.submit()
+		return attempt
 
-	def setUp(self):
+	def test_retry_failed_photo_verifications(self):
+		# set up some fake data to use...
 		self.create_and_submit("SuccessfulSally")
 		self.create_and_submit("SuccessfulSue")
 		with patch('verify_student.models.requests.post', new=mock_software_secure_post_error):
 			self.create_and_submit("RetryRoger")
 		with patch('verify_student.models.requests.post', new=mock_software_secure_post_error):
 			self.create_and_submit("RetryRick")
-
-
-	def test_submissions(self):
-		"""Test that we set our status correctly after a submission."""
-		# Basic case, things go well.
-		attempt = self.create_and_submit("yolo")
-		assert_equals(attempt.status, "submitted")
-
-		# We post, but Software Secure doesn't like what we send for some reason
-		with patch('verify_student.models.requests.post', new=mock_software_secure_post_error):
-			attempt = self.create_and_submit("yolo")
-			assert_equals(attempt.status, "must_retry")
-
-		# We try to post, but run into an error (in this case a newtork connection error)
-		with patch('verify_student.models.requests.post', new=mock_software_secure_post_unavailable):
-			attempt = self.create_and_submit("yolo")
-			assert_equals(attempt.status, "must_retry")
+		# check to make sure we had two successes and two failures; otherwise we've got problems elsewhere
+		assert_equals(len(SoftwareSecurePhotoVerification.objects.filter(status="submitted")), 2)
+		assert_equals(len(SoftwareSecurePhotoVerification.objects.filter(status='must_retry')), 2)
+		retry_failed_photo_verifications()
+		attempts_to_retry = SoftwareSecurePhotoVerification.objects.filter(status='must_retry')
+		assert_equals(bool(attempts_to_retry), False)

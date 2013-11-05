@@ -195,7 +195,6 @@ class TestPhotoVerification(TestCase):
 
     def create_and_submit(self):
         """Helper method to create a generic submission and send it."""
-        from nose.tools import set_trace; set_trace()
         user = UserFactory.create()
         attempt = SoftwareSecurePhotoVerification(user=user)
         user.profile.name = u"Rust\u01B4"
