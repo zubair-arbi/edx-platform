@@ -2,11 +2,7 @@ from djcelery import celery
 from verify_student.models import PhotoVerification, SoftwareSecure
 
 @celery.task
-def add (x, y):
-	return x+y
-
-@celery.task
-def retry_failed_photo_verification():
+def retry_failed_photo_verifications():
 	"""
 	This method finds those PhotoVerifications with a status of
 	MUST_RETRY and attempts to verify them.
