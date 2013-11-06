@@ -234,7 +234,7 @@
         % endif
       </fieldset>
 
-      <fieldset class="group group-form group-form-secondary group-form-personalinformation">
+      <fieldset class="group group-form group-form-secondary group-form-professionalinformation">
        <hr />
        <h3><strong>Professional Information</strong></h3>
    
@@ -249,13 +249,6 @@
               %endfor
             </select>
           </li>
-          
- 
-         <div class="field select checkbox" id="stanford-affiliation">
-          <input id="stanford-affiliation-yes" type="checkbox" name="stanford-affiliation" value="true" />
-          <label for="stanford-affiliation-yes">Are you affiliated with Stanford Medicine?</a></label>
-        </div>
- 
          
           <li class="field select" id="license-number">
             <label for="license_number">License Number</label>
@@ -282,7 +275,7 @@
            </select>
           </li>
 
-        <li class="field required" id="patient_population">
+        <li class="field select" id="patient_population">
           <label for="patient_population">Patient population</label>
           <select id="patient_population" name="patient_population" class="select-controller">
             <option value="">--</option>
@@ -298,7 +291,7 @@
           ## Specialty Select Field
           #####################################################
          
-          <li class="field required" style="display: none;">
+          <li class="field select" style="display: none;">
             <label for="specialty">Specialty</label>
             <select id="specialty" name="specialty" class="controller select-controller">
               <option value="">--</option>
@@ -411,13 +404,18 @@
           %endfor
         </div>
         
-         <li class="field select" id="sunet_id">
-            <label for="sunet_id">SUNet ID</label>
-            <input id="sunet_id" type="text" name="sunet_id" />
-         </li>
-       
+        
+       </ol>
+      </fieldset>
+      
+      <fieldset class="group group-form group-form-secondary group-form-affiliationinformation">
+        <hr />
+        <h3><strong>Affiliation Information</strong></h3>
+      
+      <ol class="list-input">
+        
          <li class="field select" id="affiliation">
-           <label for="stanford_affiliation">Stanford Medicine Affiliation</label>
+           <label for="stanford_affiliation">Affiliation</label>
            <select id="stanford_affiliation" name="stanford_affiliation">
              <option value="">--</option>
              %for code, stanford_affiliation in CmeUserProfile.AFFILIATION_CHOICES:
@@ -425,6 +423,13 @@
              %endfor
            </select>
          </li>
+        
+         <li class="field select" id="sunet_id">
+            <label for="sunet_id">SUNet ID</label>
+            <input id="sunet_id" type="text" name="sunet_id" />
+         </li>
+       
+
 
        
          <li class="field select" id="stanford_sub_affiliation">
@@ -447,16 +452,8 @@
             <input id="other_affiliation" type="text" name="other_affiliation" />
          </li> 
        
-         <li class="field select" id="job_title_or_position">
-            <label for="job_title_or_position">Job Title or Position</label>
-            <input id="job_title_or_position" type="text" name="job_title_or_position" />
-         </li> 
-       
-       
-       
        </ol>
       </fieldset>
-        
 
       <fieldset class="group group-form group-form-secondary group-form-personalinformation">
         <hr />
@@ -464,6 +461,11 @@
        
 
         <ol class="list-input">
+        
+         <li class="field select" id="job_title_or_position">
+           <label for="job_title_or_position">Job Title or Position</label>
+           <input id="job_title_or_position" type="text" name="job_title_or_position" />
+         </li> 
         
          <li class="field required" id="address_1">
            <label for="address_1">Address 1</label>
