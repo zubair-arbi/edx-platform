@@ -24,12 +24,13 @@
       $('body').addClass('js').addClass(view_name);
 
       // new window/tab opening
-      $('a[rel="external"], a[class="new-vp"]')
-      .click( function() {
-      window.open( $(this).attr('href') );
-      return false;
+      $('a[rel="external"], a[class="new-vp"]').click( function() {
+        window.open( $(this).attr('href') );
+        return false;
       });
-
+      
+//---------------------------------------- Client side registration behavior ----------------------------------------//
+      
       // form field label styling on focus
       $("form :input").focus(function() {
         $("label[for='" + this.id + "']").parent().addClass("is-focused");
@@ -70,7 +71,35 @@
           $(controlledField).html($(controlledFieldContents).html()).parent().show();
         }
       });
-
+      
+      // Dependent required fields
+      $('select#professional_designation').change(function() {
+        var dependentRequiredFields = 'li#license-number_container, li#license-state_container, li#physician_status_container, li#patient_population_container, li#specialty-container';
+        
+        if ($(this).children("option:selected").val() === 'MD' || $(this).children("option:selected").val() === 'MD, PhD' || $(this).children("option:selected").val() === 'DO' || $(this).children("option:selected").val() === 'MBBS') {
+          $(this).parent().siblings(dependentRequiredFields).addClass('required');
+        } else {
+          $(this).parent().siblings(dependentRequiredFields).removeClass('required');
+        }
+      });
+      $('select#stanford_affiliation').change(function() {
+        if ($(this).children("option:selected").val() === 'Other' || $(this).children("option:selected").val() === '') {
+          $(this).parent().siblings('li.field').removeClass('required');
+        } else {
+          $(this).parent().siblings('li.field').addClass('required');
+        }
+      });
+      $('select#country').change(function() {
+        var dependentRequiredFields = 'li#state_province_container, li#postal_code_container';
+        
+        if ($(this).children("option:selected").val() === 'United States' || $(this).children("option:selected").val() === 'Canada') {
+          $(this).parent().siblings(dependentRequiredFields).addClass('required');
+        } else {
+          $(this).parent().siblings(dependentRequiredFields).removeClass('required');
+        }
+      });
+      
+//--------------------------------------- /Client side registration behavior ----------------------------------------//
     });
 
     (function() {
@@ -234,13 +263,13 @@
         % endif
       </fieldset>
 
-      <fieldset class="group group-form group-form-secondary group-form-professionalinformation">
+      <fieldset class="group group-form group-form-secondary group-form-professionalinformation form-page">
        <hr />
        <h3><strong>Professional Information</strong></h3>
    
        <ol class="list-input">
          
-          <li class="field required text" id="field-professional-designation">
+          <li class="field required text" id="field-professional-designation_container">
             <label for="professional_designation">Designation</label>
             <select id="professional_designation" name="professional_designation">
               <option value="">--</option>
@@ -250,12 +279,12 @@
             </select>
           </li>
          
-          <li class="field select" id="license-number">
+          <li class="field select" id="license-number_container">
             <label for="license_number">License Number</label>
             <input id="license_number" type="text" name="license_number" />
           </li>
 
-          <li class="field select" id="license-state">
+          <li class="field select" id="license-state_container">
             <label for="license_state">License State</label>
            <select id="license_state" name="license_state">
              <option value="">--</option>
@@ -265,7 +294,7 @@
            </select>
           </li>
 
-          <li class="field select" id="physician_status">
+          <li class="field select" id="physician_status_container">
             <label for="physician_status">Physician Status</label>
            <select id="physician_status" name="physician_status">
              <option value="">--</option>
@@ -275,7 +304,7 @@
            </select>
           </li>
 
-        <li class="field select" id="patient_population">
+        <li class="field select" id="patient_population_container">
           <label for="patient_population">Patient population</label>
           <select id="patient_population" name="patient_population" class="select-controller">
             <option value="">--</option>
@@ -291,7 +320,7 @@
           ## Specialty Select Field
           #####################################################
          
-          <li class="field select" style="display: none;">
+          <li class="field select" style="display: none;" id="specialty-container">
             <label for="specialty">Specialty</label>
             <select id="specialty" name="specialty" class="controller select-controller">
               <option value="">--</option>
@@ -299,7 +328,7 @@
            
             <div class="field controlled" id="specialty_free_container" style="display: none;">
               <br />
-              <input id="specialty_free" type="text" name="specialty_free" title="Please enter your Specialty here." />
+              <input id="specialty_free" type="text" name="specialty_free" title="Please enter your Specialty here." placeholder="Please enter your Specialty here." />
            </div>
           </li>
          
@@ -329,7 +358,7 @@
           ## Sub Specialty Select Field
           #####################################################
        
-        <li class="field" style="display: none;">
+        <li class="field" style="display: none;" id="sub-specialty-container">
           <label for="sub_specialty">Sub-Specialty</label>
           <select id="sub_specialty" name="sub_specialty" class="controller">
             <option value="">--</option>
@@ -337,7 +366,7 @@
          
           <div class="field controlled" id="sub_specialty_free_container" style="display: none;">
            <br />
-           <input id="sub_specialty_free" type="text" name="sub_specialty_free" title="Please enter your Sub-Specialty here." />
+           <input id="sub_specialty_free" type="text" name="sub_specialty_free" title="Please enter your Sub-Specialty here." placeholder="Please enter your Sub-Specialty here." />
           </div>
         </li>
        
@@ -408,51 +437,48 @@
        </ol>
       </fieldset>
       
-      <fieldset class="group group-form group-form-secondary group-form-affiliationinformation">
+      <fieldset class="group group-form group-form-secondary group-form-affiliationinformation form-page">
         <hr />
         <h3><strong>Affiliation Information</strong></h3>
       
-      <ol class="list-input">
+        <ol class="list-input">
+          
+          <li class="field select" id="affiliation">
+            <label for="stanford_affiliation">Affiliation</label>
+            <select id="stanford_affiliation" name="stanford_affiliation" class="controller">
+              <option value="">--</option>
+              %for code, stanford_affiliation in CmeUserProfile.AFFILIATION_CHOICES:
+                <option value="${code}">${stanford_affiliation}</option>
+              %endfor
+            </select>
+           
+            <div class="field controlled" id="other_affiliation_container" style="display: none;">
+              <br />
+              <input id="other_affiliation" type="text" name="other_affiliation" title="Please enter your affiliation here." placeholder="Please enter your affiliation here." />
+           </div>
+          </li>
+          
+          <li class="field select" id="sunet_id">
+             <label for="sunet_id">SUNet ID</label>
+             <input id="sunet_id" type="text" name="sunet_id" />
+          </li>
         
-         <li class="field select" id="affiliation">
-           <label for="stanford_affiliation">Affiliation</label>
-           <select id="stanford_affiliation" name="stanford_affiliation">
-             <option value="">--</option>
-             %for code, stanford_affiliation in CmeUserProfile.AFFILIATION_CHOICES:
-               <option value="${code}">${stanford_affiliation}</option>
-             %endfor
-           </select>
-         </li>
-        
-         <li class="field select" id="sunet_id">
-            <label for="sunet_id">SUNet ID</label>
-            <input id="sunet_id" type="text" name="sunet_id" />
-         </li>
-       
-
-
-       
-         <li class="field select" id="stanford_sub_affiliation">
-            <label for="stanford_sub_affiliation">Stanford Sub Affiliation</label>
-            <input id="stanford_sub_affiliation" type="text" name="stanford_sub_affiliation" />
-         </li>
-         
-         <li class="field select" id="department">
-           <label for="department">Stanford Department</label>
-           <select id="department" name="department">
-             <option value="">--</option>
-             %for code, department in CmeUserProfile.DEPARTMENT_CHOICES:
-               <option value="${code}">${department}</option>
-             %endfor
-           </select>
-         </li>
-       
-         <li class="field select" id="other_affiliation">
-            <label for="other_affiliation">Other Affiliation</label>
-            <input id="other_affiliation" type="text" name="other_affiliation" />
-         </li> 
-       
-       </ol>
+          <li class="field select" id="stanford_sub_affiliation">
+             <label for="stanford_sub_affiliation">Stanford Sub Affiliation</label>
+             <input id="stanford_sub_affiliation" type="text" name="stanford_sub_affiliation" />
+          </li>
+          
+          <li class="field select" id="department">
+            <label for="department">Stanford Department</label>
+            <select id="department" name="department">
+              <option value="">--</option>
+              %for code, department in CmeUserProfile.DEPARTMENT_CHOICES:
+                <option value="${code}">${department}</option>
+              %endfor
+            </select>
+          </li>
+          
+        </ol>
       </fieldset>
 
       <fieldset class="group group-form group-form-secondary group-form-personalinformation">
@@ -462,42 +488,27 @@
 
         <ol class="list-input">
         
-         <li class="field select" id="job_title_or_position">
+         <li class="field select" id="job_title_or_position_container">
            <label for="job_title_or_position">Job Title or Position</label>
            <input id="job_title_or_position" type="text" name="job_title_or_position" />
-         </li> 
+         </li>
         
-         <li class="field required" id="address_1">
+         <li class="field required" id="address_1_container">
            <label for="address_1">Address 1</label>
            <input id="address_1" type="text" name="address_1" />
          </li>
        
-         <li class="field select" id="address_2">
+         <li class="field select" id="address_2_container">
            <label for="address_2">Address 2</label>
            <input id="address_2" type="text" name="address_2" />
          </li>
        
-         <li class="field required" id="city">
+         <li class="field required" id="city_container">
            <label for="city">City</label>
            <input id="city" type="text" name="city" />
          </li>
-       
-         <li class="field required" id="state_province">
-           <label for="state_province">State/Province</label>
-           <select id="state_province" name="state_province">
-             <option value="">--</option>
-             %for code, state in CmeUserProfile.STATE_CHOICES:
-               <option value="${code}">${state}</option>
-             %endfor
-           </select>
-         </li>
-       
-         <li class="field required" id="postal_code">
-           <label for="postal_code">Postal Code</label>
-           <input id="postal_code" type="text" name="postal_code" />
-         </li>
-       
-         <li class="field required" id="country">
+         
+         <li class="field required" id="country_container">
            <label for="country">Country</label>
            <select id="country" name="country">
              <option value="">--</option>
@@ -507,12 +518,27 @@
            </select>
          </li>
         
-         <li class="field required" id="phone_number">
+         <li class="field" id="state_province_container">
+           <label for="state_province">State/Province</label>
+           <select id="state_province" name="state_province">
+             <option value="">--</option>
+             %for code, state in CmeUserProfile.STATE_CHOICES:
+               <option value="${code}">${state}</option>
+             %endfor
+           </select>
+         </li>
+       
+         <li class="field" id="postal_code_container">
+           <label for="postal_code">Postal/Zip Code</label>
+           <input id="postal_code" type="text" name="postal_code" />
+         </li>
+        
+         <li class="field required" id="phone_number_container">
            <label for="phone_number">Phone Number</label>
            <input id="phone_number" type="text" name="phone_number" />
          </li>
        
-         <li class="field select" id="gender">
+         <li class="field select" id="gender_container">
            <label for="gender">Gender</label>
            <select id="gender" name="gender">
              <option value="">--</option>
@@ -527,7 +553,7 @@
         </ol>
       </fieldset>
 
-      <fieldset class="group group-form group-form-accountacknowledgements">
+      <fieldset class="group group-form group-form-accountacknowledgements" id="form-checkboxes">
         <hr />
         <legend class="sr">Account Acknowledgements</legend>
 
@@ -563,7 +589,7 @@
       <input type="hidden" name="course_id" value="${course_id | h}" />
 % endif
 
-      <div class="form-actions">
+      <div class="form-actions" id="form-submit">
         <button name="submit" type="submit" id="submit" class="action action-primary action-update">Register <span class="orn-plus">+</span> Create My Account</button>
       </div>
     </form>

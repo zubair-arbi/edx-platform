@@ -25,7 +25,7 @@ class CmeUserProfile(UserProfile):
 
     PROFESSIONAL_DESIGNATION_CHOICES = (('DO', 'DO'),
                                         ('MD', 'MD'),
-                                        ('MD,PhD', 'MD,PhD'),
+                                        ('MD, PhD', 'MD, PhD'),
                                         ('MBBS', 'MBBS'),
                                         ('NP', 'NP'),
                                         ('PA', 'PA'),
