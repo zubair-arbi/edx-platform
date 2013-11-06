@@ -4,12 +4,12 @@ define ["jquery", "jquery.ui", "backbone", "js/views/feedback_prompt", "js/views
 
     initialize: =>
       @$('.component').each((idx, element) =>
+          model = new ModuleModel(id: $(element).data('id'))
+          model.url = $(element).data('update_url')
           new ModuleEditView(
               el: element,
               onDelete: @deleteTab,
-              model: new ModuleModel(
-                  id: $(element).data('id'),
-              )
+              model: model
           )
       )
 

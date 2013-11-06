@@ -61,11 +61,13 @@ define ["jquery", "jquery.ui", "gettext", "backbone",
       )
 
       @$('.component').each (idx, element) =>
+        model = new ModuleModel
+            id: $(element).data('id')
+        model.url = $(element).data('update_url')
         new ModuleEditView
           el: element,
           onDelete: @deleteComponent,
-          model: new ModuleModel
-            id: $(element).data('id')
+          model: model
 
     showComponentTemplates: (event) =>
       event.preventDefault()

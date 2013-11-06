@@ -17,12 +17,14 @@ require(["domReady!", "jquery", "coffee/src/models/module", "coffee/src/views/un
   // tabs
   $('.tab-group').tabs();
 
-  new UnitEditView({
-    el: $('.main-wrapper'),
-    model: new ModuleModel({
+  var model = new ModuleModel({
       id: '${unit_location}',
       state: '${unit_state}'
-    })
+  });
+  model.url = '${unit_update_url}'
+  new UnitEditView({
+    el: $('.main-wrapper'),
+    model: model
   });
 
   $('.new-component-template').each(function(){
