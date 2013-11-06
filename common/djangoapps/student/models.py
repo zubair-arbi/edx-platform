@@ -938,6 +938,12 @@ class CourseEnrollment(models.Model):
         else:
             return True
 
+    def change_mode(self, new_mode):
+        """
+        Changes the mode of this `CourseEnrollment` record to `new_mode`.
+        """
+        self.mode = new_mode
+        self.save()
 
 
 class CourseEnrollmentAllowed(models.Model):
