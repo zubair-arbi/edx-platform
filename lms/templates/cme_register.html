@@ -507,7 +507,7 @@
            <label for="city">City</label>
            <input id="city" type="text" name="city" />
          </li>
-         
+
          <li class="field required" id="country_container">
            <label for="country">Country</label>
            <select id="country" name="country">
@@ -517,9 +517,9 @@
              %endfor
            </select>
          </li>
-        
+
          <li class="field" id="state_province_container">
-           <label for="state_province">State/Province</label>
+           <label for="state_province">State</label>
            <select id="state_province" name="state_province">
              <option value="">--</option>
              %for code, state in CmeUserProfile.STATE_CHOICES:
@@ -527,7 +527,12 @@
              %endfor
            </select>
          </li>
-       
+         
+         <li class="field" id="county_province_container">
+           <label for="county_province">County/Province</label>
+           <input id="county_province" type="text" name="county_province" />
+         </li>
+
          <li class="field" id="postal_code_container">
            <label for="postal_code">Postal/Zip Code</label>
            <input id="postal_code" type="text" name="postal_code" />
