@@ -33,7 +33,7 @@ import instructor_task.api
 from instructor_task.api_helper import AlreadyRunningError
 from instructor_task.views import get_task_completion_info
 import instructor.enrollment as enrollment
-from instructor.enrollment import enroll_email, unenroll_email
+from instructor.enrollment import enroll_email, unenroll_email, get_email_params
 from instructor.views.tools import strip_if_string, get_student_from_identifier
 import instructor.access as access
 import analytics.basic
@@ -213,16 +213,25 @@ def students_update_enrollment(request, course_id):
         ]
     }
     """
+
     action = request.GET.get('action')
     emails_raw = request.GET.get('emails')
     emails = _split_input_list(emails_raw)
     auto_enroll = request.GET.get('auto_enroll') in ['true', 'True', True]
+    email_students = request.GET.get('email_students') in ['true', 'True', True]
+    
+    
+   # import pudb; pudb.set_trace()
+    email_params = {}
+    if email_students:
+        course = get_course_by_id(course_id)
+        email_params = get_email_params(course, auto_enroll)
 
     results = []
     for email in emails:
         try:
             if action == 'enroll':
-                before, after = enroll_email(course_id, email, auto_enroll)
+                before, after = enroll_email(course_id, email, auto_enroll, email_students, email_params)
             elif action == 'unenroll':
                 before, after = unenroll_email(course_id, email)
             else:

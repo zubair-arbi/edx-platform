@@ -189,6 +189,7 @@ class BatchEnrollment
     @$btn_enroll             = @$container.find("input[name='enroll']'")
     @$btn_unenroll           = @$container.find("input[name='unenroll']'")
     @$checkbox_autoenroll    = @$container.find("input[name='auto-enroll']'")
+    @$checkbox_emailstudents = @$container.find("input[name='email-students']'")
     @$task_response          = @$container.find(".request-response")
     @$request_response_error = @$container.find(".request-response-error")
 
@@ -199,6 +200,7 @@ class BatchEnrollment
         action: 'enroll'
         emails: @$emails_input.val()
         auto_enroll: @$checkbox_autoenroll.is(':checked')
+        email_students: @$checkbox_emailstudents.is(':checked')
 
       $.ajax
         dataType: 'json'
@@ -212,6 +214,7 @@ class BatchEnrollment
         action: 'unenroll'
         emails: @$emails_input.val()
         auto_enroll: @$checkbox_autoenroll.is(':checked')
+        email_students: @$checkbox_emailstudents.is(':checked')
 
       $.ajax
         dataType: 'json'

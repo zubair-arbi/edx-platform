@@ -6,8 +6,13 @@ Does not include any access control, be sure to check access before calling.
 
 import json
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.core.urlresolvers import reverse
+from django.core.mail import send_mail
+
 from student.models import CourseEnrollment, CourseEnrollmentAllowed
 from courseware.models import StudentModule
+from mitxmako.shortcuts import render_to_string
 
 
 class EmailEnrollmentState(object):
@@ -54,7 +59,7 @@ class EmailEnrollmentState(object):
         }
 
 
-def enroll_email(course_id, student_email, auto_enroll=False):
+def enroll_email(course_id, student_email, auto_enroll=False, email_students=False, email_params=None):
     """
     Enroll a student by email.
 
@@ -71,10 +76,18 @@ def enroll_email(course_id, student_email, auto_enroll=False):
 
     if previous_state.user:
         CourseEnrollment.enroll_by_email(student_email, course_id)
+        if email_students:
+            email_params['message'] = 'registered_enroll'
+            email_params['email_address'] = student_email
+            send_mail_to_student(student_email, email_params)
     else:
         cea, _ = CourseEnrollmentAllowed.objects.get_or_create(course_id=course_id, email=student_email)
         cea.auto_enroll = auto_enroll
         cea.save()
+        if email_students:
+            email_params['message'] = 'allowed_enroll'
+            email_params['email_address'] = student_email
+            send_mail_to_student(student_email, email_params)
 
     after_state = EmailEnrollmentState(course_id, student_email)
 
@@ -141,3 +154,67 @@ def _reset_module_attempts(studentmodule):
     # save
     studentmodule.state = json.dumps(problem_state)
     studentmodule.save()
+
+
+def get_email_params(course, auto_enroll):
+    
+    stripped_site_name = _remove_preview(settings.SITE_NAME)
+    registration_url = 'https://' + stripped_site_name + reverse('student.views.register_user')
+    is_shib_course = course.enrollment_domain and course.enrollment_domain.startswith(SHIBBOLETH_DOMAIN_PREFIX)
+    
+    #Composition of email
+    email_params = {'site_name': stripped_site_name,
+                    'registration_url': registration_url,
+                    'course': course,
+                    'auto_enroll': auto_enroll,
+                    'course_url': 'https://' + stripped_site_name + '/courses/' + course.id,
+                    'course_about_url': 'https://' + stripped_site_name + '/courses/' + course.id + '/about',
+                    'is_shib_course': is_shib_course,
+                   }
+    return email_params
+
+
+def _remove_preview(site_name):
+    if site_name[:8] == "preview.":
+        return site_name[8:]
+    return site_name
+    
+
+def send_mail_to_student(student, param_dict):
+    """
+    Construct the email using templates and then send it.
+    `student` is the student's email address (a `str`),
+
+    `param_dict` is a `dict` with keys [
+    `site_name`: name given to edX instance (a `str`)
+    `registration_url`: url for registration (a `str`)
+    `course_id`: id of course (a `str`)
+    `auto_enroll`: user input option (a `str`)
+    `course_url`: url of course (a `str`)
+    `email_address`: email of student (a `str`)
+    `full_name`: student full name (a `str`)
+    `message`: type of email to send and template to use (a `str`)
+                                        ]
+    Returns a boolean indicating whether the email was sent successfully.
+    """
+
+    EMAIL_TEMPLATE_DICT = {'allowed_enroll': ('emails/enroll_email_allowedsubject.txt', 'emails/enroll_email_allowedmessage.txt'),
+                           'registered_enroll': ('emails/enroll_email_enrolledsubject.txt', 'emails/enroll_email_enrolledmessage.txt'),
+                           'allowed_unenroll': ('emails/unenroll_email_subject.txt', 'emails/unenroll_email_allowedmessage.txt'),
+                           'enrolled_unenroll': ('emails/unenroll_email_subject.txt', 'emails/unenroll_email_enrolledmessage.txt')}
+
+    subject_template, message_template = EMAIL_TEMPLATE_DICT.get(param_dict['message'], (None, None))
+    if subject_template is not None and message_template is not None:
+        subject = render_to_string(subject_template, param_dict)
+        message = render_to_string(message_template, param_dict)
+
+        # Remove leading and trailing whitespace from body
+        message = message.strip()
+
+        # Email subject *must not* contain newlines
+        subject = ''.join(subject.splitlines())
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [student], fail_silently=False)
+
+        return True
+    else:
+        return False
