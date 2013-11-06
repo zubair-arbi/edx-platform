@@ -15,6 +15,14 @@ div.video {
     border: 0;
   }
 
+  &.controls-loaded {
+    article.video-wrapper {
+      section.video-controls {
+        visibility: visible;
+      }
+    }
+  }
+
   div.tc-wrapper {
     position: relative;
     @include clearfix;
@@ -106,6 +114,7 @@ div.video {
       border-top: 0;
       color: #ccc;
       position: relative;
+      visibility: hidden;
 
       &:hover {
         ul, div {

@@ -40,9 +40,16 @@ function (VideoPlayer) {
      *     available via this object.
      * @param {DOM element} element Container of the entire Video DOM element.
      */
-    return function (state, element) {
+    return function (state, element, modules) {
         _makeFunctionsPublic(state);
-        state.initialize(element);
+
+        state.initialize(element, modules)
+            .always(function (mode) {
+                _initializeModules(modules, state)
+                    .done(function () {
+                        _showControls(state);
+                    });
+            });
     };
 
     // ***************************************************************
@@ -226,6 +233,24 @@ function (VideoPlayer) {
         state.captionHideTimeout = null;
     }
 
+    function _initializeModules (modules, state) {
+        var dfd = $.Deferred(),
+            modulesList = $.map(modules, function(module) {
+                if ($.isFunction(module)) {
+                    return module(state);
+                }
+        });
+
+        $.when.apply(null, modulesList).done(dfd.resolve);
+
+        return dfd.promise();
+    }
+
+    function _showControls (state) {
+        console.log('_showControls');
+        state.el.addClass('controls-loaded');
+    }
+
     // ***************************************************************
     // Public functions start here.
     // These are available via the 'state' object. Their context ('this'
@@ -258,6 +283,7 @@ function (VideoPlayer) {
     function initialize(element) {
         var _this = this,
             regExp = /^true$/i,
+            dfd = $.Deferred(),
             data, tempYtTestTimeout;
         // This is used in places where we instead would have to check if an
         // element has a CSS class 'fullscreen'.
@@ -315,14 +341,17 @@ function (VideoPlayer) {
             // If we do not have YouTube ID's, try parsing HTML5 video sources.
             if (!_prepareHTML5Video(this, true)) {
 
+                dfd.reject();
                 // Non-YouTube sources were not found either.
-                return;
+                return dfd.promise();
             }
 
             console.log('[Video info]: Start player in HTML5 mode.');
 
             _setConfigurations(this);
             _renderElements(this);
+
+            dfd.resolve({ mode: 'html5' });
         } else {
             if (!this.youtubeXhr) {
                 this.youtubeXhr = this.getVideoMetadata();
@@ -330,7 +359,8 @@ function (VideoPlayer) {
 
             this.youtubeXhr
                 .always(function (json, status) {
-                    var err = $.isPlainObject(json.error) ||
+                    var mode = 'youtube',
+                        err = $.isPlainObject(json.error) ||
                                 (
                                     status !== 'success' &&
                                     status !== 'notmodified'
@@ -369,6 +399,7 @@ function (VideoPlayer) {
                             // In-browser HTML5 player does not support quality
                             // control.
                             _this.el.find('a.quality_control').hide();
+                            mode = 'html5';
                         }
                     } else {
                         console.log(
@@ -381,8 +412,12 @@ function (VideoPlayer) {
 
                     _setConfigurations(_this);
                     _renderElements(_this);
+
+                    dfd.resolve({ mode: mode});
                 });
         }
+
+        return dfd.promise();
     }
 
     /*

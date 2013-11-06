@@ -73,7 +73,7 @@ function (
     previousState = null;
 
     window.Video = function (element) {
-        var state;
+        var state, modules;
 
         // Stop bufferization of previous video on sequence change.
         // Problem: multiple video tags with the same src cannot
@@ -94,19 +94,21 @@ function (
         state = {};
         previousState = state;
 
+        modules = [
+            FocusGrabber,
+            VideoControl,
+            VideoQualityControl,
+            VideoProgressSlider,
+            VideoVolumeControl,
+            VideoSpeedControl,
+            VideoCaption
+        ];
+
         state.youtubeXhr = youtubeXhr;
-        Initialize(state, element);
+        Initialize(state, element, modules);
         if (!youtubeXhr) {
             youtubeXhr = state.youtubeXhr;
         }
-
-        FocusGrabber(state);
-        VideoControl(state);
-        VideoQualityControl(state);
-        VideoProgressSlider(state);
-        VideoVolumeControl(state);
-        VideoSpeedControl(state);
-        VideoCaption(state);
 
         // Because the 'state' object is only available inside this closure, we will also make
         // it available to the caller by returning it. This is necessary so that we can test
