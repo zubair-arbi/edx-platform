@@ -73,7 +73,7 @@ function (
     previousState = null;
 
     window.Video = function (element) {
-        var state, modules;
+        var state;
 
         // Stop bufferization of previous video on sequence change.
         // Problem: multiple video tags with the same src cannot
@@ -94,7 +94,7 @@ function (
         state = {};
         previousState = state;
 
-        modules = [
+        state.modules = [
             FocusGrabber,
             VideoControl,
             VideoQualityControl,
@@ -105,7 +105,7 @@ function (
         ];
 
         state.youtubeXhr = youtubeXhr;
-        Initialize(state, element, modules);
+        Initialize(state, element);
         if (!youtubeXhr) {
             youtubeXhr = state.youtubeXhr;
         }

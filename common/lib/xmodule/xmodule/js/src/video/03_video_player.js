@@ -5,13 +5,12 @@ define(
 'video/03_video_player.js',
 ['video/02_html5_video.js', 'video/00_resizer.js' ],
 function (HTML5Video, Resizer) {
+     var dfd = $.Deferred();
+
     // VideoPlayer() function - what this module "exports".
     return function (state) {
-        var dfd = $.Deferred();
 
-        state.videoPlayer = {
-            _dfd: dfd
-        };
+        state.videoPlayer = {};
 
         _makeFunctionsPublic(state);
         _initialize(state);
@@ -415,9 +414,7 @@ function (HTML5Video, Resizer) {
         var availablePlaybackRates, baseSpeedSubs, _this,
             player, videoWidth, videoHeight;
 
-        console.log('onReady');
-        this.videoPlayer._dfd.resolve();
-        this.el.addClass('controls-loaded');
+        dfd.resolve();
 
         if (this.videoType === 'html5') {
             player = this.videoEl = this.videoPlayer.player.videoEl;
