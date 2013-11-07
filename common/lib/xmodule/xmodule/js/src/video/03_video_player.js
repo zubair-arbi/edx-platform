@@ -157,7 +157,7 @@ function (HTML5Video, Resizer) {
                 container: state.videoEl.parent()
             })
             .setMode('width')
-            .callback.once(function() {
+            .callbacks.once(function() {
                 state.trigger('videoCaption.resize', null);
             });
 
