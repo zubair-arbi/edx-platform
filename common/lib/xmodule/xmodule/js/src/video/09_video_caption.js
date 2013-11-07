@@ -730,7 +730,7 @@ function () {
             });
         }
 
-        if (this.resizer) {
+        if (this.resizer && !this.isFullScreen) {
             this.resizer.alignByWidthOnly();
         }
 

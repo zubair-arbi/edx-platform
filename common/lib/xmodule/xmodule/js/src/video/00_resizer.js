@@ -13,6 +13,7 @@ function () {
                 elementRatio: null
             },
             callbacksList = [],
+            module = {},
             mode = null,
             config;
 
@@ -29,7 +30,7 @@ function () {
                 );
             }
 
-            return this;
+            return module;
         };
 
         var getData = function () {
@@ -82,7 +83,7 @@ function () {
 
             fireCallbacks();
 
-            return this;
+            return module;
         };
 
         var alignByWidthOnly = function () {
@@ -96,7 +97,7 @@ function () {
                 'left': 0
             });
 
-            return this;
+            return module;
         };
 
         var alignByHeightOnly = function () {
@@ -110,7 +111,7 @@ function () {
                 'left': 0.5*(data.containerWidth - width)
             });
 
-            return this;
+            return module;
         };
 
         var setMode = function (param) {
@@ -119,7 +120,7 @@ function () {
                 align();
             }
 
-            return this;
+            return module;
         };
 
         var addCallback = function (func) {
@@ -127,7 +128,7 @@ function () {
                 callbacksList.push(func);
             }
 
-            return this;
+            return module;
         };
 
         var addOnceCallback = function (func) {
@@ -141,7 +142,7 @@ function () {
                 addCallback(decorator);
             }
 
-            return this;
+            return module;
         };
 
         var fireCallbacks = function () {
@@ -152,6 +153,8 @@ function () {
 
         var removeCallbacks = function () {
             callbacksList.length = 0;
+
+            return module;
         };
 
         var removeCallback = function (func) {
@@ -162,9 +165,9 @@ function () {
             }
         };
 
-        initialize.apply(this, arguments);
+        initialize.apply(module, arguments);
 
-        return {
+        return $.extend(true, module, {
             align: align,
             alignByWidthOnly: alignByWidthOnly,
             alignByHeightOnly: alignByHeightOnly,
@@ -176,7 +179,7 @@ function () {
                 remove: removeCallback,
                 removeAll: removeCallbacks
             }
-        };
+        });
     };
 
     return Resizer;
