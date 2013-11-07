@@ -12,6 +12,7 @@ function () {
                 containerRatio: null,
                 elementRatio: null
             },
+            callbacksList = [],
             mode = null,
             config;
 
@@ -79,6 +80,8 @@ function () {
                     break;
             }
 
+            fireCallbacks();
+
             return this;
         };
 
@@ -119,6 +122,46 @@ function () {
             return this;
         };
 
+        var addCallback = function (func) {
+            if ($.isFunction(func)) {
+                callbacksList.push(func);
+            }
+
+            return this;
+        };
+
+        var addOnceCallback = function (func) {
+            if ($.isFunction(func)) {
+
+                var decorator = function () {
+                    func();
+                    removeCallback(func);
+                };
+
+                addCallback(decorator);
+            }
+
+            return this;
+        };
+
+        var fireCallbacks = function () {
+            $.each(callbacksList, function(index, callback) {
+                 callback();
+            });
+        };
+
+        var removeCallbacks = function () {
+            callbacksList.length = 0;
+        };
+
+        var removeCallback = function (func) {
+            var index = $.inArray(func, callbacksList);
+
+            if (index !== -1) {
+                return callbacksList.splice(index, 1);
+            }
+        };
+
         initialize.apply(this, arguments);
 
         return {
@@ -126,7 +169,13 @@ function () {
             alignByWidthOnly: alignByWidthOnly,
             alignByHeightOnly: alignByHeightOnly,
             setParams: initialize,
-            setMode: setMode
+            setMode: setMode,
+            callback: {
+                add: addCallback,
+                once: onceCallback,
+                remove: removeCallback,
+                removeAll: removeCallbacks
+            }
         };
     };
 

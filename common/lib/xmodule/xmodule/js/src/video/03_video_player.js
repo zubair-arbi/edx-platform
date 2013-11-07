@@ -156,9 +156,11 @@ function (HTML5Video, Resizer) {
                 elementRatio: videoWidth/videoHeight,
                 container: state.videoEl.parent()
             })
-            .setMode('width');
+            .setMode('width')
+            .callback.once(function() {
+                state.trigger('videoCaption.resize', null);
+            });
 
-        state.trigger('videoCaption.resize', null);
         $(window).bind('resize', _.debounce(state.resizer.align, 100));
     }
 
