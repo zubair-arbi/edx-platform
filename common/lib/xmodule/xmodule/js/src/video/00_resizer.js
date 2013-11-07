@@ -170,9 +170,9 @@ function () {
             alignByHeightOnly: alignByHeightOnly,
             setParams: initialize,
             setMode: setMode,
-            callback: {
+            callbacks: {
                 add: addCallback,
-                once: onceCallback,
+                once: addOnceCallback,
                 remove: removeCallback,
                 removeAll: removeCallbacks
             }
