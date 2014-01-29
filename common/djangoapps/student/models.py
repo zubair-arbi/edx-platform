@@ -598,6 +598,17 @@ class CourseEnrollment(models.Model):
         d['total'] = total
         return d
 
+    @classmethod
+    def delete_course_enrollments(cls, course_id):
+        """
+        Deletes all 'Enrollment' objects related to a course from db
+
+        `course_id` is our usual course_id string (e.g. "edX/Test101/2013_Fall)
+
+        Note: Use this method only if a course is actually deleted
+        """
+        CourseEnrollment.objects.filter(course_id=course_id).delete()
+
     def activate(self):
         """Makes this `CourseEnrollment` record active. Saves immediately."""
         self.update_enrollment(is_active=True)
